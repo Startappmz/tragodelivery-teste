@@ -1,0 +1,421 @@
+openapi: 3.1.0
+info:
+  title: TraGo Tracking and Communication API
+  version: 1.0.0
+  description: Contrato MVP para pedidos, canais privados, presença e fases de entrega.
+servers:
+  - url: /api
+security:
+  - bearerAuth: []
+paths:
+  /public/orders:
+    post:
+      summary: Criar pedido do Cliente
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrder'
+      responses:
+        '201':
+          description: Pedido criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order:
+                    $ref: '#/components/schemas/Order'
+  /public/orders/{id}/context:
+    get:
+      summary: Obter contexto e estados públicos do pedido
+      security:
+        - orderAccessToken: []
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Contexto seguro
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order:
+                    $ref: '#/components/schemas/Order'
+                  driver:
+                    $ref: '#/components/schemas/PublicDriver'
+                  status_history:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PublicStatusEvent'
+  /public/orders/{id}/messages:
+    get:
+      summary: Ler apenas Cliente ↔ Motorista e eventos do sistema
+      security:
+        - orderAccessToken: []
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Mensagens visíveis ao Cliente
+    post:
+      summary: Enviar mensagem ao Motorista
+      security:
+        - orderAccessToken: []
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        $ref: '#/components/requestBodies/Message'
+      responses:
+        '201':
+          description: Mensagem criada em client_driver
+  /public/orders/{id}/driver-offer:
+    post:
+      summary: Ofertar pedido a um Motorista disponível
+      security:
+        - orderAccessToken: []
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [driver_id]
+              properties:
+                driver_id:
+                  type: string
+      responses:
+        '201':
+          description: Oferta criada
+        '409':
+          description: Pedido ou Motorista já reservado
+  /public/orders/{id}/cancel:
+    post:
+      summary: Cancelar pedido pelo Cliente
+      security:
+        - orderAccessToken: []
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        $ref: '#/components/requestBodies/Cancellation'
+      responses:
+        '200':
+          description: Pedido cancelado
+  /orders/my-deliveries:
+    get:
+      summary: Listar ofertas e entregas do Motorista
+      responses:
+        '200':
+          description: Entregas
+  /orders/{id}/offer-response:
+    post:
+      summary: Aceitar ou recusar oferta
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accept]
+              properties:
+                accept:
+                  type: boolean
+                reason:
+                  type: string
+                  maxLength: 500
+      responses:
+        '200':
+          description: Oferta processada atomicamente
+        '409':
+          description: Oferta expirada ou concorrente
+  /orders/{id}/messages:
+    get:
+      summary: Ler mensagens autorizadas
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+        - in: query
+          name: channel
+          schema:
+            $ref: '#/components/schemas/MessageChannel'
+      responses:
+        '200':
+          description: Mensagens filtradas por papel e canal
+    post:
+      summary: Enviar mensagem ao canal autorizado
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message, channel]
+              properties:
+                message:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+                channel:
+                  $ref: '#/components/schemas/MessageChannel'
+      responses:
+        '201':
+          description: Mensagem criada
+        '403':
+          description: Canal não permitido
+  /orders/{id}/pickup-start:
+    post:
+      summary: Motorista inicia deslocação para recolha
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Recolha iniciada
+  /orders/{id}/pickup-complete:
+    post:
+      summary: Motorista conclui recolha após autorização
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Recolha concluída
+        '409':
+          description: Estabelecimento ainda não autorizou
+  /orders/{id}/delivery-start:
+    post:
+      summary: Motorista inicia entrega ao Cliente
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Cliente passa a ver A caminho
+  /orders/{id}/delivery-complete:
+    post:
+      summary: Concluir entrega
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [verification_code]
+              properties:
+                verification_code:
+                  type: string
+                  minLength: 5
+                  maxLength: 5
+                driver_delivery_notes:
+                  type: string
+                  maxLength: 1000
+      responses:
+        '200':
+          description: Pedido entregue
+  /restaurant/orders/{id}/confirm:
+    post:
+      summary: Confirmar receção do pedido
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Receção confirmada
+  /restaurant/orders/{id}/pickup-confirmation:
+    post:
+      summary: Autorizar recolha pelo Motorista
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Recolha autorizada
+        '409':
+          description: Pedido não confirmado ou ainda não em preparação
+  /restaurant/orders/{id}/status:
+    post:
+      summary: Marcar Em preparação ou Cancelado
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [preparing, rejected]
+                reason:
+                  type: string
+                  minLength: 3
+                  maxLength: 500
+                prep_time_min:
+                  type: integer
+                  minimum: 1
+                  maximum: 180
+      responses:
+        '200':
+          description: Estado atualizado
+  /restaurant/orders/{id}/messages:
+    get:
+      summary: Ler apenas Motorista ↔ Loja e eventos do sistema
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Mensagens visíveis à Loja
+    post:
+      summary: Enviar mensagem ao Motorista
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        $ref: '#/components/requestBodies/Message'
+      responses:
+        '201':
+          description: Mensagem criada em driver_partner
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    orderAccessToken:
+      type: apiKey
+      in: header
+      name: X-Order-Access-Token
+  parameters:
+    OrderId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-fA-F0-9]{24}$'
+  requestBodies:
+    Message:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [message]
+            properties:
+              message:
+                type: string
+                minLength: 1
+                maxLength: 2000
+    Cancellation:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              reason:
+                type: string
+                maxLength: 500
+  schemas:
+    MessageChannel:
+      type: string
+      enum: [client_driver, driver_partner, system]
+    CreateOrder:
+      type: object
+      required: [service_type, client_name, client_phone1, pickup_address_text, address_text]
+      properties:
+        service_type:
+          type: string
+        client_name:
+          type: string
+        client_phone1:
+          type: string
+        client_notes:
+          type: string
+          maxLength: 1000
+        pickup_address_text:
+          type: string
+        pickup_lat:
+          type: number
+        pickup_lng:
+          type: number
+        address_text:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        restaurant_id:
+          type: string
+        payment_method:
+          type: string
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [pendente, atribuido, recolha_em_progresso, recolha_concluida, entrega_em_progresso, concluido, cancelado]
+        restaurant_status:
+          type: string
+          enum: [pending, accepted, preparing, rejected]
+        client_notes:
+          type: string
+        partner_confirmed_at:
+          type: [string, 'null']
+          format: date-time
+        pickup_authorized_at:
+          type: [string, 'null']
+          format: date-time
+        pickup_address_coords:
+          $ref: '#/components/schemas/Location'
+        address_coords:
+          $ref: '#/components/schemas/Location'
+    Location:
+      type: object
+      properties:
+        lat:
+          type: number
+          minimum: -90
+          maximum: 90
+        lng:
+          type: number
+          minimum: -180
+          maximum: 180
+    PublicDriver:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        vehicle:
+          type: object
+        location:
+          $ref: '#/components/schemas/Location'
+    PublicStatusEvent:
+      type: object
+      required: [label, created_at]
+      properties:
+        status:
+          type: string
+        label:
+          type: string
+          enum: [Pedido confirmado, Em preparação, A caminho, Entregue, Cancelado]
+        actor_type:
+          type: string
+        created_at:
+          type: string
+          format: date-time

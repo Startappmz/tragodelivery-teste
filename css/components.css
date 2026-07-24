@@ -1,0 +1,279 @@
+.trago-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-shell {
+  width: min(100% - 32px, var(--trago-content-width));
+  margin-inline: auto;
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-stack {
+  display: grid;
+  gap: var(--trago-space-4);
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--trago-space-3);
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-card {
+  overflow: hidden;
+  border: 1px solid var(--trago-color-line);
+  border-radius: var(--trago-radius-md);
+  background: var(--trago-color-surface);
+  box-shadow: var(--trago-shadow-sm);
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-card__body {
+  padding: var(--trago-space-4);
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-card__title {
+  color: var(--trago-color-ink);
+  font-size: var(--trago-font-size-lg);
+  line-height: 1.3;
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-muted {
+  color: var(--trago-color-muted);
+}
+
+.trago-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  font: 700 0.875rem/1.2 "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif;
+  text-align: center;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.trago-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.trago-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.trago-button--primary {
+  color: #142008;
+  background: #82c132;
+  box-shadow: 0 8px 20px rgb(97 157 29 / 20%);
+}
+
+.trago-button--primary:hover:not(:disabled) {
+  background: #91ce43;
+}
+
+.trago-button--secondary {
+  color: #151c27;
+  border-color: #dfe6ea;
+  background: #ffffff;
+}
+
+.trago-button--ghost {
+  color: #4e5b6c;
+  background: transparent;
+}
+
+.trago-button--danger {
+  color: #ffffff;
+  background: #c73737;
+}
+
+.trago-button--block {
+  width: 100%;
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-field {
+  display: grid;
+  gap: var(--trago-space-2);
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-label {
+  color: var(--trago-color-ink);
+  font-size: var(--trago-font-size-sm);
+  font-weight: 700;
+}
+
+:where(.trago-client-app, .trago-restaurant-app) :where(.trago-input, .trago-select, .trago-textarea) {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 13px;
+  border: 1px solid var(--trago-color-line);
+  border-radius: var(--trago-radius-sm);
+  background: var(--trago-color-surface);
+  transition: border-color var(--trago-transition), box-shadow var(--trago-transition);
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+:where(.trago-client-app, .trago-restaurant-app) :where(.trago-input, .trago-select, .trago-textarea):focus {
+  border-color: var(--trago-color-primary-strong);
+  box-shadow: 0 0 0 3px rgb(130 193 50 / 14%);
+  outline: none;
+}
+
+:where(.trago-client-app, .trago-restaurant-app) [aria-invalid="true"] {
+  border-color: var(--trago-color-danger) !important;
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-field-error {
+  color: var(--trago-color-danger);
+  font-size: var(--trago-font-size-xs);
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 5px 9px;
+  border-radius: var(--trago-radius-pill);
+  color: var(--trago-color-ink-soft);
+  background: #eef2f4;
+  font-size: var(--trago-font-size-xs);
+  font-weight: 700;
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-badge--success {
+  color: #176536;
+  background: #ddf4e6;
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-badge--warning {
+  color: #885000;
+  background: #fff0d3;
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-badge--danger {
+  color: #9e2929;
+  background: #fde2e2;
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-state {
+  display: grid;
+  place-items: center;
+  gap: var(--trago-space-3);
+  min-height: 220px;
+  padding: var(--trago-space-8);
+  color: var(--trago-color-muted);
+  text-align: center;
+}
+
+:where(.trago-client-app, .trago-restaurant-app) .trago-skeleton {
+  min-height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(90deg, #edf1f3 25%, #f8fafb 45%, #edf1f3 65%);
+  background-size: 300% 100%;
+  animation: trago-shimmer 1.35s infinite linear;
+}
+
+@keyframes trago-shimmer {
+  to { background-position: -150% 0; }
+}
+
+.trago-toast-region {
+  position: fixed;
+  z-index: 1200;
+  inset: 16px 16px auto auto;
+  width: min(380px, calc(100vw - 32px));
+  display: grid;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.trago-toast {
+  display: grid;
+  grid-template-columns: 5px 1fr auto;
+  gap: 12px;
+  overflow: hidden;
+  padding: 12px 12px 12px 0;
+  border: 1px solid #dfe6ea;
+  border-radius: 12px;
+  color: #151c27;
+  background: #ffffff;
+  box-shadow: 0 14px 36px rgb(21 28 39 / 16%);
+  font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif;
+  pointer-events: auto;
+  animation: trago-toast-in 180ms ease-out;
+}
+
+.trago-toast--leaving { animation: trago-toast-out 160ms ease-in forwards; }
+.trago-toast__marker { background: #2878c7; }
+.trago-toast--success .trago-toast__marker { background: #258a4b; }
+.trago-toast--warning .trago-toast__marker { background: #b36b00; }
+.trago-toast--error .trago-toast__marker { background: #c73737; }
+.trago-toast__content { align-self: center; min-width: 0; }
+.trago-toast__title { display: block; margin-bottom: 2px; font-size: 0.875rem; }
+.trago-toast__message { margin: 0; color: #4e5b6c; font-size: 0.8125rem; line-height: 1.45; }
+.trago-toast__close { width: 32px; height: 32px; border: 0; border-radius: 8px; color: #738092; background: transparent; cursor: pointer; font-size: 1.25rem; }
+.trago-toast__close:hover { color: #151c27; background: #f1f4f5; }
+
+@keyframes trago-toast-in {
+  from { transform: translateY(-8px); opacity: 0; }
+}
+
+@keyframes trago-toast-out {
+  to { transform: translateX(14px); opacity: 0; }
+}
+
+.trago-modal-open { overflow: hidden; }
+
+.trago-modal-backdrop {
+  position: fixed;
+  z-index: 1100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(15 22 31 / 58%);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.trago-modal-backdrop--visible { opacity: 1; }
+.trago-modal-backdrop--leaving { opacity: 0; }
+
+.trago-modal {
+  width: min(100%, 600px);
+  max-height: min(86vh, 800px);
+  overflow: auto;
+  border-radius: 16px;
+  color: #151c27;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgb(4 9 15 / 28%);
+  font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif;
+  transform: translateY(10px) scale(0.985);
+  transition: transform 180ms ease;
+}
+
+.trago-modal-backdrop--visible .trago-modal { transform: translateY(0) scale(1); }
+.trago-modal--small { max-width: 430px; }
+.trago-modal--large { max-width: 880px; }
+.trago-modal__header { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #e5eaed; background: #ffffff; }
+.trago-modal__title { margin: 0; font-size: 1.15rem; line-height: 1.3; }
+.trago-modal__close { flex: 0 0 36px; width: 36px; height: 36px; border: 0; border-radius: 9px; color: #738092; background: #f1f4f5; cursor: pointer; font-size: 1.35rem; }
+.trago-modal__body { padding: 20px; color: #4e5b6c; font-size: 0.9375rem; }
+.trago-modal__footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; padding: 16px 20px; border-top: 1px solid #e5eaed; }

@@ -1,0 +1,2543 @@
+/* TraGo · Motorista Premium — carteira, perfil público e viatura. */
+.v20-driver-app {
+  --driver-premium-ink: #101a13;
+  --driver-premium-muted: #69736b;
+  --driver-premium-line: #dfe5dc;
+  --driver-premium-soft: #f4f7f2;
+  --driver-premium-green: #78bd2c;
+  --driver-premium-green-dark: #4d861a;
+  --driver-premium-navy: #09253a;
+}
+
+/*
+ * Blindagem dos modais do Motorista.
+ * global.css inicia .modal-content invisível e só o revela dentro de
+ * .modal-backdrop; este painel usa .modal-overlay. Estas regras impedem que
+ * o backdrop fique activo sem o respectivo conteúdo.
+ */
+body.v20-driver-app .driver-modal {
+  background: rgba(5, 13, 9, .52) !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  visibility: visible !important;
+  width: 100vw !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+  backdrop-filter: blur(3px) !important;
+}
+
+body.v20-driver-app .driver-modal.hidden {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+body.v20-driver-app .driver-modal:not(.hidden) {
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+body.v20-driver-app.driver-modal-open {
+  overflow: hidden !important;
+}
+
+body.v20-driver-app .driver-modal > .modal-content {
+  display: block !important;
+  flex: 0 0 auto !important;
+  inset: auto !important;
+  margin: auto !important;
+  max-height: calc(100dvh - 32px) !important;
+  opacity: 1 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  transform: none !important;
+  visibility: visible !important;
+}
+
+body.v20-driver-app .driver-modal:not(.hidden) > .modal-content {
+  animation: none !important;
+}
+
+@media (max-width: 520px) {
+  body.v20-driver-app .driver-modal {
+    align-items: flex-end !important;
+    padding: 10px !important;
+  }
+
+  body.v20-driver-app .driver-modal > .modal-content {
+    border-radius: 20px !important;
+    margin: auto auto max(6px, env(safe-area-inset-bottom)) !important;
+    max-height: calc(100dvh - 20px - env(safe-area-inset-bottom)) !important;
+    padding: 24px 18px !important;
+  }
+}
+
+.v20-driver-app :where(.driver-earnings-page, .driver-profile-page) {
+  max-width: 1180px !important;
+}
+
+.v20-driver-app .driver-premium-topbar {
+  align-items: center !important;
+  margin-bottom: 20px !important;
+}
+
+.v20-driver-app .driver-premium-topbar > div > p:last-child {
+  color: var(--driver-premium-muted);
+  font-size: 10px;
+  margin: 5px 0 0;
+}
+
+.v20-driver-app .driver-export-earnings {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--driver-premium-line);
+  border-radius: 11px;
+  color: var(--driver-premium-ink);
+  display: inline-flex;
+  font-size: 9px;
+  font-weight: 900;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 15px;
+}
+
+.v20-driver-app .driver-export-earnings:hover {
+  background: var(--driver-premium-soft);
+}
+
+.v20-driver-app .driver-earnings-period {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--driver-premium-line);
+  border-radius: 15px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 8px 9px 8px 15px;
+}
+
+.v20-driver-app .driver-earnings-period > span {
+  display: grid;
+  gap: 2px;
+}
+
+.v20-driver-app .driver-earnings-period > span small {
+  color: #929b93;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.v20-driver-app .driver-earnings-period > span strong {
+  font-size: 12px;
+}
+
+.v20-driver-app .driver-earnings-period .driver-period-chips {
+  background: #f0f3ee;
+  border-radius: 11px;
+  display: grid !important;
+  gap: 3px !important;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0 !important;
+  padding: 3px;
+}
+
+.v20-driver-app .driver-earnings-period .driver-period-chips button {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  height: 34px !important;
+  min-width: 76px;
+  padding: 0 14px !important;
+}
+
+.v20-driver-app .driver-earnings-period .driver-period-chips button.active {
+  background: #fff !important;
+  box-shadow: 0 3px 10px rgba(18, 31, 20, .08);
+  color: var(--driver-premium-green-dark) !important;
+}
+
+.v20-driver-app .driver-earnings-dashboard {
+  align-items: stretch;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+
+.v20-driver-app .driver-earnings-main {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.v20-driver-app .driver-wallet-hero {
+  background:
+    radial-gradient(circle at 87% 15%, rgba(121, 189, 44, .2), transparent 24%),
+    linear-gradient(130deg, #071e30, #0d3525) !important;
+  border-radius: 22px !important;
+  min-height: 190px !important;
+  padding: 30px 34px !important;
+}
+
+.v20-driver-app .driver-wallet-hero::after {
+  border-color: rgba(255, 255, 255, .045) !important;
+  height: 230px !important;
+  right: -44px !important;
+  top: -105px !important;
+  width: 230px !important;
+}
+
+.v20-driver-app .driver-wallet-hero small {
+  color: #a6da72 !important;
+  font-size: 8px !important;
+}
+
+.v20-driver-app .driver-wallet-hero strong {
+  font-size: clamp(34px, 4.2vw, 46px) !important;
+  line-height: 1;
+  margin: 13px 0 9px !important;
+}
+
+.v20-driver-app .driver-wallet-status {
+  align-items: center;
+  color: #d1ddd4;
+  display: inline-flex;
+  font-size: 8px;
+  gap: 6px;
+  margin-top: 17px;
+}
+
+.v20-driver-app .driver-wallet-status i,
+.v20-driver-app .driver-availability-badge i {
+  background: var(--driver-premium-green);
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(121, 189, 44, .12);
+  height: 7px;
+  width: 7px;
+}
+
+.v20-driver-app .driver-wallet-hero > span {
+  background: rgba(255, 255, 255, .08) !important;
+  border: 1px solid rgba(255, 255, 255, .08);
+  height: 76px !important;
+  width: 76px !important;
+}
+
+.v20-driver-app .driver-earnings-stats {
+  gap: 9px !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  margin: 0 !important;
+}
+
+.v20-driver-app .driver-earnings-stats article {
+  align-items: flex-start !important;
+  border-radius: 15px !important;
+  min-height: 100px;
+  padding: 15px !important;
+}
+
+.v20-driver-app .driver-earnings-stats article > i {
+  flex: 0 0 36px;
+}
+
+.v20-driver-app .driver-earnings-stats article span {
+  min-width: 0;
+}
+
+.v20-driver-app .driver-earnings-stats strong {
+  font-size: 13px !important;
+  overflow-wrap: anywhere;
+}
+
+.v20-driver-app .driver-earnings-stats em {
+  color: #929a93;
+  font-size: 7px;
+  font-style: normal;
+  margin-top: 4px;
+}
+
+.v20-driver-app .driver-performance-card,
+.v20-driver-app .driver-payout-card,
+.v20-driver-app .driver-profile-section,
+.v20-driver-app .driver-public-preview-card,
+.v20-driver-app .driver-profile-quick-card {
+  background: #fff;
+  border: 1px solid var(--driver-premium-line);
+  border-radius: 18px;
+}
+
+.v20-driver-app .driver-performance-card {
+  padding: 18px 20px 15px;
+}
+
+.v20-driver-app .driver-performance-card > header {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.v20-driver-app .driver-performance-card header small,
+.v20-driver-app .driver-payout-card > small,
+.v20-driver-app .driver-public-preview-card header small,
+.v20-driver-app .driver-profile-quick-card header small {
+  color: var(--driver-premium-green-dark);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .13em;
+}
+
+.v20-driver-app .driver-performance-card h2,
+.v20-driver-app .driver-profile-quick-card h2 {
+  font-size: 15px;
+  margin: 4px 0 0;
+}
+
+.v20-driver-app .driver-performance-card header > span {
+  align-items: center;
+  background: var(--driver-premium-soft);
+  border-radius: 99px;
+  color: var(--driver-premium-muted);
+  display: inline-flex;
+  font-size: 8px;
+  gap: 5px;
+  padding: 6px 9px;
+}
+
+.v20-driver-app .driver-performance-card header > span i {
+  color: var(--driver-premium-green-dark);
+}
+
+.v20-driver-app .driver-performance-chart {
+  align-items: end;
+  border-bottom: 1px solid var(--driver-premium-line);
+  display: grid;
+  gap: clamp(8px, 2vw, 20px);
+  grid-template-columns: repeat(7, 1fr);
+  height: 145px;
+  margin-top: 18px;
+  padding: 0 10px;
+}
+
+.v20-driver-app .driver-performance-chart > i {
+  align-self: end;
+  background: linear-gradient(180deg, #9bd65c, #6eb52a);
+  border-radius: 7px 7px 2px 2px;
+  height: var(--value);
+  min-height: 12px;
+  position: relative;
+}
+
+.v20-driver-app .driver-performance-chart > i b {
+  bottom: -21px;
+  color: #949c95;
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 700;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.v20-driver-app .driver-payout-card {
+  align-content: start;
+  background: linear-gradient(160deg, #f7faF5, #fff);
+  display: grid;
+  padding: 23px;
+}
+
+.v20-driver-app .driver-payout-icon {
+  align-items: center;
+  background: var(--driver-premium-navy);
+  border-radius: 15px;
+  color: #a8da74;
+  display: flex;
+  font-size: 21px;
+  height: 52px;
+  justify-content: center;
+  margin-bottom: 24px;
+  width: 52px;
+}
+
+.v20-driver-app .driver-payout-card h2 {
+  font-size: 21px;
+  line-height: 1.15;
+  margin: 7px 0 8px;
+}
+
+.v20-driver-app .driver-payout-card > p {
+  color: var(--driver-premium-muted);
+  font-size: 9px;
+  line-height: 1.55;
+  margin: 0 0 24px;
+}
+
+.v20-driver-app .driver-payout-card > div {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--driver-premium-line);
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+}
+
+.v20-driver-app .driver-payout-card > div span {
+  display: grid;
+  gap: 2px;
+}
+
+.v20-driver-app .driver-payout-card > div small {
+  color: #929a93;
+  font-size: 7px;
+}
+
+.v20-driver-app .driver-payout-card > div strong {
+  font-size: 10px;
+}
+
+.v20-driver-app .driver-payout-card > div > i {
+  color: var(--driver-premium-green);
+}
+
+.v20-driver-app .driver-payout-card > button {
+  background: transparent;
+  border: 0;
+  color: var(--driver-premium-green-dark);
+  font-size: 8px;
+  font-weight: 800;
+  margin-top: auto;
+  padding: 20px 0 0;
+  text-align: left;
+}
+
+.v20-driver-app .driver-earnings-table-card {
+  margin-top: 12px;
+  padding: 20px !important;
+}
+
+.v20-driver-app .driver-earnings-table-card .driver-section-header p {
+  margin-top: 5px !important;
+}
+
+.v20-driver-app .driver-earnings-table-card td {
+  font-size: 10px !important;
+  padding-block: 15px !important;
+}
+
+.v20-driver-app .driver-earnings-table-card tbody tr:last-child td {
+  border-bottom: 0 !important;
+}
+
+/* Perfil premium */
+.v20-driver-app .driver-profile-completeness {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--driver-premium-line);
+  border-radius: 12px;
+  display: grid;
+  gap: 1px;
+  grid-template-columns: auto auto;
+  padding: 8px 11px;
+}
+
+.v20-driver-app .driver-profile-completeness i {
+  color: var(--driver-premium-green);
+  font-size: 14px;
+  grid-row: span 2;
+  margin-right: 5px;
+}
+
+.v20-driver-app .driver-profile-completeness b {
+  font-size: 10px;
+}
+
+.v20-driver-app .driver-profile-completeness small {
+  color: #939b94;
+  font-size: 7px;
+}
+
+.v20-driver-app .driver-profile-hero-premium {
+  background: #fff;
+  border: 1px solid var(--driver-premium-line);
+  border-radius: 21px;
+  margin-bottom: 13px;
+  overflow: hidden;
+}
+
+.v20-driver-app .driver-profile-cover {
+  background:
+    radial-gradient(circle at 84% 20%, rgba(121, 189, 44, .2), transparent 24%),
+    linear-gradient(125deg, #071e30, #0e3525);
+  height: 118px;
+  overflow: hidden;
+  position: relative;
+}
+
+.v20-driver-app .driver-profile-cover::before,
+.v20-driver-app .driver-profile-cover::after {
+  border: 38px solid rgba(255, 255, 255, .04);
+  border-radius: 50%;
+  content: "";
+  height: 180px;
+  position: absolute;
+  right: 4%;
+  top: -90px;
+  width: 180px;
+}
+
+.v20-driver-app .driver-profile-cover::after {
+  height: 270px;
+  right: -8%;
+  top: -150px;
+  width: 270px;
+}
+
+.v20-driver-app .driver-profile-identity {
+  align-items: center;
+  display: flex;
+  gap: 15px;
+  min-height: 105px;
+  padding: 0 24px 8px;
+}
+
+.v20-driver-app .driver-photo-picker {
+  background: #fff;
+  border: 5px solid #fff;
+  border-radius: 22px;
+  flex: 0 0 92px;
+  height: 92px;
+  margin-top: -45px;
+  padding: 0;
+  position: relative;
+  width: 92px;
+  z-index: 2;
+}
+
+.v20-driver-app .driver-photo-picker > img,
+.v20-driver-app .driver-photo-picker > .driver-avatar {
+  border-radius: 17px !important;
+  height: 100% !important;
+  object-fit: cover;
+  width: 100% !important;
+}
+
+.v20-driver-app .driver-photo-picker > i {
+  align-items: center;
+  background: var(--driver-premium-green);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  bottom: -4px;
+  color: #fff;
+  display: flex;
+  font-size: 10px;
+  height: 28px;
+  justify-content: center;
+  position: absolute;
+  right: -4px;
+  width: 28px;
+}
+
+.v20-driver-app .driver-profile-identity > div {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.v20-driver-app .driver-verified-label {
+  color: var(--driver-premium-green-dark);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .11em;
+}
+
+.v20-driver-app .driver-profile-identity h2 {
+  font-size: 22px;
+  margin: 5px 0 3px;
+}
+
+.v20-driver-app .driver-profile-identity p {
+  color: var(--driver-premium-muted);
+  font-size: 9px;
+  margin: 0;
+}
+
+.v20-driver-app .driver-profile-identity p i {
+  color: #f4b83d;
+}
+
+.v20-driver-app .driver-availability-badge {
+  align-items: center;
+  background: var(--driver-premium-soft);
+  border-radius: 99px;
+  color: var(--driver-premium-green-dark);
+  display: inline-flex;
+  font-size: 8px;
+  font-weight: 900;
+  gap: 8px;
+  padding: 9px 12px;
+}
+
+.v20-driver-app .driver-profile-layout {
+  align-items: start;
+  display: grid;
+  gap: 13px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(290px, .7fr);
+}
+
+.v20-driver-app .driver-profile-form,
+.v20-driver-app .driver-profile-sidebar-premium {
+  display: grid;
+  gap: 13px;
+  min-width: 0;
+}
+
+.v20-driver-app .driver-profile-section {
+  padding: 20px;
+}
+
+.v20-driver-app .driver-profile-section > header {
+  align-items: center;
+  display: flex;
+  gap: 11px;
+  margin-bottom: 17px;
+}
+
+.v20-driver-app .driver-profile-section > header > span {
+  align-items: center;
+  background: var(--driver-premium-soft);
+  border-radius: 11px;
+  color: var(--driver-premium-green-dark);
+  display: flex;
+  flex: 0 0 40px;
+  height: 40px;
+  justify-content: center;
+}
+
+.v20-driver-app .driver-profile-section > header > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.v20-driver-app .driver-profile-section header small {
+  color: var(--driver-premium-green-dark);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.v20-driver-app .driver-profile-section header h2 {
+  font-size: 14px;
+  margin: 3px 0 1px;
+}
+
+.v20-driver-app .driver-profile-section header p {
+  color: var(--driver-premium-muted);
+  font-size: 8px;
+  margin: 0;
+}
+
+.v20-driver-app .driver-public-tag,
+.v20-driver-app .driver-private-tag {
+  align-items: center;
+  background: #eef7e6;
+  border-radius: 99px;
+  color: var(--driver-premium-green-dark);
+  display: inline-flex;
+  font-size: 7px;
+  gap: 5px;
+  padding: 6px 8px;
+}
+
+.v20-driver-app .driver-private-tag {
+  background: #f1f3f4;
+  color: #687078;
+}
+
+.v20-driver-app .driver-profile-fields {
+  display: grid;
+  gap: 11px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.v20-driver-app .driver-profile-fields label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.v20-driver-app .driver-profile-fields label.wide {
+  grid-column: 1 / -1;
+}
+
+.v20-driver-app .driver-profile-fields label > span {
+  color: #5c675e;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.v20-driver-app .driver-profile-fields :is(input, select, textarea) {
+  background: #f8faf7;
+  border: 1px solid #d7ded4;
+  border-radius: 10px;
+  color: var(--driver-premium-ink);
+  font-size: 10px;
+  min-height: 44px;
+  outline: 0;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.v20-driver-app .driver-profile-fields textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.v20-driver-app .driver-profile-fields :is(input, select, textarea):focus {
+  background: #fff;
+  border-color: var(--driver-premium-green);
+  box-shadow: 0 0 0 3px rgba(121, 189, 44, .11);
+}
+
+.v20-driver-app .driver-vehicle-photo {
+  margin-bottom: 16px;
+}
+
+.v20-driver-app .driver-vehicle-photo > button {
+  align-items: center;
+  background: linear-gradient(135deg, #f1f5ef, #e8eee5);
+  border: 1px dashed #bdc9b8;
+  border-radius: 14px;
+  display: flex;
+  height: 190px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  width: 100%;
+}
+
+.v20-driver-app .driver-vehicle-photo img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.v20-driver-app .driver-vehicle-photo button > span {
+  align-items: center;
+  color: #667066;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.v20-driver-app .driver-vehicle-photo button > span > i {
+  color: var(--driver-premium-green-dark);
+  font-size: 29px;
+}
+
+.v20-driver-app .driver-vehicle-photo button > span strong {
+  font-size: 10px;
+}
+
+.v20-driver-app .driver-vehicle-photo button > span small {
+  font-size: 8px;
+}
+
+.v20-driver-app .driver-vehicle-photo button > b {
+  background: rgba(8, 22, 13, .76);
+  border-radius: 9px;
+  bottom: 10px;
+  color: #fff;
+  font-size: 8px;
+  padding: 7px 9px;
+  position: absolute;
+  right: 10px;
+}
+
+.v20-driver-app .driver-document-layout {
+  align-items: stretch;
+  display: grid;
+  gap: 13px;
+  grid-template-columns: 190px minmax(0, 1fr);
+}
+
+.v20-driver-app .driver-license-upload button {
+  align-items: center;
+  background: #f6f8f5;
+  border: 1px dashed #bdc8b9;
+  border-radius: 12px;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  min-height: 135px;
+  overflow: hidden;
+  padding: 0;
+  width: 100%;
+}
+
+.v20-driver-app .driver-license-upload img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.v20-driver-app .driver-license-upload button > span {
+  align-items: center;
+  color: #737d74;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.v20-driver-app .driver-license-upload button i {
+  color: var(--driver-premium-green-dark);
+  font-size: 24px;
+}
+
+.v20-driver-app .driver-license-upload button strong {
+  font-size: 9px;
+}
+
+.v20-driver-app .driver-license-upload button small {
+  font-size: 7px;
+}
+
+.v20-driver-app .driver-document-status {
+  align-items: center;
+  background: #f7f9f6;
+  border-radius: 11px;
+  display: flex;
+  gap: 9px;
+  margin-top: 13px;
+  padding: 11px;
+}
+
+.v20-driver-app .driver-document-status > i {
+  color: #e0a72b;
+}
+
+.v20-driver-app .driver-document-status > span {
+  display: grid;
+  flex: 1;
+}
+
+.v20-driver-app .driver-document-status strong {
+  font-size: 9px;
+}
+
+.v20-driver-app .driver-document-status small {
+  color: var(--driver-premium-muted);
+  font-size: 7px;
+}
+
+.v20-driver-app .driver-document-status b {
+  background: #fff4d9;
+  border-radius: 99px;
+  color: #976b0c;
+  font-size: 7px;
+  padding: 6px 8px;
+}
+
+.v20-driver-app .driver-profile-savebar {
+  align-items: center;
+  background: var(--driver-premium-navy);
+  border-radius: 15px;
+  color: #fff;
+  display: flex;
+  gap: 12px;
+  padding: 13px;
+}
+
+.v20-driver-app .driver-profile-savebar > span {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: 10px;
+  min-width: 0;
+}
+
+.v20-driver-app .driver-profile-savebar > span > i {
+  color: #a7d975;
+}
+
+.v20-driver-app .driver-profile-savebar b {
+  display: grid;
+}
+
+.v20-driver-app .driver-profile-savebar strong {
+  font-size: 9px;
+}
+
+.v20-driver-app .driver-profile-savebar small {
+  color: #aab8c2;
+  font-size: 7px;
+}
+
+.v20-driver-app .driver-profile-savebar > button {
+  background: var(--driver-premium-green);
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 900;
+  min-height: 42px;
+  padding: 0 16px;
+}
+
+.v20-driver-app .driver-public-preview-card {
+  overflow: hidden;
+}
+
+.v20-driver-app .driver-public-preview-card > header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.v20-driver-app .driver-public-preview-card header span {
+  display: grid;
+}
+
+.v20-driver-app .driver-public-preview-card header h2 {
+  font-size: 13px;
+  margin: 3px 0 0;
+}
+
+.v20-driver-app .driver-public-preview-card header > i {
+  color: var(--driver-premium-green-dark);
+}
+
+.v20-driver-app .driver-public-map {
+  background:
+    linear-gradient(25deg, transparent 46%, rgba(255,255,255,.92) 47% 52%, transparent 53%),
+    linear-gradient(155deg, transparent 41%, rgba(211,228,203,.9) 42% 48%, transparent 49%),
+    #edf4e9;
+  height: 115px;
+  position: relative;
+}
+
+.v20-driver-app .driver-public-map > i {
+  border-top: 2px dashed var(--driver-premium-green);
+  left: 23%;
+  position: absolute;
+  right: 18%;
+  top: 56%;
+  transform: rotate(-13deg);
+}
+
+.v20-driver-app .driver-public-bike {
+  align-items: center;
+  background: var(--driver-premium-green);
+  border: 4px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 5px 15px rgba(55, 101, 22, .25);
+  color: #fff;
+  display: flex;
+  height: 41px;
+  justify-content: center;
+  left: 30%;
+  position: absolute;
+  top: 36%;
+  width: 41px;
+}
+
+.v20-driver-app .driver-public-person {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  padding: 15px 16px 11px;
+}
+
+.v20-driver-app .driver-public-person > span {
+  align-items: center;
+  background: var(--driver-premium-navy);
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  flex: 0 0 44px;
+  height: 44px;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.v20-driver-app .driver-public-person img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.v20-driver-app .driver-public-person > div {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.v20-driver-app .driver-public-person strong {
+  font-size: 11px;
+}
+
+.v20-driver-app .driver-public-person small {
+  color: var(--driver-premium-muted);
+  font-size: 8px;
+}
+
+.v20-driver-app .driver-public-person small i {
+  color: #f4b83d;
+}
+
+.v20-driver-app .driver-public-person > i {
+  color: var(--driver-premium-green);
+}
+
+.v20-driver-app .driver-public-vehicle {
+  align-items: center;
+  background: #f7f9f6;
+  border-radius: 12px;
+  display: flex;
+  gap: 10px;
+  margin: 0 16px 12px;
+  padding: 10px;
+}
+
+.v20-driver-app .driver-public-vehicle > span {
+  align-items: center;
+  background: #e9eee6;
+  border-radius: 9px;
+  display: flex;
+  flex: 0 0 52px;
+  height: 47px;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.v20-driver-app .driver-public-vehicle img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.v20-driver-app .driver-public-vehicle > span > i {
+  color: var(--driver-premium-green-dark);
+  font-size: 19px;
+}
+
+.v20-driver-app .driver-public-vehicle > div {
+  display: grid;
+  min-width: 0;
+}
+
+.v20-driver-app .driver-public-vehicle small {
+  color: #909890;
+  font-size: 7px;
+  font-weight: 900;
+}
+
+.v20-driver-app .driver-public-vehicle strong {
+  font-size: 10px;
+  margin: 2px 0;
+}
+
+.v20-driver-app .driver-public-vehicle p {
+  color: var(--driver-premium-muted);
+  font-size: 8px;
+  margin: 0;
+}
+
+.v20-driver-app .driver-public-preview-card > p {
+  border-top: 1px solid var(--driver-premium-line);
+  color: var(--driver-premium-muted);
+  font-size: 8px;
+  line-height: 1.45;
+  margin: 0;
+  padding: 12px 16px 15px;
+}
+
+.v20-driver-app .driver-public-preview-card > p i {
+  color: var(--driver-premium-green-dark);
+  margin-right: 5px;
+}
+
+.v20-driver-app .driver-profile-quick-card {
+  padding: 16px;
+}
+
+.v20-driver-app .driver-profile-quick-card > header {
+  margin-bottom: 9px;
+}
+
+.v20-driver-app .driver-profile-quick-card > :is(button, span) {
+  align-items: center;
+  background: #f7f9f6;
+  border: 0;
+  border-radius: 11px;
+  color: var(--driver-premium-ink);
+  display: flex;
+  gap: 9px;
+  margin-top: 7px;
+  min-height: 54px;
+  padding: 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.v20-driver-app .driver-profile-quick-card > :is(button, span) > i {
+  color: var(--driver-premium-green-dark);
+  width: 22px;
+}
+
+.v20-driver-app .driver-profile-quick-card > :is(button, span) > span {
+  display: grid;
+  flex: 1;
+}
+
+.v20-driver-app .driver-profile-quick-card strong {
+  font-size: 9px;
+}
+
+.v20-driver-app .driver-profile-quick-card small {
+  color: var(--driver-premium-muted);
+  font-size: 7px;
+}
+
+.v20-driver-app .driver-profile-quick-card b {
+  color: #899089;
+  font-size: 8px;
+}
+
+.v20-driver-app .driver-profile-quick-card b.online {
+  background: #eaf6df;
+  border-radius: 99px;
+  color: var(--driver-premium-green-dark);
+  padding: 5px 7px;
+}
+
+.v20-driver-app .driver-profile-sidebar-premium .driver-password-card {
+  padding: 16px !important;
+}
+
+@media (max-width: 980px) {
+  .v20-driver-app .driver-earnings-dashboard,
+  .v20-driver-app .driver-profile-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .v20-driver-app .driver-payout-card {
+    grid-template-columns: 52px minmax(0, 1fr) minmax(230px, .8fr);
+    column-gap: 14px;
+  }
+
+  .v20-driver-app .driver-payout-icon {
+    grid-row: span 3;
+    margin: 0;
+  }
+
+  .v20-driver-app .driver-payout-card > :is(small, h2, p) {
+    grid-column: 2;
+  }
+
+  .v20-driver-app .driver-payout-card > div {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+
+  .v20-driver-app .driver-payout-card > button {
+    grid-column: 3;
+    padding-top: 8px;
+  }
+
+  .v20-driver-app .driver-profile-sidebar-premium {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .v20-driver-app .driver-premium-topbar {
+    align-items: flex-start !important;
+  }
+
+  .v20-driver-app .driver-premium-topbar h1 {
+    font-size: 23px !important;
+  }
+
+  .v20-driver-app .driver-premium-topbar > div > p:last-child {
+    font-size: 9px;
+  }
+
+  .v20-driver-app .driver-export-earnings {
+    border-radius: 50%;
+    flex: 0 0 41px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .v20-driver-app .driver-export-earnings span {
+    display: none;
+  }
+
+  .v20-driver-app .driver-earnings-period {
+    align-items: stretch;
+    gap: 8px;
+    padding: 7px;
+  }
+
+  .v20-driver-app .driver-earnings-period > span {
+    display: none;
+  }
+
+  .v20-driver-app .driver-earnings-period .driver-period-chips {
+    flex: 1;
+  }
+
+  .v20-driver-app .driver-earnings-period .driver-period-chips button {
+    min-width: 0;
+    padding: 0 8px !important;
+  }
+
+  .v20-driver-app .driver-wallet-hero {
+    min-height: 165px !important;
+    padding: 23px !important;
+  }
+
+  .v20-driver-app .driver-wallet-hero strong {
+    font-size: 31px !important;
+  }
+
+  .v20-driver-app .driver-wallet-hero > span {
+    height: 58px !important;
+    width: 58px !important;
+  }
+
+  .v20-driver-app .driver-earnings-stats {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .v20-driver-app .driver-earnings-stats article {
+    min-height: 92px;
+    padding: 12px !important;
+  }
+
+  .v20-driver-app .driver-earnings-stats article > i {
+    height: 32px;
+    width: 32px;
+  }
+
+  .v20-driver-app .driver-performance-card {
+    padding: 15px 13px 13px;
+  }
+
+  .v20-driver-app .driver-performance-card header > span {
+    display: none;
+  }
+
+  .v20-driver-app .driver-performance-chart {
+    gap: 9px;
+    height: 125px;
+    padding-inline: 4px;
+  }
+
+  .v20-driver-app .driver-payout-card {
+    display: grid;
+    grid-template-columns: 47px minmax(0, 1fr);
+    padding: 17px;
+  }
+
+  .v20-driver-app .driver-payout-icon {
+    height: 47px;
+    width: 47px;
+  }
+
+  .v20-driver-app .driver-payout-card > :is(small, h2, p) {
+    grid-column: 2;
+  }
+
+  .v20-driver-app .driver-payout-card > div,
+  .v20-driver-app .driver-payout-card > button {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+
+  .v20-driver-app .driver-payout-card > p {
+    margin-bottom: 13px;
+  }
+
+  .v20-driver-app .driver-earnings-table-card {
+    padding: 14px !important;
+  }
+
+  .v20-driver-app .driver-earnings-table-card .driver-section-header p {
+    display: block !important;
+    font-size: 8px !important;
+  }
+
+  .v20-driver-app .driver-profile-completeness {
+    padding: 7px 9px;
+  }
+
+  .v20-driver-app .driver-profile-cover {
+    height: 92px;
+  }
+
+  .v20-driver-app .driver-profile-identity {
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 0 15px 15px;
+  }
+
+  .v20-driver-app .driver-photo-picker {
+    flex-basis: 78px;
+    height: 78px;
+    margin-top: -35px;
+    width: 78px;
+  }
+
+  .v20-driver-app .driver-profile-identity > div {
+    flex-basis: calc(100% - 90px);
+  }
+
+  .v20-driver-app .driver-profile-identity h2 {
+    font-size: 18px;
+  }
+
+  .v20-driver-app .driver-availability-badge {
+    margin-left: 88px;
+    margin-top: -6px;
+  }
+
+  .v20-driver-app .driver-profile-section {
+    padding: 15px;
+  }
+
+  .v20-driver-app .driver-profile-section > header {
+    align-items: flex-start;
+  }
+
+  .v20-driver-app .driver-profile-section header p {
+    line-height: 1.35;
+  }
+
+  .v20-driver-app .driver-public-tag,
+  .v20-driver-app .driver-private-tag {
+    position: absolute;
+    right: 15px;
+  }
+
+  .v20-driver-app .driver-profile-section {
+    position: relative;
+  }
+
+  .v20-driver-app .driver-profile-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .v20-driver-app .driver-profile-fields label.wide {
+    grid-column: auto;
+  }
+
+  .v20-driver-app .driver-vehicle-photo > button {
+    height: 160px;
+  }
+
+  .v20-driver-app .driver-document-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .v20-driver-app .driver-license-upload button {
+    height: 145px;
+  }
+
+  .v20-driver-app .driver-profile-savebar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .v20-driver-app .driver-profile-savebar > button {
+    width: 100%;
+  }
+
+  .v20-driver-app .driver-profile-sidebar-premium {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 390px) {
+  .v20-driver-app .driver-profile-completeness small {
+    display: none;
+  }
+
+  .v20-driver-app .driver-profile-completeness i {
+    grid-row: auto;
+  }
+
+  .v20-driver-app .driver-wallet-hero strong {
+    font-size: 27px !important;
+  }
+
+  .v20-driver-app .driver-wallet-hero > span {
+    font-size: 22px;
+    height: 50px !important;
+    width: 50px !important;
+  }
+
+  .v20-driver-app .driver-earnings-stats article {
+    display: grid !important;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 8px !important;
+  }
+
+  .v20-driver-app .driver-earnings-stats strong {
+    font-size: 11px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v20-driver-app .driver-performance-chart > i {
+    transition: none !important;
+  }
+}
+
+.v20-driver-app .driver-performance-chart > i > span {
+  color: #365b18;
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 900;
+  left: 50%;
+  position: absolute;
+  top: -14px;
+  transform: translateX(-50%);
+}
+
+.v20-driver-app .driver-table-loading,
+.v20-driver-app .driver-table-empty {
+  align-items: center;
+  color: #717a72;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  min-height: 72px;
+  width: 100%;
+}
+
+.v20-driver-app .driver-table-empty {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v20-driver-app .driver-table-empty > i {
+  color: #76b932;
+  font-size: 18px;
+  margin-bottom: 2px;
+}
+
+.v20-driver-app .driver-table-empty b {
+  color: #182019;
+  font-size: 10px;
+}
+
+.v20-driver-app .driver-table-empty small {
+  font-size: 8px;
+}
+
+.v20-driver-app .driver-table-empty.error > i { color: #d75555; }
+.v20-driver-app .driver-inline-refresh.is-loading i { animation: driver-premium-spin .7s linear infinite; }
+
+.v20-driver-app .driver-avatar.has-photo {
+  background-color: #e8eee4 !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+}
+
+.v20-driver-app .driver-portal-links-premium {
+  background: #fff;
+  border: 1px solid var(--driver-premium-line);
+  border-radius: 17px;
+  padding: 17px;
+}
+
+.v20-driver-app .driver-portal-links-premium header small {
+  color: var(--driver-premium-green-dark);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.v20-driver-app .driver-portal-links-premium header h2 {
+  font-size: 15px;
+  margin: 4px 0 3px;
+}
+
+.v20-driver-app .driver-portal-links-premium header p {
+  color: var(--driver-premium-muted);
+  font-size: 8px;
+  line-height: 1.4;
+  margin: 0 0 11px;
+}
+
+.v20-driver-app .driver-portal-links-premium > div {
+  display: grid;
+  gap: 7px;
+}
+
+.v20-driver-app .driver-portal-links-premium a {
+  align-items: center;
+  background: var(--driver-premium-soft);
+  border-radius: 11px;
+  color: var(--driver-premium-ink);
+  display: grid;
+  gap: 9px;
+  grid-template-columns: 35px minmax(0, 1fr) auto;
+  min-height: 49px;
+  padding: 7px 10px;
+  text-decoration: none;
+}
+
+.v20-driver-app .driver-portal-links-premium a > i {
+  align-items: center;
+  background: #fff;
+  border-radius: 9px;
+  color: var(--driver-premium-green-dark);
+  display: flex;
+  height: 35px;
+  justify-content: center;
+}
+
+.v20-driver-app .driver-portal-links-premium a span { display: grid; }
+.v20-driver-app .driver-portal-links-premium a strong { font-size: 9px; }
+.v20-driver-app .driver-portal-links-premium a small { color: var(--driver-premium-muted); font-size: 7px; }
+.v20-driver-app .driver-portal-links-premium a > b { color: #929b93; font-size: 8px; }
+
+.driver-photo-processing [data-driver-photo] {
+  cursor: progress !important;
+  opacity: .68;
+  pointer-events: none;
+}
+
+@keyframes driver-premium-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --------------------------------------------------------------------------
+   Reparação estrutural do painel do Motorista
+   Remove a compactação herdada e estabelece uma escala legível e responsiva.
+   -------------------------------------------------------------------------- */
+
+html:has(.v20-driver-app) {
+  overflow-x: hidden;
+}
+
+.v20-driver-app {
+  --driver-content-max: 1180px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.v20-driver-app :where(button, input, select, textarea, a) {
+  min-width: 0;
+}
+
+.v20-driver-app .driver-v20-header {
+  border-radius: 0 !important;
+  box-sizing: border-box !important;
+  height: 76px !important;
+  margin: 0 !important;
+  max-width: none !important;
+  padding-inline: max(24px, calc((100vw - var(--driver-content-max)) / 2)) !important;
+  width: 100% !important;
+}
+
+.v20-driver-app .driver-v20-main {
+  box-sizing: border-box !important;
+  margin-inline: auto !important;
+  max-width: var(--driver-content-max) !important;
+  padding: 36px 24px 96px !important;
+  width: 100% !important;
+}
+
+.v20-driver-app .driver-brand-copy strong {
+  font-size: 19px !important;
+}
+
+.v20-driver-app .driver-brand-copy small {
+  font-size: 8px !important;
+}
+
+.v20-driver-app .driver-top-action {
+  font-size: 12px !important;
+  height: 44px !important;
+  padding-inline: 14px !important;
+}
+
+.v20-driver-app .driver-top-action span {
+  font-size: 11px !important;
+}
+
+.v20-driver-app .driver-eyebrow,
+.v20-driver-app .driver-map-kicker {
+  font-size: 10px !important;
+  letter-spacing: .12em !important;
+}
+
+.v20-driver-app .driver-home-hero {
+  gap: 20px !important;
+  margin-bottom: 26px !important;
+}
+
+.v20-driver-app .driver-hero-copy h1 {
+  font-size: clamp(32px, 4vw, 42px) !important;
+  line-height: 1.08 !important;
+  margin: 8px 0 !important;
+}
+
+.v20-driver-app .driver-hero-copy p {
+  font-size: 14px !important;
+}
+
+.v20-driver-app :is(.driver-refresh-btn, .driver-inline-refresh) {
+  flex: 0 0 auto;
+  font-size: 12px !important;
+  height: 44px !important;
+  white-space: nowrap;
+}
+
+.v20-driver-app .driver-overview-grid {
+  gap: 16px !important;
+  grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(220px, .8fr)) !important;
+  margin-bottom: 20px !important;
+}
+
+.v20-driver-app :is(.driver-status-card, .driver-mini-stat) {
+  min-height: 132px !important;
+  padding: 20px !important;
+}
+
+.v20-driver-app :is(.driver-status-main small, .driver-mini-stat small) {
+  font-size: 10px !important;
+}
+
+.v20-driver-app :is(.driver-status-main strong, .driver-mini-stat strong) {
+  font-size: 16px !important;
+  line-height: 1.25 !important;
+  margin: 5px 0 !important;
+}
+
+.v20-driver-app :is(.driver-status-main p, .driver-mini-stat p) {
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+.v20-driver-app .driver-status-meta > span,
+.v20-driver-app .driver-status-meta button {
+  font-size: 10px !important;
+}
+
+.v20-driver-app :is(.driver-list-card, .driver-operation-card, .driver-earnings-table-card) {
+  border-radius: 22px !important;
+  padding: 24px !important;
+}
+
+.v20-driver-app .driver-section-header {
+  gap: 20px !important;
+  margin-bottom: 18px !important;
+  padding-bottom: 18px !important;
+}
+
+.v20-driver-app .driver-section-header h2 {
+  font-size: 22px !important;
+}
+
+.v20-driver-app .driver-section-header p {
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+.v20-driver-app .driver-deliveries-list {
+  gap: 14px !important;
+}
+
+.v20-driver-app .entrega-card.driver-delivery-card {
+  gap: 0 24px !important;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, .75fr) !important;
+  min-height: 178px !important;
+  padding: 20px 22px !important;
+}
+
+.v20-driver-app .driver-delivery-top {
+  margin-bottom: 14px !important;
+}
+
+.v20-driver-app .driver-delivery-id {
+  font-size: 13px !important;
+}
+
+.v20-driver-app .driver-delivery-status {
+  font-size: 10px !important;
+  padding: 6px 10px !important;
+}
+
+.v20-driver-app .driver-delivery-route {
+  gap: 10px !important;
+  padding-right: 24px !important;
+}
+
+.v20-driver-app .driver-delivery-route span {
+  align-items: flex-start !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  overflow-wrap: anywhere;
+}
+
+.v20-driver-app .driver-delivery-route span i {
+  flex: 0 0 34px !important;
+  height: 34px !important;
+  width: 34px !important;
+}
+
+.v20-driver-app .driver-delivery-meta {
+  gap: 8px !important;
+  padding-left: 0 !important;
+}
+
+.v20-driver-app .driver-delivery-meta span {
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+  padding: 8px 10px !important;
+}
+
+.v20-driver-app .driver-delivery-footer {
+  gap: 14px !important;
+  padding-left: 0 !important;
+}
+
+.v20-driver-app .driver-delivery-price small {
+  font-size: 9px !important;
+}
+
+.v20-driver-app .driver-delivery-price strong {
+  font-size: 18px !important;
+}
+
+.v20-driver-app .ver-detalhes-btn {
+  font-size: 11px !important;
+  height: 42px !important;
+  padding-inline: 15px !important;
+  white-space: nowrap;
+}
+
+.v20-driver-app .driver-safety-banner {
+  margin-top: 20px !important;
+  padding: 20px 22px !important;
+}
+
+.v20-driver-app .driver-safety-banner strong {
+  font-size: 14px !important;
+}
+
+.v20-driver-app .driver-safety-banner p {
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
+
+/* Detalhe da entrega */
+.v20-driver-app .driver-detail-topbar {
+  align-items: center !important;
+  display: grid !important;
+  gap: 16px !important;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin-bottom: 24px !important;
+}
+
+.v20-driver-app .driver-detail-topbar > div {
+  min-width: 0;
+}
+
+.v20-driver-app .driver-detail-topbar h1 {
+  font-size: clamp(25px, 3vw, 34px) !important;
+  line-height: 1.15 !important;
+  overflow-wrap: anywhere;
+}
+
+.v20-driver-app .btn-voltar {
+  flex: 0 0 auto;
+  font-size: 12px !important;
+  height: 44px !important;
+}
+
+.v20-driver-app .driver-order-status-pill {
+  font-size: 10px !important;
+  padding: 8px 12px !important;
+}
+
+.v20-driver-app .driver-workspace {
+  gap: 20px !important;
+  grid-template-columns: minmax(0, 1.55fr) minmax(360px, .8fr) !important;
+}
+
+.v20-driver-app .driver-map-card {
+  min-width: 0;
+}
+
+.v20-driver-app .driver-map-header {
+  gap: 16px;
+  padding: 20px 22px !important;
+}
+
+.v20-driver-app .driver-map-header h2 {
+  font-size: 20px !important;
+}
+
+.v20-driver-app .driver-map-header p:last-child,
+.v20-driver-app .driver-map-badge {
+  font-size: 10px !important;
+}
+
+.v20-driver-app .driver-map-stage {
+  height: clamp(430px, 58vh, 590px) !important;
+}
+
+.v20-driver-app .driver-map-footer {
+  align-items: center !important;
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px !important;
+}
+
+.v20-driver-app .driver-map-legend {
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+}
+
+.v20-driver-app .driver-map-legend span {
+  font-size: 10px !important;
+}
+
+.v20-driver-app .driver-map-actions {
+  display: flex !important;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  gap: 7px !important;
+}
+
+.v20-driver-app .driver-map-actions button {
+  font-size: 10px !important;
+  height: 38px !important;
+  padding-inline: 11px !important;
+}
+
+.v20-driver-app .driver-detail-sidebar {
+  gap: 14px !important;
+  min-width: 0;
+}
+
+.v20-driver-app .driver-detail-panel {
+  min-width: 0;
+  padding: 18px !important;
+}
+
+.v20-driver-app .panel-heading {
+  gap: 12px !important;
+  margin-bottom: 14px !important;
+}
+
+.v20-driver-app .panel-heading > span {
+  flex: 0 0 40px !important;
+  height: 40px !important;
+  width: 40px !important;
+}
+
+.v20-driver-app .panel-heading small {
+  font-size: 9px !important;
+}
+
+.v20-driver-app .panel-heading h3 {
+  font-size: 14px !important;
+  line-height: 1.3 !important;
+}
+
+.v20-driver-app .driver-detail-panel > p {
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  overflow-wrap: anywhere;
+  padding-block: 10px !important;
+}
+
+.v20-driver-app .route-point-card {
+  gap: 11px !important;
+  padding-block: 8px !important;
+}
+
+.v20-driver-app .route-marker-dot {
+  flex-basis: 34px !important;
+  height: 34px !important;
+}
+
+.v20-driver-app .route-point-card small {
+  font-size: 9px !important;
+}
+
+.v20-driver-app .route-address-title {
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+  overflow-wrap: anywhere;
+}
+
+.v20-driver-app .route-metric-pill :is(span, strong),
+.v20-driver-app .payment-panel > span {
+  font-size: 11px !important;
+}
+
+.v20-driver-app .driver-operation-card {
+  margin-top: 20px !important;
+}
+
+.v20-driver-app .driver-operation-card > div:first-child h2 {
+  font-size: 20px !important;
+}
+
+.v20-driver-app .driver-quick-actions {
+  gap: 10px !important;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+}
+
+.v20-driver-app .driver-quick-action {
+  font-size: 11px !important;
+  min-height: 78px !important;
+  padding: 10px !important;
+}
+
+.v20-driver-app .driver-support-order {
+  gap: 14px !important;
+  margin-top: 14px !important;
+  padding: 16px !important;
+}
+
+.v20-driver-app .driver-support-order strong {
+  font-size: 13px !important;
+}
+
+.v20-driver-app .driver-support-order small,
+.v20-driver-app .driver-support-order > b {
+  font-size: 10px !important;
+}
+
+.v20-driver-app .driver-completion-grid {
+  gap: 20px !important;
+  margin-top: 20px !important;
+}
+
+/* Ganhos */
+.v20-driver-app .driver-earnings-period {
+  margin-bottom: 18px;
+  padding: 11px 14px;
+}
+
+.v20-driver-app .driver-earnings-period > span small,
+.v20-driver-app .driver-wallet-hero small,
+.v20-driver-app .driver-earnings-stats small,
+.v20-driver-app .driver-payout-card > small {
+  font-size: 10px !important;
+}
+
+.v20-driver-app .driver-earnings-period > span strong {
+  font-size: 14px !important;
+}
+
+.v20-driver-app .driver-earnings-period .driver-period-chips button {
+  font-size: 11px !important;
+  height: 40px !important;
+}
+
+.v20-driver-app .driver-earnings-dashboard {
+  gap: 18px;
+}
+
+.v20-driver-app .driver-earnings-stats {
+  gap: 12px !important;
+}
+
+.v20-driver-app .driver-earnings-stats article {
+  min-height: 100px;
+  padding: 16px !important;
+}
+
+.v20-driver-app .driver-earnings-stats strong {
+  font-size: 14px !important;
+}
+
+.v20-driver-app .driver-earnings-stats em,
+.v20-driver-app .driver-performance-card header small,
+.v20-driver-app .driver-payout-card p {
+  font-size: 10px !important;
+}
+
+.v20-driver-app :is(.driver-performance-card, .driver-payout-card) {
+  padding: 22px !important;
+}
+
+.v20-driver-app .driver-performance-card h2,
+.v20-driver-app .driver-payout-card h2 {
+  font-size: 18px !important;
+}
+
+/* Perfil */
+.v20-driver-app .driver-profile-layout {
+  gap: 20px;
+  grid-template-columns: minmax(0, 1.5fr) minmax(310px, .65fr);
+}
+
+.v20-driver-app .driver-profile-form,
+.v20-driver-app .driver-profile-sidebar-premium {
+  gap: 18px;
+}
+
+.v20-driver-app .driver-profile-section,
+.v20-driver-app .driver-profile-quick-card,
+.v20-driver-app .driver-profile-sidebar-premium .driver-password-card {
+  border-radius: 20px !important;
+  padding: 22px !important;
+}
+
+.v20-driver-app .driver-profile-section > header {
+  gap: 13px;
+  margin-bottom: 20px;
+}
+
+.v20-driver-app .driver-profile-section > header > span {
+  flex: 0 0 42px;
+  height: 42px;
+  width: 42px;
+}
+
+.v20-driver-app .driver-profile-section header small,
+.v20-driver-app .driver-profile-quick-card header small {
+  font-size: 9px !important;
+}
+
+.v20-driver-app .driver-profile-section header h2,
+.v20-driver-app .driver-profile-quick-card h2 {
+  font-size: 18px !important;
+}
+
+.v20-driver-app .driver-profile-section header p {
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
+
+.v20-driver-app .driver-profile-fields {
+  gap: 15px;
+}
+
+.v20-driver-app .driver-profile-fields label {
+  gap: 7px;
+}
+
+.v20-driver-app .driver-profile-fields label > span,
+.v20-driver-app .driver-password-card label > span {
+  font-size: 10px !important;
+}
+
+.v20-driver-app .driver-profile-fields :is(input, select, textarea),
+.v20-driver-app .driver-password-card input {
+  font-size: 13px !important;
+  min-height: 48px !important;
+  padding: 12px 13px !important;
+}
+
+.v20-driver-app .driver-profile-quick-card > :is(button, span) {
+  min-height: 62px;
+  padding: 11px 12px;
+}
+
+.v20-driver-app .driver-profile-quick-card strong {
+  font-size: 12px !important;
+}
+
+.v20-driver-app .driver-profile-quick-card small,
+.v20-driver-app .driver-profile-quick-card b {
+  font-size: 9px !important;
+}
+
+.v20-driver-app .driver-profile-savebar {
+  gap: 16px;
+  padding: 16px;
+}
+
+.v20-driver-app .driver-profile-savebar strong {
+  font-size: 12px !important;
+}
+
+.v20-driver-app .driver-profile-savebar small {
+  font-size: 10px !important;
+}
+
+.v20-driver-app .driver-profile-savebar > button,
+.v20-driver-app .driver-password-card form button {
+  font-size: 11px !important;
+  min-height: 46px !important;
+}
+
+/* Suporte */
+.v20-driver-app .driver-support-intro {
+  gap: 18px !important;
+  padding: 24px !important;
+}
+
+.v20-driver-app .driver-support-intro h2 {
+  font-size: 19px !important;
+}
+
+.v20-driver-app .driver-support-intro p {
+  font-size: 12px !important;
+}
+
+.v20-driver-app .support-hub-top h2 {
+  font-size: 24px;
+}
+
+.v20-driver-app .support-hub-top p,
+.v20-driver-app .support-notice {
+  font-size: 12px;
+}
+
+.v20-driver-app .support-create-card {
+  padding: 24px;
+}
+
+.v20-driver-app .support-sidebar-head {
+  min-width: 0;
+}
+
+.v20-driver-app .support-sidebar-head strong {
+  flex: 1 1 auto;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.v20-driver-app .support-sidebar-head select {
+  flex: 0 1 150px;
+  min-width: 105px;
+}
+
+@media (max-width: 1020px) {
+  .v20-driver-app .driver-overview-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .v20-driver-app .driver-status-card {
+    grid-column: 1 / -1;
+  }
+
+  .v20-driver-app .driver-workspace {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .v20-driver-app .driver-detail-sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .v20-driver-app .driver-route-panel {
+    grid-column: 1 / -1;
+    grid-row: auto !important;
+  }
+
+  .v20-driver-app .driver-profile-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .v20-driver-app .driver-profile-sidebar-premium {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .v20-driver-app :is(.driver-refresh-btn, .driver-inline-refresh) {
+    border-radius: 50% !important;
+    justify-content: center;
+    padding: 0 !important;
+    width: 44px !important;
+  }
+
+  .v20-driver-app :is(.driver-refresh-btn, .driver-inline-refresh) span {
+    display: none !important;
+  }
+
+  .v20-driver-app .entrega-card.driver-delivery-card {
+    display: grid !important;
+    gap: 14px !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    min-height: 0 !important;
+  }
+
+  .v20-driver-app .driver-delivery-top,
+  .v20-driver-app .driver-delivery-route,
+  .v20-driver-app .driver-delivery-meta,
+  .v20-driver-app .driver-delivery-footer {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+  }
+
+  .v20-driver-app .driver-delivery-route {
+    border-bottom: 1px solid var(--driver-premium-line) !important;
+    border-right: 0 !important;
+    padding: 0 0 14px !important;
+  }
+
+  .v20-driver-app .driver-delivery-meta,
+  .v20-driver-app .driver-delivery-footer {
+    padding: 0 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .v20-driver-app .driver-v20-header {
+    height: 68px !important;
+    padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)) !important;
+  }
+
+  .v20-driver-app .driver-logo-wrap {
+    height: 42px !important;
+    width: 42px !important;
+  }
+
+  .v20-driver-app .motorista-logo {
+    height: 36px !important;
+    width: 36px !important;
+  }
+
+  .v20-driver-app .motorista-profile {
+    margin-left: auto !important;
+  }
+
+  .v20-driver-app .motorista-profile .driver-top-action:not(.driver-profile-action) {
+    display: none !important;
+  }
+
+  .v20-driver-app .driver-profile-action {
+    background: #fff !important;
+    border: 1px solid var(--driver-premium-line) !important;
+    display: flex !important;
+    height: 44px !important;
+    padding: 0 !important;
+    width: 44px !important;
+  }
+
+  .v20-driver-app .driver-profile-action .desktop-only,
+  .v20-driver-app :is(.btn-mobile-driver-menu, .driver-mobile-menu) {
+    display: none !important;
+  }
+
+  .v20-driver-app .driver-bottom-nav {
+    background: rgba(255, 255, 255, .98) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    border-top: 1px solid var(--driver-premium-line) !important;
+    bottom: 0 !important;
+    box-shadow: 0 -10px 30px rgba(15, 28, 17, .08) !important;
+    box-sizing: border-box !important;
+    display: grid !important;
+    gap: 3px !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    height: calc(74px + env(safe-area-inset-bottom)) !important;
+    left: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    padding: 6px 5px env(safe-area-inset-bottom) !important;
+    right: 0 !important;
+    transform: none !important;
+    width: 100% !important;
+    z-index: 200 !important;
+  }
+
+  .v20-driver-app .driver-bottom-nav-item {
+    border-radius: 12px !important;
+    color: #747d75 !important;
+    font-size: 10px !important;
+    gap: 4px !important;
+    min-height: 56px !important;
+    overflow: hidden;
+    padding: 5px 2px !important;
+  }
+
+  .v20-driver-app .driver-bottom-nav-item i {
+    font-size: 18px !important;
+  }
+
+  .v20-driver-app .driver-bottom-nav-item.active {
+    background: var(--driver-premium-soft) !important;
+    color: var(--driver-premium-green-dark) !important;
+  }
+
+  .v20-driver-app .driver-support-nav i {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    color: inherit !important;
+    font-size: 18px !important;
+    height: auto !important;
+    margin: 0 !important;
+    width: auto !important;
+  }
+
+  .v20-driver-app .driver-v20-main {
+    padding: 26px 16px calc(104px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .v20-driver-app .driver-home-hero {
+    align-items: flex-start !important;
+    margin-bottom: 20px !important;
+  }
+
+  .v20-driver-app .driver-hero-copy h1 {
+    font-size: clamp(28px, 8.5vw, 36px) !important;
+  }
+
+  .v20-driver-app .driver-overview-grid {
+    gap: 12px !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .v20-driver-app .driver-status-card,
+  .v20-driver-app .driver-mini-stat {
+    grid-column: auto !important;
+    min-height: 108px !important;
+    padding: 17px !important;
+  }
+
+  .v20-driver-app :is(.driver-list-card, .driver-operation-card, .driver-earnings-table-card) {
+    padding: 18px !important;
+  }
+
+  .v20-driver-app .driver-section-header h2 {
+    font-size: 19px !important;
+  }
+
+  .v20-driver-app .driver-detail-topbar {
+    align-items: start !important;
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .v20-driver-app .driver-premium-topbar {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+  }
+
+  .v20-driver-app .driver-detail-topbar > :is(.driver-order-status-pill, .driver-support-online, .driver-profile-completeness, .driver-export-earnings) {
+    grid-column: 1 / -1;
+    justify-self: start;
+    max-width: 100%;
+  }
+
+  .v20-driver-app .driver-premium-topbar > .driver-export-earnings {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .v20-driver-app .driver-premium-topbar > .driver-profile-completeness {
+    grid-column: 2 / 4;
+    grid-row: 2;
+  }
+
+  .v20-driver-app .driver-map-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 18px !important;
+  }
+
+  .v20-driver-app .driver-map-stage {
+    height: min(400px, 48svh) !important;
+    min-height: 300px !important;
+  }
+
+  .v20-driver-app .driver-map-footer {
+    align-items: stretch !important;
+    display: grid !important;
+  }
+
+  .v20-driver-app .driver-map-actions {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .v20-driver-app .driver-detail-sidebar {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .v20-driver-app .driver-route-panel {
+    grid-column: auto;
+  }
+
+  .v20-driver-app .driver-quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .v20-driver-app .driver-completion-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .v20-driver-app .driver-earnings-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .v20-driver-app .driver-profile-sidebar-premium {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .v20-driver-app .driver-profile-section > header {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .v20-driver-app .driver-profile-section,
+  .v20-driver-app .driver-profile-quick-card,
+  .v20-driver-app .driver-profile-sidebar-premium .driver-password-card {
+    padding: 18px !important;
+  }
+
+  .v20-driver-app .driver-profile-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .v20-driver-app .driver-public-tag,
+  .v20-driver-app .driver-private-tag {
+    grid-column: 2;
+    justify-self: start;
+    margin: 0;
+    position: static;
+  }
+
+  .v20-driver-app .driver-availability-badge {
+    margin-left: 0;
+    margin-top: 0;
+  }
+
+  .v20-driver-app .driver-support-intro {
+    align-items: flex-start !important;
+    padding: 20px !important;
+  }
+
+  .v20-driver-app .support-create-card {
+    padding: 18px;
+  }
+
+  .v20-driver-app .support-sidebar-head {
+    display: grid !important;
+    gap: 10px !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 16px !important;
+  }
+
+  .v20-driver-app .support-sidebar-head strong {
+    grid-column: 1 / -1;
+    white-space: normal;
+  }
+
+  .v20-driver-app .support-sidebar-head select {
+    min-height: 42px;
+    width: 100%;
+  }
+
+  .v20-driver-app .support-refresh {
+    height: 42px;
+  }
+
+  .v20-driver-app .support-conversation-area {
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 460px) {
+  .v20-driver-app .driver-v20-main {
+    padding-inline: 12px !important;
+  }
+
+  .v20-driver-app .driver-brand-copy strong {
+    font-size: 17px !important;
+  }
+
+  .v20-driver-app .driver-brand-copy small {
+    font-size: 7px !important;
+  }
+
+  .v20-driver-app .driver-profile-action {
+    height: 42px !important;
+    width: 42px !important;
+  }
+
+  .v20-driver-app .driver-section-header {
+    align-items: flex-start !important;
+  }
+
+  .v20-driver-app .entrega-card.driver-delivery-card {
+    padding: 16px !important;
+  }
+
+  .v20-driver-app .driver-delivery-footer {
+    align-items: center !important;
+  }
+
+  .v20-driver-app .ver-detalhes-btn {
+    flex: 0 0 auto;
+  }
+
+  .v20-driver-app .driver-quick-actions {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  }
+
+  .v20-driver-app .driver-earnings-period {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .v20-driver-app .driver-earnings-period > span {
+    display: grid;
+  }
+
+  .v20-driver-app .driver-earnings-period .driver-period-chips {
+    width: 100%;
+  }
+
+  .v20-driver-app .driver-earnings-period .driver-period-chips button {
+    flex: 1;
+  }
+
+  .v20-driver-app .driver-wallet-hero {
+    padding: 20px !important;
+  }
+
+  .v20-driver-app .driver-wallet-hero strong {
+    font-size: 26px !important;
+  }
+
+  .v20-driver-app .driver-earnings-stats article {
+    min-height: 112px;
+  }
+
+  .v20-driver-app .driver-profile-identity {
+    align-items: flex-start;
+  }
+
+  .v20-driver-app .driver-availability-badge {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .v20-driver-app .driver-profile-savebar > span {
+    align-items: flex-start;
+  }
+
+  .v20-driver-app .support-hub-top h2 {
+    font-size: 20px;
+  }
+
+  .v20-driver-app .support-form-actions button {
+    width: 100%;
+  }
+}

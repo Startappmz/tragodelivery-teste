@@ -1,0 +1,2275 @@
+/* TraGo · polimento final dos portais Cliente, Restaurante e Motorista.
+   Este ficheiro é deliberadamente isolado do painel Admin. */
+
+:is(.v20-client-app, .v20-restaurant-app, .v20-driver-app) {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:is(.v20-client-app, .v20-restaurant-app, .v20-driver-app) :where(
+  main, section, article, header, footer, nav, aside, div, span, form, label
+) {
+  min-width: 0;
+}
+
+:is(.v20-client-app, .v20-restaurant-app, .v20-driver-app) :where(
+  h1, h2, h3, h4, p, strong, small, b, label, button, a, td, th
+) {
+  overflow-wrap: break-word;
+}
+
+:is(.v20-client-app, .v20-restaurant-app, .v20-driver-app) :where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(121, 185, 51, .28) !important;
+  outline-offset: 2px;
+}
+
+:is(.v20-client-app, .v20-restaurant-app, .v20-driver-app) :where(button, a) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:is(.v20-client-app, .v20-restaurant-app, .v20-driver-app) :where(input, select, textarea) {
+  max-width: 100%;
+}
+
+:is(.v20-client-app, .v20-restaurant-app) .portal-panel[aria-hidden="true"],
+.v20-driver-app .content-section.hidden {
+  display: none !important;
+}
+
+/* Cliente */
+.v20-client-app .v20-client-header-inner {
+  gap: clamp(12px, 2vw, 28px);
+}
+
+.v20-client-app .v20-location-brand {
+  flex: 0 1 auto;
+}
+
+.v20-client-app .v20-location-brand span,
+.v20-client-app .v20-location-brand strong {
+  min-width: 0;
+}
+
+.v20-client-app .v20-desktop-nav {
+  flex: 0 1 auto;
+  justify-content: center;
+}
+
+.v20-client-app .v20-header-actions {
+  flex: none;
+}
+
+.v20-client-app .portal-panel:not(.hidden) {
+  min-height: min(640px, calc(100svh - 150px));
+}
+
+.v20-client-app .v20-page-header > div,
+.v20-client-app .v20-section-title > div,
+.v20-client-app .v20-account-hero > div,
+.v20-client-app .v20-menu-group button > span,
+.v20-client-app .v20-notification-list article > span,
+.v20-client-app .v20-address-card > span {
+  min-width: 0;
+}
+
+.v20-client-app .v20-page-header h1 {
+  font-size: clamp(23px, 3vw, 29px);
+  line-height: 1.12;
+}
+
+.v20-client-app .v20-menu-group strong,
+.v20-client-app .v20-notification-list strong,
+.v20-client-app .v20-address-card strong,
+.v20-client-app .v20-settings strong {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.v20-client-app .v20-menu-group small,
+.v20-client-app .v20-notification-list p,
+.v20-client-app .v20-address-card p,
+.v20-client-app .v20-settings small,
+.v20-client-app .v20-faq p,
+.v20-client-app .v20-legal p {
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.v20-client-app .v20-menu-group > button,
+.v20-client-app .v20-settings > :is(label, button) {
+  min-height: 70px;
+}
+
+.v20-client-app .v20-notification-list article,
+.v20-client-app .v20-address-card,
+.v20-client-app .v20-coupon-list article {
+  align-items: flex-start;
+}
+
+.v20-client-app .v20-search-row,
+.v20-client-app .v20-results-heading,
+.v20-client-app .v20-map-toolbar,
+.v20-client-app .v20-route-card > div,
+.v20-client-app .v20-order-head,
+.v20-client-app .v20-wallet-card > div {
+  gap: 12px;
+}
+
+.v20-client-app .v20-checkout > main,
+.v20-client-app .v20-order-summary,
+.v20-client-app .v20-cart-box {
+  min-width: 0;
+}
+
+.v20-client-app .v20-cart-box,
+.v20-client-app .v20-sheet > article,
+.v20-client-app .v20-product-sheet {
+  overscroll-behavior: contain;
+}
+
+.v20-client-app .v20-delivery-address {
+  flex-wrap: wrap;
+}
+
+.v20-client-app .v20-delivery-address label {
+  flex: 1 1 260px;
+}
+
+.v20-client-app .v20-payment-methods button,
+.v20-client-app .v20-schedule button,
+.v20-client-app .v20-map-actions button,
+.v20-client-app .v20-coupon-input button {
+  min-height: 44px;
+}
+
+.v20-client-app .v20-app .cart-item,
+.v20-client-app .cart-item {
+  min-width: 0;
+}
+
+.v20-client-app .portal-toast {
+  width: max-content;
+  max-width: min(480px, calc(100vw - 30px));
+  line-height: 1.4;
+}
+
+@media (max-width: 1050px) and (min-width: 801px) {
+  .v20-client-app .v20-client-header-inner {
+    gap: 10px;
+  }
+
+  .v20-client-app .v20-location-brand small,
+  .v20-client-app .v20-location-brand strong i:first-child,
+  .v20-client-app .v20-login-button i {
+    display: none;
+  }
+
+  .v20-client-app .v20-location-brand strong {
+    display: block;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .v20-client-app .v20-desktop-nav .portal-tab {
+    padding-inline: 10px;
+  }
+
+  .v20-client-app .v20-login-button {
+    padding-inline: 11px;
+  }
+
+  .v20-client-app .v20-checkout {
+    grid-template-columns: minmax(0, 1fr) 290px;
+  }
+}
+
+@media (max-width: 800px) {
+  .v20-client-app .portal-panel:not(.hidden) {
+    min-height: calc(100svh - 84px - env(safe-area-inset-bottom));
+  }
+
+  .v20-client-app .v20-mobile-topbar,
+  .v20-client-app .v20-page-header {
+    padding-left: max(15px, env(safe-area-inset-left));
+    padding-right: max(15px, env(safe-area-inset-right));
+  }
+
+  .v20-client-app .v20-page-header {
+    min-height: 68px;
+    height: auto;
+    padding-block: 10px;
+  }
+
+  .v20-client-app .v20-page-header h1 {
+    font-size: clamp(19px, 5.7vw, 23px);
+  }
+
+  .v20-client-app .v20-page-header p {
+    line-height: 1.35;
+  }
+
+  .v20-client-app .v20-bottom-nav > button {
+    min-height: 48px;
+  }
+
+  .v20-client-app .v20-menu-group > button,
+  .v20-client-app .v20-settings > :is(label, button) {
+    min-height: 72px;
+  }
+
+  .v20-client-app .v20-cart-box {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .v20-client-app .v20-checkout {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+
+  .v20-client-app .v20-sheet > article {
+    max-width: min(100%, 560px);
+  }
+}
+
+@media (max-width: 520px) {
+  .v20-client-app .v20-mobile-topbar .v20-location-brand strong {
+    display: block;
+    max-width: calc(100vw - 145px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .v20-client-app .v20-banner {
+    min-height: 230px;
+  }
+
+  .v20-client-app .v20-banner-copy {
+    width: min(88%, 370px);
+    padding: 26px 18px 38px;
+  }
+
+  .v20-client-app .v20-banner-copy h2 {
+    font-size: clamp(22px, 7vw, 29px);
+  }
+
+  .v20-client-app .v20-express-card {
+    grid-template-columns: 88px minmax(0, 1fr) 30px;
+  }
+
+  .v20-client-app .v20-express-card img {
+    width: 88px;
+  }
+
+  .v20-client-app .v20-cargo-types {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .v20-client-app .v20-vehicle-grid,
+  .v20-client-app .v20-contact-grid,
+  .v20-client-app .v20-map-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .v20-client-app .v20-contact-grid label:last-child,
+  .v20-client-app .v20-map-actions .v20-primary {
+    grid-column: auto;
+  }
+
+  .v20-client-app .v20-map-toolbar {
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .v20-client-app .v20-map-toolbar > span {
+    grid-column: 1 / -1;
+  }
+
+  .v20-client-app .v20-route-card > div,
+  .v20-client-app .v20-wallet-card > div,
+  .v20-client-app .v20-order-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .v20-client-app .v20-coupon-list article {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .v20-client-app .v20-coupon-list article > button {
+    grid-column: 2;
+    justify-self: start;
+    min-height: 36px;
+  }
+
+  .v20-client-app .v20-support-hero > div,
+  .v20-client-app .v20-about > div {
+    flex-wrap: wrap;
+  }
+
+  .v20-client-app .v20-payment-methods > div {
+    scroll-snap-type: x proximity;
+  }
+
+  .v20-client-app .v20-payment-methods button {
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 360px) {
+  .v20-client-app .v20-cargo-types {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .v20-client-app .v20-bottom-nav > button {
+    font-size: 8px;
+  }
+
+  .v20-client-app .v20-home-heading h1 {
+    font-size: 24px;
+  }
+}
+
+/* Restaurante */
+.v20-restaurant-app .portal-panel:not(.hidden) {
+  min-height: min(620px, calc(100svh - 360px));
+}
+
+.v20-restaurant-app .v20-restaurant-topbar .v20-restaurant-shell > div,
+.v20-restaurant-app .v20-restaurant-identity > div,
+.v20-restaurant-app .v20-restaurant-section-head > div,
+.v20-restaurant-app .v20-operation-status > span,
+.v20-restaurant-app .v20-operation-items b,
+.v20-restaurant-app .v20-menu-group,
+.v20-restaurant-app .menu-admin-item > div,
+.v20-restaurant-app .v20-message-list article > div {
+  min-width: 0;
+}
+
+.v20-restaurant-app .v20-restaurant-account b {
+  max-width: 190px;
+}
+
+.v20-restaurant-app .v20-restaurant-account strong,
+.v20-restaurant-app .v20-restaurant-account small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v20-restaurant-app .v20-restaurant-section-head h2 {
+  font-size: clamp(22px, 3vw, 27px);
+  line-height: 1.15;
+}
+
+.v20-restaurant-app :where(
+  .v20-restaurant-section-head p,
+  .v20-operation-status small,
+  .v20-operation-items small,
+  .v20-products-card > header p,
+  .v20-product-editor > header p,
+  .v20-featured-order header p,
+  .v20-featured-order blockquote,
+  .v20-communication-overview p,
+  .v20-message-list p,
+  .v20-review-warning p,
+  .v20-product-ratings small,
+  .menu-admin-item p
+) {
+  font-size: 11px !important;
+  line-height: 1.45;
+}
+
+.v20-restaurant-app :where(
+  .v20-restaurant-section-head small,
+  .v20-operation-card header small,
+  .v20-coupon-card header small,
+  .v20-products-card > header small,
+  .v20-product-editor > header small,
+  .v20-featured-order header small,
+  .v20-message-list header small,
+  .v20-product-ratings header small
+) {
+  font-size: 9px !important;
+  line-height: 1.35;
+}
+
+.v20-restaurant-app :where(
+  .v20-coupon-card label,
+  .v20-product-editor label,
+  .v20-profile-form label,
+  .v20-communication-grid form label,
+  .v20-featured-actions label
+) {
+  font-size: 11px;
+}
+
+.v20-restaurant-app :where(
+  .v20-coupon-card input,
+  .v20-coupon-card select,
+  .v20-product-editor input,
+  .v20-product-editor select,
+  .v20-product-editor textarea,
+  .v20-profile-form input,
+  .v20-profile-form select,
+  .v20-profile-form textarea,
+  .v20-communication-grid input,
+  .v20-communication-grid select,
+  .v20-communication-grid textarea
+) {
+  min-height: 44px;
+  font-size: 12px;
+}
+
+.v20-restaurant-app :where(
+  .v20-secondary-button,
+  .v20-order-tabs button,
+  .v20-product-filter button,
+  .v20-featured-actions button,
+  .inline-actions button
+) {
+  min-height: 42px;
+  font-size: 11px !important;
+}
+
+.v20-restaurant-app .v20-featured-order > header,
+.v20-restaurant-app .v20-products-card > header,
+.v20-restaurant-app .v20-product-ratings > header,
+.v20-restaurant-app .v20-message-list > header {
+  gap: 12px;
+}
+
+.v20-restaurant-app .v20-product-tools,
+.v20-restaurant-app .v20-product-filter,
+.v20-restaurant-app .v20-order-tabs {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.v20-restaurant-app .v20-opening-hours > div,
+.v20-restaurant-app .v20-options-builder article > :is(div, label) {
+  gap: 8px;
+}
+
+.v20-restaurant-app .v20-review-summary label {
+  font-size: 10px;
+}
+
+.v20-restaurant-app .v20-confirm-modal article,
+.v20-restaurant-app .v20-sheet > article {
+  max-height: calc(100svh - 30px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 1100px) {
+  .v20-restaurant-app .v20-products-layout {
+    grid-template-columns: 350px minmax(0, 1fr);
+  }
+
+  .v20-restaurant-app .v20-profile-layout {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  .v20-restaurant-app .v20-communication-grid {
+    grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+  }
+}
+
+@media (max-width: 960px) {
+  .v20-restaurant-app .v20-products-layout,
+  .v20-restaurant-app .v20-profile-layout,
+  .v20-restaurant-app .v20-communication-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .v20-restaurant-app .v20-product-editor,
+  .v20-restaurant-app .v20-public-preview {
+    position: static;
+  }
+
+  .v20-restaurant-app .v20-restaurant-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .v20-restaurant-app .v20-communication-overview {
+    align-items: flex-start;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 700px) {
+  .v20-restaurant-app .portal-panel:not(.hidden) {
+    min-height: calc(100svh - 350px - env(safe-area-inset-bottom));
+  }
+
+  .v20-restaurant-app .v20-restaurant-topbar .v20-restaurant-shell {
+    gap: 8px;
+    padding-left: max(13px, env(safe-area-inset-left));
+    padding-right: max(13px, env(safe-area-inset-right));
+  }
+
+  .v20-restaurant-app .v20-store-status {
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .v20-restaurant-app .v20-restaurant-identity > div {
+    overflow: hidden;
+  }
+
+  .v20-restaurant-app .v20-restaurant-identity h1,
+  .v20-restaurant-app .v20-restaurant-identity p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .v20-restaurant-app .v20-restaurant-tabs {
+    scroll-snap-type: x proximity;
+  }
+
+  .v20-restaurant-app .v20-restaurant-tabs .portal-tab {
+    min-height: 44px;
+    scroll-snap-align: start;
+  }
+
+  .v20-restaurant-app .v20-restaurant-section-head {
+    align-items: flex-start;
+  }
+
+  .v20-restaurant-app .v20-featured-order > header,
+  .v20-restaurant-app .v20-products-card > header,
+  .v20-restaurant-app .v20-product-ratings > header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .v20-restaurant-app .v20-product-tools {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+  }
+
+  .v20-restaurant-app .v20-product-tools label {
+    width: auto;
+  }
+
+  .v20-restaurant-app .v20-product-ratings > header select {
+    min-height: 42px;
+    width: 100%;
+  }
+
+  .v20-restaurant-app .v20-communication-overview {
+    display: block;
+  }
+
+  .v20-restaurant-app .v20-communication-overview > section {
+    scroll-snap-type: x proximity;
+  }
+
+  .v20-restaurant-app .v20-communication-overview article {
+    scroll-snap-align: start;
+  }
+
+  .v20-restaurant-app .v20-restaurant-bottom-nav button {
+    min-height: 48px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 520px) {
+  .v20-restaurant-app .v20-restaurant-metrics,
+  .v20-restaurant-app .v20-operation-items,
+  .v20-restaurant-app .v20-coupon-card form > div,
+  .v20-restaurant-app .v20-form-two,
+  .v20-restaurant-app .v20-confirm-modal article > div {
+    grid-template-columns: 1fr;
+  }
+
+  .v20-restaurant-app .v20-featured-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .v20-restaurant-app .v20-featured-actions > button {
+    width: 100%;
+  }
+
+  .v20-restaurant-app .v20-options-builder article > :is(div, label) {
+    grid-template-columns: 1fr;
+  }
+
+  .v20-restaurant-app .v20-opening-hours > div {
+    align-items: start;
+    grid-template-columns: 1fr auto;
+  }
+
+  .v20-restaurant-app .v20-opening-hours label {
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+  }
+
+  .v20-restaurant-app .v20-opening-hours > div > input {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .v20-restaurant-app .v20-review-summary > section {
+    justify-content: flex-start;
+  }
+
+  .v20-restaurant-app .v20-review-summary label {
+    grid-template-columns: 48px minmax(0, 1fr) 28px;
+  }
+
+  .v20-restaurant-app .v20-message-list > article {
+    align-items: flex-start;
+  }
+}
+
+/* Motorista */
+.v20-driver-app .content-section:not(.hidden) {
+  min-height: min(600px, calc(100svh - 175px));
+}
+
+.v20-driver-app :where(
+  .driver-brand-copy,
+  .driver-status-main > div,
+  .driver-mini-stat > div,
+  .driver-section-header > div,
+  .driver-detail-topbar > div,
+  .driver-delivery-route span,
+  .driver-delivery-meta,
+  .driver-account-hero > div,
+  .driver-account-info div,
+  .driver-portals-card a > span,
+  .driver-support-intro > div
+) {
+  min-width: 0;
+}
+
+.v20-driver-app .driver-eyebrow {
+  font-size: 10px !important;
+}
+
+.v20-driver-app .driver-status-main small,
+.v20-driver-app .driver-mini-stat small,
+.v20-driver-app .driver-earnings-stats small,
+.v20-driver-app .driver-account-hero small,
+.v20-driver-app .driver-support-intro small {
+  font-size: 9px !important;
+  line-height: 1.35 !important;
+}
+
+.v20-driver-app .driver-status-main strong,
+.v20-driver-app .driver-mini-stat strong {
+  font-size: 14px !important;
+  line-height: 1.3 !important;
+}
+
+.v20-driver-app .driver-status-main p,
+.v20-driver-app .driver-mini-stat p,
+.v20-driver-app .driver-section-header p,
+.v20-driver-app .driver-wallet-hero p,
+.v20-driver-app .driver-portals-card p,
+.v20-driver-app .driver-support-intro p {
+  font-size: 11px !important;
+  line-height: 1.48 !important;
+}
+
+.v20-driver-app .driver-status-meta > span,
+.v20-driver-app .driver-status-meta button {
+  font-size: 10px !important;
+}
+
+.v20-driver-app .driver-delivery-id,
+.v20-driver-app .driver-delivery-route span {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+.v20-driver-app .driver-delivery-status,
+.v20-driver-app .driver-delivery-meta span,
+.v20-driver-app .driver-order-status-pill {
+  font-size: 9px !important;
+  line-height: 1.3 !important;
+}
+
+.v20-driver-app :where(
+  .ver-detalhes-btn,
+  .driver-refresh-btn,
+  .driver-inline-refresh,
+  .driver-primary-action,
+  .driver-account-support,
+  .driver-password-card form button,
+  .driver-quick-action,
+  .driver-modal .btn
+) {
+  min-height: 42px !important;
+  font-size: 11px !important;
+}
+
+.v20-driver-app .driver-quick-action {
+  line-height: 1.3;
+  padding: 9px 7px !important;
+}
+
+.v20-driver-app .driver-final-form label span,
+.v20-driver-app .driver-password-card label span,
+.v20-driver-app .driver-modal .form-group label {
+  font-size: 10px !important;
+}
+
+.v20-driver-app .driver-final-form input,
+.v20-driver-app .driver-final-form textarea,
+.v20-driver-app .driver-password-card input,
+.v20-driver-app .driver-modal .form-group input,
+.v20-driver-app #driver-earnings-period-select,
+.v20-driver-app #driver-completed-period-select {
+  min-height: 44px !important;
+  font-size: 12px !important;
+}
+
+.v20-driver-app .driver-account-info strong,
+.v20-driver-app .driver-portals-card a strong,
+.v20-driver-app .driver-support-order strong {
+  font-size: 11px !important;
+}
+
+.v20-driver-app .driver-account-info small,
+.v20-driver-app .driver-portals-card a small,
+.v20-driver-app .driver-support-order small,
+.v20-driver-app .driver-action-note {
+  font-size: 10px !important;
+  line-height: 1.4 !important;
+}
+
+.v20-driver-app .driver-period-chips button {
+  min-height: 38px !important;
+  font-size: 10px !important;
+}
+
+.v20-driver-app .driver-earnings-table-card :where(th, td) {
+  font-size: 11px !important;
+  line-height: 1.4;
+}
+
+.v20-driver-app .driver-table-wrap,
+.v20-driver-app .driver-map-actions,
+.v20-driver-app .support-workspace {
+  max-width: 100%;
+  overscroll-behavior: contain;
+}
+
+.v20-driver-app .driver-modal .modal-content {
+  max-height: calc(100svh - 32px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 1100px) and (min-width: 701px) {
+  .v20-driver-app .driver-v20-header {
+    padding-inline: 20px !important;
+  }
+
+  .v20-driver-app .driver-top-action {
+    padding-inline: 10px !important;
+  }
+
+  .v20-driver-app .driver-top-action .desktop-only {
+    display: none !important;
+  }
+
+  .v20-driver-app .driver-workspace,
+  .v20-driver-app .driver-settings-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .v20-driver-app .content-section:not(.hidden) {
+    min-height: calc(100svh - 150px - env(safe-area-inset-bottom));
+  }
+
+  .v20-driver-app .driver-v20-header,
+  .v20-driver-app .driver-v20-main {
+    padding-left: max(13px, env(safe-area-inset-left)) !important;
+    padding-right: max(13px, env(safe-area-inset-right)) !important;
+  }
+
+  .v20-driver-app .driver-brand-copy strong {
+    font-size: 18px;
+  }
+
+  .v20-driver-app .driver-brand-copy small {
+    font-size: 8px;
+  }
+
+  .v20-driver-app .driver-bottom-nav-item {
+    min-height: 48px !important;
+    font-size: 9px !important;
+  }
+
+  .v20-driver-app .driver-overview-grid {
+    align-items: stretch;
+  }
+
+  .v20-driver-app .driver-mini-stat {
+    min-height: 138px;
+  }
+
+  .v20-driver-app .driver-mini-stat p {
+    font-size: 10px !important;
+    padding-right: 22px;
+  }
+
+  .v20-driver-app .driver-delivery-footer {
+    align-items: center !important;
+    gap: 12px;
+  }
+
+  .v20-driver-app .driver-detail-topbar {
+    align-items: flex-start !important;
+  }
+
+  .v20-driver-app .driver-detail-topbar h1 {
+    line-height: 1.15;
+  }
+
+  .v20-driver-app .driver-map-stage {
+    height: min(390px, 52svh) !important;
+    min-height: 300px;
+  }
+
+  .v20-driver-app .driver-map-actions {
+    display: flex !important;
+    scroll-snap-type: x proximity;
+  }
+
+  .v20-driver-app .driver-map-actions button {
+    min-height: 42px !important;
+    scroll-snap-align: start;
+  }
+
+  .v20-driver-app .driver-earnings-table-card td::before {
+    font-size: 9px !important;
+  }
+
+  .v20-driver-app .driver-modal .modal-content {
+    padding: 24px 18px !important;
+  }
+}
+
+@media (max-width: 440px) {
+  .v20-driver-app .driver-overview-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .v20-driver-app .driver-status-card {
+    grid-column: auto;
+  }
+
+  .v20-driver-app .driver-mini-stat {
+    min-height: 104px;
+  }
+
+  .v20-driver-app .driver-detail-topbar {
+    flex-wrap: wrap;
+  }
+
+  .v20-driver-app .driver-detail-topbar > div {
+    flex: 1 1 calc(100% - 55px);
+  }
+
+  .v20-driver-app .driver-detail-topbar > select,
+  .v20-driver-app .driver-detail-topbar > .driver-order-status-pill {
+    flex: 1 1 100%;
+    max-width: none;
+    width: 100%;
+  }
+
+  .v20-driver-app .driver-quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .v20-driver-app .driver-wallet-hero {
+    padding: 20px !important;
+  }
+
+  .v20-driver-app .driver-wallet-hero > span {
+    height: 48px;
+    width: 48px;
+  }
+
+  .v20-driver-app .driver-support-intro {
+    display: block !important;
+  }
+
+  .v20-driver-app .driver-support-intro > span {
+    margin-bottom: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.v20-client-app, .v20-restaurant-app, .v20-driver-app) *,
+  :is(.v20-client-app, .v20-restaurant-app, .v20-driver-app) *::before,
+  :is(.v20-client-app, .v20-restaurant-app, .v20-driver-app) *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Identificação pública do motorista no acompanhamento do cliente */
+.v20-client-app .v20-map-driver-marker {
+  align-items: center;
+  background: #111a13;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgba(17, 26, 19, .24);
+  color: #fff;
+  display: flex;
+  height: 48px;
+  justify-content: center;
+  left: 27%;
+  padding: 0;
+  position: absolute;
+  top: 43%;
+  width: 48px;
+  z-index: 5;
+}
+
+.v20-client-app .v20-map-driver-marker::after {
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 8px solid #fff;
+  bottom: -10px;
+  content: "";
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.v20-client-app .v20-map-driver-marker img {
+  border-radius: 50%;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.v20-client-app .v20-map-driver-marker i {
+  color: #9bd75b;
+  font-size: 17px;
+}
+
+.v20-client-app .v20-map-driver-marker small {
+  background: #fff;
+  border: 1px solid #dfe6dc;
+  border-radius: 8px;
+  bottom: -34px;
+  box-shadow: 0 5px 13px rgba(12, 24, 14, .1);
+  color: #182019;
+  font-size: 7px;
+  font-weight: 900;
+  left: 50%;
+  padding: 5px 7px;
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.v20-client-app .v20-assigned-driver-avatar {
+  border: 0 !important;
+  border-radius: 50% !important;
+  height: 43px !important;
+  overflow: hidden;
+  padding: 0;
+  width: 43px !important;
+}
+
+.v20-client-app .v20-assigned-driver-avatar img,
+.v20-client-app .v20-assigned-driver-avatar b {
+  background: #111a13;
+  color: #fff;
+  display: grid;
+  font-size: 11px;
+  height: 100%;
+  object-fit: cover;
+  place-items: center;
+  width: 100%;
+}
+
+.v20-client-app .v20-order-driver > div em {
+  color: #6f786f;
+  font-size: 8px;
+  font-style: normal;
+  margin-top: 2px;
+}
+
+.v20-client-app .v20-order-driver > a {
+  align-items: center;
+  background: #eef8e6;
+  border-radius: 11px;
+  color: #548e1e;
+  display: flex;
+  height: 36px;
+  justify-content: center;
+  text-decoration: none;
+  width: 36px;
+}
+
+.v20-client-app .v20-order-driver > a.disabled {
+  opacity: .42;
+  pointer-events: none;
+}
+
+.v20-client-app #client-driver-profile-sheet {
+  align-items: center;
+  padding: 18px;
+}
+
+.v20-client-app .v20-driver-public-sheet {
+  border-radius: 26px !important;
+  box-shadow: 0 28px 90px rgba(8, 14, 8, .27);
+  max-height: calc(100svh - 36px) !important;
+  padding: 0 22px 22px !important;
+  width: min(520px, 100%) !important;
+}
+
+.v20-client-app .v20-driver-public-sheet > header {
+  align-items: flex-start !important;
+  background: #fff !important;
+  border-radius: 0 !important;
+  color: #121813 !important;
+  display: flex !important;
+  grid-template-columns: none !important;
+  justify-content: space-between;
+  margin: 0 !important;
+  padding: 22px 0 17px !important;
+}
+
+.v20-client-app .v20-driver-public-sheet > header > span {
+  display: block;
+  grid-column: auto !important;
+}
+
+.v20-client-app .v20-driver-public-sheet > header small {
+  color: #5b9821;
+}
+
+.v20-client-app .v20-driver-public-sheet > header h2 {
+  color: #121813;
+  font-size: 22px;
+  margin: 4px 0 2px;
+}
+
+.v20-client-app .v20-driver-public-sheet > header p {
+  color: #737b74;
+  font-size: 9px;
+}
+
+.v20-client-app .v20-driver-public-sheet > header > button {
+  background: #f0f3ee !important;
+  border: 0;
+  border-radius: 11px !important;
+  color: #101711 !important;
+  flex: 0 0 38px;
+  grid-column: auto !important;
+  height: 38px !important;
+  width: 38px !important;
+}
+
+.v20-client-app .v20-driver-public-cover {
+  background: linear-gradient(135deg, #eaf3e4, #f8faf6);
+  border-radius: 17px;
+  height: 138px;
+  overflow: hidden;
+  position: relative;
+}
+
+.v20-client-app .v20-driver-public-cover::before,
+.v20-client-app .v20-driver-public-cover::after {
+  background: rgba(255, 255, 255, .85);
+  content: "";
+  height: 220px;
+  position: absolute;
+  transform: rotate(63deg);
+  width: 15px;
+}
+
+.v20-client-app .v20-driver-public-cover::before { left: 26%; top: -40px; }
+.v20-client-app .v20-driver-public-cover::after { right: 26%; top: -18px; }
+
+.v20-client-app .v20-driver-public-cover > i {
+  background: #79be31;
+  border: 5px solid #fff;
+  border-radius: 50%;
+  bottom: 30px;
+  box-shadow: 0 7px 18px rgba(84, 143, 30, .25);
+  height: 32px;
+  left: 28%;
+  position: absolute;
+  width: 32px;
+  z-index: 2;
+}
+
+.v20-client-app .v20-driver-public-cover > b {
+  color: #e04b52;
+  font-size: 25px;
+  position: absolute;
+  right: 24%;
+  top: 26px;
+  z-index: 2;
+}
+
+.v20-client-app .v20-driver-route-line {
+  border-top: 2px dashed #6fb32d;
+  left: 33%;
+  position: absolute;
+  right: 29%;
+  top: 67px;
+  transform: rotate(-16deg);
+}
+
+.v20-client-app .v20-driver-public-identity {
+  align-items: center;
+  display: flex;
+  gap: 13px;
+  padding: 0 10px 14px;
+}
+
+.v20-client-app .v20-driver-public-identity > span {
+  background: #111a13;
+  border: 5px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  display: grid;
+  flex: 0 0 78px;
+  height: 78px;
+  margin-top: -31px;
+  overflow: hidden;
+  place-items: center;
+  position: relative;
+  z-index: 3;
+}
+
+.v20-client-app .v20-driver-public-identity > span img,
+.v20-client-app .v20-driver-public-identity > span b {
+  display: grid;
+  font-size: 18px;
+  height: 100%;
+  object-fit: cover;
+  place-items: center;
+  width: 100%;
+}
+
+.v20-client-app .v20-driver-public-identity > div { min-width: 0; }
+.v20-client-app .v20-driver-public-identity > div > small { color: #5b9821; font-size: 7px; font-weight: 900; letter-spacing: .08em; }
+.v20-client-app .v20-driver-public-identity h2 { font-size: 19px; margin: 3px 0 1px; }
+.v20-client-app .v20-driver-public-identity p { color: #6c746d; font-size: 9px; margin: 0; }
+.v20-client-app .v20-driver-public-identity p i { color: #f2b53a; }
+
+.v20-client-app .v20-driver-vehicle-card {
+  align-items: center;
+  background: #f5f8f3;
+  border: 1px solid #e0e6dd;
+  border-radius: 16px;
+  display: grid;
+  gap: 13px;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  padding: 10px;
+}
+
+.v20-client-app .v20-driver-vehicle-card > div {
+  background: #e7eee3;
+  border-radius: 12px;
+  height: 70px;
+  overflow: hidden;
+}
+
+.v20-client-app .v20-driver-vehicle-card > div img,
+.v20-client-app .v20-driver-vehicle-card > div span {
+  align-items: center;
+  color: #5b9821;
+  display: flex;
+  font-size: 22px;
+  height: 100%;
+  justify-content: center;
+  object-fit: cover;
+  width: 100%;
+}
+
+.v20-client-app .v20-driver-vehicle-card > article { min-width: 0; }
+.v20-client-app .v20-driver-vehicle-card small { color: #6b756c; font-size: 7px; font-weight: 900; }
+.v20-client-app .v20-driver-vehicle-card h3 { font-size: 15px; margin: 3px 0 6px; }
+.v20-client-app .v20-driver-vehicle-card p { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.v20-client-app .v20-driver-vehicle-card p strong { background: #111a13; border-radius: 6px; color: #fff; font-size: 9px; letter-spacing: .08em; padding: 5px 7px; }
+.v20-client-app .v20-driver-vehicle-card p span { color: #717972; font-size: 9px; padding: 5px 0; }
+.v20-client-app .v20-driver-vehicle-card > i { color: #75ba30; font-size: 18px; }
+
+.v20-client-app .v20-driver-safety-note {
+  align-items: center;
+  background: #f0f7e9;
+  border-radius: 13px;
+  display: flex;
+  gap: 11px;
+  margin-top: 11px;
+  padding: 12px;
+}
+
+.v20-client-app .v20-driver-safety-note > i { color: #5b9821; font-size: 18px; }
+.v20-client-app .v20-driver-safety-note span { display: grid; }
+.v20-client-app .v20-driver-safety-note strong { font-size: 10px; }
+.v20-client-app .v20-driver-safety-note small { color: #69716a; font-size: 8px; line-height: 1.4; }
+
+.v20-client-app .v20-driver-public-actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 13px;
+}
+
+.v20-client-app .v20-driver-public-actions > * {
+  align-items: center;
+  border: 0;
+  border-radius: 12px;
+  display: flex;
+  font-size: 9px;
+  font-weight: 900;
+  gap: 7px;
+  justify-content: center;
+  min-height: 45px;
+  text-decoration: none;
+}
+
+.v20-client-app .v20-driver-public-actions a { background: #111a13; color: #fff; }
+.v20-client-app .v20-driver-public-actions button { background: #79be31; color: #fff; }
+.v20-client-app .v20-driver-public-actions a.disabled { opacity: .45; pointer-events: none; }
+
+@media (max-width: 760px) {
+  .v20-client-app #client-driver-profile-sheet {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .v20-client-app .v20-driver-public-sheet {
+    border-radius: 25px 25px 0 0 !important;
+    max-height: 95svh !important;
+    padding: 0 16px calc(18px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .v20-client-app .v20-driver-public-cover { height: 126px; }
+}
+
+@media (max-width: 390px) {
+  .v20-client-app .v20-driver-vehicle-card { grid-template-columns: 74px minmax(0, 1fr) auto; }
+  .v20-client-app .v20-driver-vehicle-card > div { height: 62px; }
+  .v20-client-app .v20-driver-public-actions { grid-template-columns: 1fr; }
+}
+
+/* Cliente · correcções profundas dos fluxos reportados */
+.v20-client-app .v20-address-custom-label[hidden],
+.v20-client-app #client-address-empty[hidden] {
+  display: none !important;
+}
+
+.v20-client-app .v20-address-explainer {
+  align-items: flex-start;
+  background: #f2f7ed;
+  border: 1px solid #dcebd0;
+  border-radius: 14px;
+  display: flex;
+  gap: 11px;
+  margin-bottom: 14px;
+  padding: 13px 14px;
+}
+
+.v20-client-app .v20-address-explainer > i {
+  color: var(--v20-green-dark);
+  margin-top: 2px;
+}
+
+.v20-client-app .v20-address-explainer p,
+.v20-client-app .v20-address-explainer span {
+  display: block;
+  margin: 0;
+}
+
+.v20-client-app .v20-address-explainer strong {
+  font-size: 13px;
+}
+
+.v20-client-app .v20-address-explainer span {
+  color: var(--v20-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin-top: 3px;
+}
+
+.v20-client-app .v20-address-list {
+  display: grid;
+  gap: 10px;
+}
+
+.v20-client-app .v20-address-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  margin: 0;
+  padding: 14px;
+}
+
+.v20-client-app .v20-address-card > i {
+  width: 42px;
+  height: 42px;
+}
+
+.v20-client-app .v20-address-card > span {
+  display: grid;
+  gap: 2px;
+}
+
+.v20-client-app .v20-address-card > span > small {
+  color: var(--v20-muted);
+  font-size: 10px;
+}
+
+.v20-client-app .v20-address-card > span > em {
+  align-items: center;
+  color: var(--v20-green-dark);
+  display: flex;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.v20-client-app .v20-address-actions {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+}
+
+.v20-client-app .v20-address-actions button {
+  align-items: center;
+  background: #f5f7f4;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #626a62;
+  display: inline-flex;
+  gap: 5px;
+  min-height: 38px;
+  padding: 0 10px;
+}
+
+.v20-client-app .v20-address-actions button:hover {
+  background: var(--v20-green-soft);
+  color: var(--v20-green-dark);
+}
+
+.v20-client-app .v20-address-actions button:last-child:hover {
+  background: #fff0f0;
+  color: var(--v20-danger);
+}
+
+.v20-client-app .v20-address-actions span {
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.v20-client-app #client-address-sheet,
+.v20-client-app #client-profile-sheet,
+.v20-client-app #client-auth-sheet,
+.v20-client-app #order-detail-sheet {
+  align-items: center;
+  padding: 18px;
+}
+
+.v20-client-app .v20-address-sheet,
+.v20-client-app .v20-profile-sheet,
+.v20-client-app .v20-auth-sheet,
+.v20-client-app .v20-order-detail {
+  border-radius: 24px !important;
+  box-shadow: 0 28px 90px rgba(8, 14, 8, .24);
+  max-height: calc(100svh - 36px) !important;
+}
+
+.v20-client-app .v20-address-sheet {
+  width: min(520px, 100%);
+}
+
+.v20-client-app .v20-profile-sheet {
+  width: min(500px, 100%);
+}
+
+.v20-client-app .v20-profile-sheet header.simple p {
+  color: var(--v20-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 3px 0 0;
+}
+
+.v20-client-app .v20-profile-avatar {
+  align-items: center;
+  background: var(--v20-ink);
+  border-radius: 15px;
+  color: #fff;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 15px;
+  padding: 14px;
+}
+
+.v20-client-app .v20-profile-avatar > span {
+  align-items: center;
+  background: var(--v20-green);
+  border-radius: 50%;
+  display: flex;
+  font-size: 18px;
+  font-weight: 900;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.v20-client-app .v20-profile-avatar > div {
+  display: grid;
+}
+
+.v20-client-app .v20-profile-avatar strong {
+  font-size: 14px;
+}
+
+.v20-client-app .v20-profile-avatar small {
+  color: #adb5ad;
+  font-size: 10px;
+}
+
+.v20-client-app .v20-address-sheet header.simple {
+  align-items: flex-start;
+}
+
+.v20-client-app .v20-address-sheet header.simple p,
+.v20-client-app .v20-order-detail header.simple p {
+  color: var(--v20-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 3px 0 0;
+}
+
+.v20-client-app .v20-address-types {
+  border: 0;
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+}
+
+.v20-client-app .v20-address-types legend {
+  font-size: 10px;
+  font-weight: 800;
+  margin-bottom: 7px;
+}
+
+.v20-client-app .v20-address-types button {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--v20-line);
+  border-radius: 11px;
+  display: flex;
+  font-size: 11px;
+  font-weight: 800;
+  gap: 7px;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.v20-client-app .v20-address-types button.active {
+  background: var(--v20-green-soft);
+  border-color: var(--v20-green);
+  color: var(--v20-green-dark);
+}
+
+.v20-client-app .v20-location-capture,
+.v20-client-app .v20-address-default {
+  align-items: center;
+  background: #f7f9f6;
+  border: 1px solid var(--v20-line);
+  border-radius: 12px;
+  color: var(--v20-ink);
+  display: flex !important;
+  gap: 10px;
+  min-height: 58px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.v20-client-app .v20-location-capture > i {
+  align-items: center;
+  background: var(--v20-green-soft);
+  border-radius: 9px;
+  color: var(--v20-green-dark);
+  display: flex;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.v20-client-app .v20-location-capture span,
+.v20-client-app .v20-address-default span {
+  display: grid;
+  flex: 1;
+}
+
+.v20-client-app .v20-location-capture strong,
+.v20-client-app .v20-address-default strong {
+  font-size: 11px;
+}
+
+.v20-client-app .v20-location-capture small,
+.v20-client-app .v20-address-default small {
+  color: var(--v20-muted);
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.v20-client-app .v20-location-capture.is-loading > i {
+  animation: trago-address-spin .8s linear infinite;
+}
+
+@keyframes trago-address-spin {
+  to { transform: rotate(360deg); }
+}
+
+.v20-client-app .v20-auth-sheet {
+  padding: 22px;
+  width: min(500px, 100%);
+}
+
+.v20-client-app .v20-auth-sheet > header:not(.simple) {
+  align-items: center;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 56px minmax(0, 1fr) 40px;
+  margin: -22px -22px 18px;
+  min-height: 150px;
+  padding: 24px;
+}
+
+.v20-client-app .v20-auth-sheet > header:not(.simple) img {
+  grid-column: 1;
+  grid-row: 1;
+  height: 52px;
+  width: 52px;
+}
+
+.v20-client-app .v20-auth-sheet > header:not(.simple) > span {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.v20-client-app .v20-auth-sheet > header:not(.simple) > button {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+}
+
+.v20-client-app .v20-auth-sheet header h2 {
+  font-size: clamp(22px, 4vw, 28px);
+  line-height: 1.08;
+}
+
+.v20-client-app .v20-auth-sheet header p {
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.v20-client-app .v20-auth-sheet .v20-segmented {
+  margin-bottom: 4px;
+}
+
+.v20-client-app .v20-auth-sheet form {
+  gap: 12px;
+}
+
+.v20-client-app .v20-auth-sheet form input {
+  font-size: 13px;
+  min-height: 46px;
+}
+
+.v20-client-app .v20-vehicle-section {
+  background: #fff;
+  border: 1px solid var(--v20-line);
+  border-radius: 19px;
+  padding: 18px;
+}
+
+.v20-client-app .v20-vehicle-grid button {
+  align-content: center;
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 46px minmax(0, 1fr);
+  justify-items: start;
+  min-height: 94px;
+  padding: 14px;
+  text-align: left;
+}
+
+.v20-client-app .v20-vehicle-grid button > i {
+  align-items: center;
+  background: #f1f4ef;
+  border-radius: 12px;
+  display: flex;
+  font-size: 20px;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+.v20-client-app .v20-vehicle-grid button.active > i {
+  background: #fff;
+  color: var(--v20-green-dark);
+}
+
+.v20-client-app .v20-vehicle-grid button > span {
+  display: grid;
+  gap: 4px;
+}
+
+.v20-client-app .v20-vehicle-grid button strong {
+  font-size: 14px;
+}
+
+.v20-client-app .v20-vehicle-grid button small {
+  font-size: 10px;
+}
+
+.v20-client-app .v20-vehicle-section > footer {
+  align-items: center;
+  border-top: 1px solid var(--v20-line);
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-top: 15px;
+  padding-top: 15px;
+}
+
+.v20-client-app .v20-vehicle-section > footer p {
+  color: var(--v20-muted);
+  font-size: 10px;
+  margin: 0;
+}
+
+.v20-client-app .v20-vehicle-section > footer p i {
+  color: var(--v20-green-dark);
+  margin-right: 5px;
+}
+
+.v20-client-app .v20-vehicle-section > footer .v20-primary {
+  flex: 0 0 230px;
+}
+
+.v20-client-app .v20-route-card > div b {
+  align-items: flex-end;
+  display: grid;
+  font-style: normal;
+  text-align: right;
+}
+
+.v20-client-app .v20-route-card > div em {
+  color: #9ca29b;
+  font-size: 9px;
+  font-style: normal;
+}
+
+.v20-client-app .v20-map-page {
+  width: min(980px, calc(100% - 40px));
+  margin-inline: auto;
+}
+
+.v20-client-app .v20-map-workspace {
+  background: #fff;
+  border: 1px solid var(--v20-line);
+  border-radius: 20px;
+  padding: 15px;
+}
+
+.v20-client-app .v20-map-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.v20-client-app .v20-map-toolbar > div {
+  display: flex;
+  gap: 8px;
+}
+
+.v20-client-app .v20-map-toolbar button {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+  min-height: 48px;
+  padding: 7px 13px;
+  text-align: left;
+}
+
+.v20-client-app .v20-map-toolbar button > i {
+  align-items: center;
+  background: #f0f3ee;
+  border-radius: 9px;
+  display: flex;
+  height: 31px;
+  justify-content: center;
+  width: 31px;
+}
+
+.v20-client-app .v20-map-toolbar button.active > i {
+  background: rgba(255, 255, 255, .13);
+}
+
+.v20-client-app .v20-map-toolbar button span,
+.v20-client-app .v20-map-toolbar > span {
+  display: grid;
+}
+
+.v20-client-app .v20-map-toolbar button strong {
+  font-size: 11px;
+}
+
+.v20-client-app .v20-map-toolbar button small,
+.v20-client-app .v20-map-toolbar > span small {
+  color: var(--v20-muted);
+  font-size: 8px;
+  font-weight: 500;
+}
+
+.v20-client-app .v20-map-toolbar button.active small {
+  color: #c9cec8;
+}
+
+.v20-client-app .v20-map-toolbar > span {
+  margin-left: auto;
+  text-align: right;
+}
+
+.v20-client-app .v20-map-toolbar > span strong {
+  font-size: 14px;
+}
+
+.v20-client-app .v20-map-toolbar > span em {
+  color: var(--v20-green-dark);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.v20-client-app .v20-map {
+  height: clamp(390px, 56svh, 590px);
+  min-height: 0;
+}
+
+.v20-client-app .v20-map-actions {
+  align-items: stretch;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  margin-top: 12px;
+}
+
+.v20-client-app .v20-map-actions button {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 0;
+  min-height: 46px;
+}
+
+.v20-client-app .v20-map-actions button span {
+  font-size: 10px;
+}
+
+.v20-client-app .v20-map-workspace [hidden] {
+  display: none !important;
+}
+
+.v20-client-app .v20-map-workspace.is-food-delivery .v20-map-toolbar > div {
+  min-width: 150px;
+}
+
+.v20-client-app .v20-map-workspace.is-food-delivery .v20-map-actions {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.v20-client-app .v20-map-workspace.is-food-delivery .v20-map-actions .v20-primary {
+  grid-column: auto;
+  min-width: 190px;
+}
+
+.v20-client-app .v20-order-detail {
+  padding: 22px;
+  width: min(760px, 100%) !important;
+}
+
+.v20-client-app .v20-live-map {
+  height: 180px;
+}
+
+.v20-client-app .v20-timeline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 20px 0 18px;
+}
+
+.v20-client-app .v20-timeline span {
+  align-items: center;
+  flex-direction: column;
+  gap: 7px;
+  min-height: 0;
+  text-align: center;
+}
+
+.v20-client-app .v20-timeline span::after {
+  border-left: 0;
+  border-top: 2px solid #dfe3dd;
+  height: 0;
+  left: calc(50% + 18px);
+  top: 14px;
+  width: calc(100% - 36px);
+}
+
+.v20-client-app .v20-timeline span b {
+  font-size: 11px;
+}
+
+.v20-client-app .v20-order-contact {
+  border-top: 1px solid var(--v20-line);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1.2fr .8fr;
+  padding-top: 16px;
+}
+
+.v20-client-app .v20-chat,
+.v20-client-app .v20-proof {
+  background: #f8faf7;
+  border: 1px solid var(--v20-line);
+  border-radius: 15px;
+  display: block;
+  padding: 13px;
+}
+
+.v20-client-app .v20-chat > header,
+.v20-client-app .v20-proof > header {
+  margin-bottom: 11px;
+}
+
+.v20-client-app .v20-chat > header > span,
+.v20-client-app .v20-proof > header > span {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+}
+
+.v20-client-app .v20-chat > header i,
+.v20-client-app .v20-proof > header i {
+  align-items: center;
+  background: var(--v20-green-soft);
+  border-radius: 9px;
+  color: var(--v20-green-dark);
+  display: flex;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.v20-client-app .v20-chat header b,
+.v20-client-app .v20-proof header b {
+  display: grid;
+}
+
+.v20-client-app .v20-chat header strong,
+.v20-client-app .v20-proof header strong {
+  font-size: 12px;
+}
+
+.v20-client-app .v20-chat header small,
+.v20-client-app .v20-proof header small {
+  color: var(--v20-muted);
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.v20-client-app .v20-chat-stream {
+  background: transparent;
+  border-radius: 0;
+  display: grid;
+  gap: 7px;
+  max-height: 150px;
+  overflow: auto;
+  padding: 0;
+  width: 100%;
+}
+
+.v20-client-app .v20-chat-stream article {
+  background: #eaf3e2;
+  border-radius: 11px 11px 11px 3px;
+  justify-self: start;
+  max-width: 88%;
+  padding: 9px 11px;
+}
+
+.v20-client-app .v20-chat-stream article.mine {
+  background: var(--v20-ink);
+  border-radius: 11px 11px 3px 11px;
+  color: #fff;
+  justify-self: end;
+}
+
+.v20-client-app .v20-chat-stream p {
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.v20-client-app .v20-chat-stream small {
+  color: var(--v20-muted);
+  display: block;
+  font-size: 8px;
+  margin-top: 3px;
+  text-align: right;
+}
+
+.v20-client-app #client-driver-chat-form {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--v20-line);
+  border-radius: 11px;
+  display: grid;
+  gap: 5px;
+  grid-template-columns: minmax(0, 1fr) 39px;
+  margin-top: 9px;
+  padding: 3px;
+}
+
+.v20-client-app #client-driver-chat-form label {
+  border: 0;
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+.v20-client-app #client-driver-chat-form input {
+  background: transparent;
+  border: 0;
+  font-size: 12px;
+  min-height: 39px;
+  outline: 0;
+  padding: 0 9px;
+  width: 100%;
+}
+
+.v20-client-app #client-driver-chat-form button {
+  background: var(--v20-green);
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  height: 39px;
+  width: 39px;
+}
+
+.v20-client-app .v20-proof > div {
+  display: grid;
+  gap: 7px;
+}
+
+.v20-client-app .v20-proof > div > button {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--v20-line);
+  border-radius: 11px;
+  display: flex;
+  gap: 9px;
+  min-height: 55px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.v20-client-app .v20-proof > div > button > i {
+  background: #f1f4ef;
+  color: var(--v20-green-dark);
+  flex: none;
+}
+
+.v20-client-app .v20-proof > div > button > span {
+  display: grid;
+}
+
+.v20-client-app .v20-proof > div strong {
+  font-size: 11px;
+}
+
+.v20-client-app .v20-proof > div small {
+  color: var(--v20-muted);
+  font-size: 8px;
+}
+
+@media (max-width: 760px) {
+  .v20-client-app #client-address-sheet,
+  .v20-client-app #client-profile-sheet,
+  .v20-client-app #client-auth-sheet,
+  .v20-client-app #order-detail-sheet {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .v20-client-app .v20-address-sheet,
+  .v20-client-app .v20-profile-sheet,
+  .v20-client-app .v20-auth-sheet,
+  .v20-client-app .v20-order-detail {
+    border-radius: 24px 24px 0 0 !important;
+    max-height: 95svh !important;
+  }
+
+  .v20-client-app .v20-map-page {
+    padding-inline: 13px;
+    width: 100%;
+  }
+
+  .v20-client-app .v20-map-workspace {
+    border-radius: 16px;
+    padding: 10px;
+  }
+
+  .v20-client-app .v20-map-toolbar {
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .v20-client-app .v20-map-toolbar > div {
+    min-width: 0;
+  }
+
+  .v20-client-app .v20-map-toolbar button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .v20-client-app .v20-map-toolbar > span {
+    grid-column: auto;
+  }
+
+  .v20-client-app .v20-map {
+    height: min(55svh, 520px);
+    min-height: 330px;
+  }
+
+  .v20-client-app .v20-map-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .v20-client-app .v20-map-actions .v20-primary {
+    grid-column: 1 / -1;
+  }
+
+  .v20-client-app .v20-map-workspace.is-food-delivery .v20-map-actions {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .v20-client-app .v20-map-workspace.is-food-delivery .v20-map-actions .v20-primary {
+    grid-column: auto;
+  }
+
+  .v20-client-app .v20-order-contact {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .v20-client-app .v20-auth-sheet > header:not(.simple) {
+    gap: 10px;
+    grid-template-columns: 46px minmax(0, 1fr) 38px;
+    min-height: 132px;
+    padding: 20px;
+  }
+
+  .v20-client-app .v20-auth-sheet > header:not(.simple) img {
+    height: 44px;
+    width: 44px;
+  }
+
+  .v20-client-app .v20-auth-sheet header h2 {
+    font-size: 22px;
+  }
+
+  .v20-client-app .v20-address-card {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .v20-client-app .v20-address-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    padding-top: 8px;
+  }
+
+  .v20-client-app .v20-vehicle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .v20-client-app .v20-vehicle-grid button {
+    min-height: 82px;
+  }
+
+  .v20-client-app .v20-vehicle-section > footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .v20-client-app .v20-vehicle-section > footer .v20-primary {
+    flex-basis: auto;
+    width: 100%;
+  }
+
+  .v20-client-app .v20-map-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .v20-client-app .v20-map-toolbar > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .v20-client-app .v20-map-workspace.is-food-delivery .v20-map-toolbar > div {
+    grid-template-columns: 1fr;
+  }
+
+  .v20-client-app .v20-map-toolbar > span {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    grid-column: 1;
+    justify-content: flex-end;
+  }
+
+  .v20-client-app .v20-map-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .v20-client-app .v20-map-actions .v20-primary {
+    grid-column: auto;
+  }
+
+  .v20-client-app .v20-map-workspace.is-food-delivery .v20-map-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .v20-client-app .v20-map-workspace.is-food-delivery .v20-map-actions .v20-primary {
+    min-width: 0;
+  }
+
+  .v20-client-app .v20-map-actions button span {
+    text-align: left;
+  }
+
+  .v20-client-app .v20-timeline {
+    grid-template-columns: 1fr;
+    padding-inline: 4px;
+  }
+
+  .v20-client-app .v20-timeline span {
+    align-items: flex-start;
+    flex-direction: row;
+    min-height: 54px;
+    text-align: left;
+  }
+
+  .v20-client-app .v20-timeline span::after {
+    border-left: 2px solid #dfe3dd;
+    border-top: 0;
+    height: 26px;
+    left: 14px;
+    top: 29px;
+    width: 0;
+  }
+
+  .v20-client-app .v20-live-map {
+    height: 160px;
+  }
+}
+
+@media (max-width: 390px) {
+  .v20-client-app .v20-address-actions button span {
+    display: none;
+  }
+
+  .v20-client-app .v20-address-actions button {
+    justify-content: center;
+    padding: 0;
+    width: 38px;
+  }
+
+  .v20-client-app .v20-address-types {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.v20-client-app, .v20-restaurant-app, .v20-driver-app) *,
+  :is(.v20-client-app, .v20-restaurant-app, .v20-driver-app) *::before,
+  :is(.v20-client-app, .v20-restaurant-app, .v20-driver-app) *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
+.v20-client-app .v20-chat-stream article > b { display: block; margin-bottom: 4px; color: #697365; font-size: .7rem; }
+.v20-client-app .v20-chat-stream article.system { align-self: center; max-width: 92%; border-radius: 999px; background: #e8ede5; text-align: center; }
+.v20-client-app .v20-chat-stream .v20-chat-empty { margin: auto; color: #707a6d; text-align: center; line-height: 1.5; }
+.v20-client-app .restaurant-operational-alert { display: flex; align-items: flex-start; gap: 9px; margin: 10px 0; padding: 10px 12px; border: 1px solid #d9e9ca; border-radius: 12px; background: #f2faeb; color: #496b2f; font-size: .82rem; line-height: 1.4; }
+.v20-client-app .restaurant-operational-alert i { margin-top: 2px; color: #69ad31; }
+.v20-client-app .restaurant-group.restaurant-closed { opacity: .74; }
+.v20-client-app .restaurant-group.restaurant-closed .status-pill { background: #f4e8e8; color: #9f3e3e; }
+.v20-client-app .v20-profile-avatar > span { overflow: hidden; position: relative; }
+.v20-client-app .v20-profile-avatar > span img { height: 100%; inset: 0; object-fit: cover; position: absolute; width: 100%; }
+.v20-client-app .v20-benefit-summary { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 18px; }
+.v20-client-app .v20-benefit-summary article { align-items: center; background: #0b2a40; border-radius: 18px; color: #fff; display: flex; gap: 13px; min-height: 104px; padding: 18px; }
+.v20-client-app .v20-benefit-summary article > i { align-items: center; background: rgba(121,185,51,.18); border-radius: 14px; color: #9dde58; display: flex; font-size: 19px; height: 44px; justify-content: center; width: 44px; }
+.v20-client-app .v20-benefit-summary span { display: grid; gap: 5px; min-width: 0; }
+.v20-client-app .v20-benefit-summary small { color: #b9c9d4; font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+.v20-client-app .v20-benefit-summary strong { font-size: clamp(16px, 3vw, 23px); overflow-wrap: anywhere; }
+.v20-client-app .v20-benefit-list { background: #fff; border: 1px solid #dfe5dc; border-radius: 18px; margin-bottom: 16px; padding: 18px; }
+.v20-client-app .v20-benefit-list header { margin-bottom: 12px; }
+.v20-client-app .v20-benefit-list header small { color: #5b9228; font-size: 10px; font-weight: 900; letter-spacing: .1em; }
+.v20-client-app .v20-benefit-list header h2 { font-size: 18px; margin: 4px 0 0; }
+.v20-client-app .v20-benefit-list > article { align-items: center; border-top: 1px solid #edf0eb; display: grid; gap: 12px; grid-template-columns: minmax(72px, auto) 1fr; padding: 13px 0; }
+.v20-client-app .v20-benefit-list > article > b { background: #edf8e3; border-radius: 10px; color: #548d25; font-size: 12px; overflow-wrap: anywhere; padding: 9px; text-align: center; }
+.v20-client-app .v20-benefit-list > article > span { display: grid; gap: 3px; min-width: 0; }
+.v20-client-app .v20-benefit-list > article strong { font-size: 13px; }
+.v20-client-app .v20-benefit-list > article small { color: #717a70; font-size: 11px; line-height: 1.4; }
+@media (max-width: 560px) {
+  .v20-client-app .v20-benefit-summary { grid-template-columns: 1fr; }
+}
+.v20-client-app .dish-option-groups { display: grid; gap: 12px; margin: 16px 0; }
+.v20-client-app .dish-option-groups fieldset { border: 1px solid #dfe6dc; border-radius: 14px; display: grid; gap: 7px; padding: 12px; }
+.v20-client-app .dish-option-groups legend { color: #273225; font-size: 12px; font-weight: 900; padding: 0 6px; }
+.v20-client-app .dish-option-groups label { align-items: center; background: #f7f9f5; border-radius: 10px; display: grid; gap: 8px; grid-template-columns: auto 1fr auto; min-height: 42px; padding: 8px 10px; }
+.v20-client-app .dish-option-groups label span { font-size: 12px; font-weight: 700; }
+.v20-client-app .dish-option-groups label b { color: #5b9228; font-size: 11px; }
+.v20-client-app .v20-route-stops { display: grid; gap: 7px; margin: -4px 0 12px; }
+.v20-client-app .v20-route-stops > span { align-items: center; background: #f3f6f1; border: 1px solid #e1e7de; border-radius: 11px; display: grid; gap: 9px; grid-template-columns: auto 1fr auto; padding: 9px 11px; }
+.v20-client-app .v20-route-stops b { font-size: 11px; overflow-wrap: anywhere; }
+.v20-client-app .v20-route-stops button { background: transparent; border: 0; color: #9a4242; cursor: pointer; height: 28px; width: 28px; }

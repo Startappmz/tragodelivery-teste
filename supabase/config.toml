@@ -1,0 +1,8 @@
+project_id = "trago-delivery"
+
+[functions.api]
+# IMPORTANTÍSSIMO:
+# O projecto usa JWT próprio do Trago Delivery, não Supabase Auth JWT.
+# Por isso a verificação automática do gateway da Supabase precisa ficar desligada
+# e a Edge Function faz a validação internamente.
+verify_jwt = false

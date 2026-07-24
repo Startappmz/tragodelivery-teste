@@ -1,0 +1,157 @@
+.trago-restaurant-app {
+  background: #f3f6f7;
+}
+
+.trago-restaurant-app .restaurant-layout {
+  min-height: 100vh;
+  display: grid;
+}
+
+.trago-restaurant-app .restaurant-sidebar {
+  display: none;
+  color: #eaf0f5;
+  background: var(--trago-color-ink);
+}
+
+.trago-restaurant-app .restaurant-brand {
+  min-height: var(--trago-header-height);
+  display: flex;
+  align-items: center;
+  gap: var(--trago-space-3);
+  padding-inline: var(--trago-space-5);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.trago-restaurant-app .restaurant-nav {
+  display: grid;
+  gap: 4px;
+  padding: var(--trago-space-3);
+}
+
+.trago-restaurant-app .restaurant-nav__item {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--trago-space-3);
+  padding-inline: var(--trago-space-3);
+  border-radius: 9px;
+  color: #aeb9c5;
+  font-size: var(--trago-font-size-sm);
+  font-weight: 650;
+}
+
+.trago-restaurant-app .restaurant-nav__item:hover,
+.trago-restaurant-app .restaurant-nav__item[aria-current="page"] {
+  color: #ffffff;
+  background: rgb(255 255 255 / 9%);
+}
+
+.trago-restaurant-app .restaurant-main {
+  min-width: 0;
+}
+
+.trago-restaurant-app .restaurant-topbar {
+  position: sticky;
+  z-index: 40;
+  top: 0;
+  min-height: var(--trago-header-height);
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--trago-color-line);
+  background: rgb(255 255 255 / 94%);
+  backdrop-filter: blur(12px);
+}
+
+.trago-restaurant-app .restaurant-topbar__inner {
+  width: min(100% - 32px, var(--trago-content-width));
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--trago-space-4);
+}
+
+.trago-restaurant-app .restaurant-content {
+  width: min(100% - 32px, var(--trago-content-width));
+  margin-inline: auto;
+  padding-block: var(--trago-space-6);
+}
+
+.trago-restaurant-app .restaurant-page-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--trago-space-4);
+  margin-bottom: var(--trago-space-5);
+}
+
+.trago-restaurant-app .restaurant-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--trago-space-3);
+}
+
+.trago-restaurant-app .restaurant-stat {
+  display: grid;
+  gap: var(--trago-space-2);
+  padding: var(--trago-space-4);
+}
+
+.trago-restaurant-app .restaurant-stat__value {
+  font-size: var(--trago-font-size-xl);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.trago-restaurant-app .restaurant-order-board {
+  display: grid;
+  gap: var(--trago-space-4);
+  margin-top: var(--trago-space-5);
+}
+
+.trago-restaurant-app .restaurant-order-column {
+  min-width: 0;
+  padding: var(--trago-space-3);
+  border: 1px solid var(--trago-color-line);
+  border-radius: var(--trago-radius-md);
+  background: #eef2f4;
+}
+
+.trago-restaurant-app .restaurant-order-column__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--trago-space-3);
+  margin-bottom: var(--trago-space-3);
+  font-size: var(--trago-font-size-sm);
+}
+
+.trago-restaurant-app .restaurant-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--trago-color-line);
+  border-radius: var(--trago-radius-md);
+  background: #ffffff;
+}
+
+.trago-restaurant-app .restaurant-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--trago-font-size-sm);
+}
+
+.trago-restaurant-app .restaurant-table :where(th, td) {
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--trago-color-line);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.trago-restaurant-app .restaurant-table th {
+  color: var(--trago-color-muted);
+  background: #f8fafb;
+  font-size: var(--trago-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

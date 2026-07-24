@@ -1,0 +1,48 @@
+:where(
+  .trago-client-app,
+  .trago-restaurant-app,
+  .v20-client-app,
+  .v20-restaurant-app,
+  .v20-driver-app,
+  .dashboard-body
+) {
+  --trago-color-primary: #82c132;
+  --trago-color-primary-strong: #619d1d;
+  --trago-color-primary-soft: #edf8df;
+  --trago-color-ink: #151c27;
+  --trago-color-ink-soft: #4e5b6c;
+  --trago-color-muted: #738092;
+  --trago-color-line: #dfe6ea;
+  --trago-color-surface: #ffffff;
+  --trago-color-canvas: #f4f7f8;
+  --trago-color-canvas-alt: #f9f9ff;
+  --trago-color-success: #258a4b;
+  --trago-color-warning: #b36b00;
+  --trago-color-danger: #c73737;
+  --trago-color-info: #2878c7;
+  --trago-shadow-sm: 0 2px 10px rgb(21 28 39 / 7%);
+  --trago-shadow-md: 0 14px 36px rgb(21 28 39 / 12%);
+  --trago-radius-sm: 8px;
+  --trago-radius-md: 12px;
+  --trago-radius-lg: 18px;
+  --trago-radius-pill: 999px;
+  --trago-space-1: 4px;
+  --trago-space-2: 8px;
+  --trago-space-3: 12px;
+  --trago-space-4: 16px;
+  --trago-space-5: 20px;
+  --trago-space-6: 24px;
+  --trago-space-8: 32px;
+  --trago-space-10: 40px;
+  --trago-space-12: 48px;
+  --trago-font: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --trago-font-size-xs: 0.75rem;
+  --trago-font-size-sm: 0.875rem;
+  --trago-font-size-base: 1rem;
+  --trago-font-size-lg: 1.125rem;
+  --trago-font-size-xl: 1.35rem;
+  --trago-font-size-2xl: clamp(1.7rem, 4vw, 2.5rem);
+  --trago-transition: 160ms ease;
+  --trago-content-width: 1180px;
+  --trago-header-height: 68px;
+}

@@ -1,0 +1,110 @@
+@media (min-width: 640px) {
+  :where(.trago-client-app, .trago-restaurant-app) .trago-shell {
+    width: min(100% - 48px, var(--trago-content-width));
+  }
+
+  .trago-client-app .client-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--trago-space-4);
+  }
+
+  .trago-restaurant-app .restaurant-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .trago-modal__footer .trago-button {
+    min-width: 112px;
+  }
+}
+
+@media (min-width: 900px) {
+  .trago-client-app {
+    padding-bottom: 0;
+  }
+
+  .trago-client-app .client-hero {
+    grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+    min-height: 410px;
+    padding-block: var(--trago-space-10);
+  }
+
+  .trago-client-app .client-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .trago-client-app .client-bottom-nav {
+    position: static;
+    display: flex;
+    width: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  .trago-client-app .client-bottom-nav__item {
+    min-height: 40px;
+    padding-inline: 12px;
+    display: flex;
+    font-size: var(--trago-font-size-sm);
+  }
+
+  .trago-client-app .client-cart-layout,
+  .trago-client-app .client-checkout-layout {
+    grid-template-columns: minmax(0, 1fr) 350px;
+    align-items: start;
+  }
+
+  .trago-client-app .client-summary {
+    position: sticky;
+    top: calc(var(--trago-header-height) + var(--trago-space-4));
+  }
+
+  .trago-restaurant-app .restaurant-layout {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .trago-restaurant-app .restaurant-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: block;
+  }
+
+  .trago-restaurant-app .restaurant-order-board {
+    grid-template-columns: repeat(3, minmax(240px, 1fr));
+    overflow-x: auto;
+  }
+}
+
+@media (min-width: 1180px) {
+  .trago-client-app .client-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .trago-restaurant-app .restaurant-layout {
+    grid-template-columns: 264px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .trago-toast-region {
+    inset: auto 12px calc(76px + env(safe-area-inset-bottom)) 12px;
+    width: auto;
+  }
+
+  .trago-modal-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .trago-modal {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .trago-modal__footer {
+    display: grid;
+  }
+}

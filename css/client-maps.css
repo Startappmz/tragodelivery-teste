@@ -1,0 +1,1147 @@
+/*
+ * TraGo Delivery · sistema unificado de mapas do Cliente
+ * Esta folha é carregada apenas por cliente.html e encerra os conflitos
+ * entre os estilos históricos dos cinco contextos de mapa.
+ */
+
+.v20-client-app {
+  --client-map-green: #69be35;
+  --client-map-green-dark: #103a23;
+  --client-map-ink: #10251a;
+  --client-map-surface: rgb(255 255 255 / 95%);
+  --client-map-border: rgb(255 255 255 / 88%);
+  --client-map-shadow: 0 14px 38px rgb(13 42 23 / 18%);
+}
+
+/* A navegação principal nunca pode cobrir um fluxo de mapa modal ou dedicado. */
+.v20-client-app[data-client-panel="map"] .v20-bottom-nav,
+.v20-client-app[data-client-panel="partners"] .v20-bottom-nav,
+.v20-client-app.sheet-open .v20-bottom-nav,
+.v20-client-app.radar-open .v20-bottom-nav {
+  display: none !important;
+}
+
+.v20-client-app[data-client-panel="map"] .v20-client-main {
+  padding-bottom: 0 !important;
+}
+
+.v20-client-app :is(
+  #client-map,
+  #partners-map,
+  #client-active-order-map,
+  #client-live-order-map,
+  #driver-radar-map
+) {
+  touch-action: pan-x pan-y;
+}
+
+/* Controlos Leaflet consistentes em todos os mapas do Cliente. */
+.v20-client-app :is(
+  #client-map,
+  #partners-map,
+  #client-active-order-map,
+  #client-live-order-map,
+  #driver-radar-map
+) .leaflet-top.leaflet-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.v20-client-app :is(
+  #client-map,
+  #partners-map,
+  #client-active-order-map,
+  #client-live-order-map,
+  #driver-radar-map
+) .leaflet-top.leaflet-right > .leaflet-control {
+  float: none;
+  clear: none;
+  margin: 0 !important;
+  pointer-events: auto;
+}
+
+.v20-client-app .trago-map-navigation-control {
+  display: grid;
+  gap: 7px;
+  padding: 5px;
+  border: 1px solid rgb(17 52 30 / 10%);
+  border-radius: 17px;
+  background: var(--client-map-surface);
+  box-shadow: var(--client-map-shadow);
+  backdrop-filter: blur(14px);
+}
+
+.v20-client-app .trago-map-navigation-control button {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  background: #f1f6ee;
+  color: var(--client-map-ink);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.v20-client-app .trago-map-navigation-control button:hover,
+.v20-client-app .trago-map-navigation-control button:focus-visible,
+.v20-client-app .trago-map-navigation-control button.is-active {
+  outline: 0;
+  background: var(--client-map-green-dark);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.v20-client-app .trago-map-navigation-control button:disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+
+.v20-client-app .trago-map-navigation-control button span {
+  display: none !important;
+}
+
+/* Anula regras antigas que tratavam qualquer <span> dentro do mapa como marcador. */
+.v20-client-app :is(.v20-order-map, .v20-live-map) :is(
+  .trago-map-status-control > span,
+  .leaflet-control-zoom a > span,
+  .leaflet-control-attribution > span
+) {
+  position: static !important;
+  inset: auto !important;
+  width: auto !important;
+  height: auto !important;
+  display: inline !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  transform: none !important;
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+
+.v20-client-app :is(.leaflet-control-zoom a, .trago-map-navigation-control button) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.v20-client-app .trago-map-status-control {
+  min-height: 32px;
+  padding-inline: 10px;
+  white-space: nowrap;
+}
+
+/* 1. Selecção da rota: mapa integral com três zonas flutuantes e sem colisões. */
+.v20-client-app .v20-map-page {
+  width: min(1120px, calc(100% - 32px)) !important;
+}
+
+.v20-client-app .v20-map-workspace {
+  position: relative !important;
+  height: clamp(560px, calc(100dvh - 214px), 760px) !important;
+  min-height: 560px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 28px !important;
+  background: #e8eee8;
+  box-shadow: 0 24px 70px rgb(16 46 27 / 15%);
+}
+
+.v20-client-app .v20-map-workspace > #client-map {
+  position: absolute !important;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100% !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  border-radius: inherit !important;
+}
+
+.v20-client-app .v20-map-place-search {
+  position: absolute !important;
+  z-index: 650;
+  top: 14px;
+  right: 14px;
+  left: 14px;
+  width: min(620px, calc(100% - 28px));
+  min-height: 52px;
+  margin: 0 auto;
+  border: 2px solid var(--client-map-border);
+  border-radius: 17px;
+  background: var(--client-map-surface);
+  box-shadow: var(--client-map-shadow);
+  backdrop-filter: blur(16px);
+}
+
+.v20-client-app .v20-map-place-search .address-suggestions {
+  top: calc(100% + 8px);
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid #dfe7dc;
+  border-radius: 15px;
+}
+
+.v20-client-app .v20-map-toolbar {
+  position: absolute !important;
+  z-index: 640;
+  top: 76px;
+  right: 14px;
+  left: 14px;
+  width: min(620px, calc(100% - 28px));
+  min-height: 62px;
+  margin: 0 auto !important;
+  padding: 6px;
+  border: 2px solid var(--client-map-border);
+  border-radius: 19px;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 12px 32px rgb(13 42 23 / 15%);
+  backdrop-filter: blur(16px);
+}
+
+.v20-client-app .v20-map-toolbar > div {
+  min-width: 0;
+  flex: 1;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.v20-client-app .v20-map-toolbar button {
+  min-width: 0;
+  min-height: 50px !important;
+  justify-content: flex-start;
+  border: 0 !important;
+  border-radius: 14px !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+
+.v20-client-app .v20-map-toolbar button.active {
+  background: var(--client-map-green-dark) !important;
+  color: #fff;
+}
+
+.v20-client-app .v20-map-toolbar > span {
+  min-width: 116px;
+  align-content: center;
+  margin: 0 !important;
+  padding: 0 9px;
+  border-left: 1px solid #e0e7dd;
+}
+
+.v20-client-app #client-map .trago-map-status-control {
+  display: none;
+}
+
+.v20-client-app #client-map .leaflet-top.leaflet-right {
+  top: 158px;
+  right: 13px;
+}
+
+.v20-client-app .v20-map-actions {
+  position: absolute !important;
+  z-index: 650;
+  right: 14px;
+  bottom: 14px;
+  left: 14px;
+  width: min(720px, calc(100% - 28px));
+  display: grid !important;
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) minmax(170px, .9fr) !important;
+  gap: 7px !important;
+  margin: 0 auto !important;
+  padding: 8px;
+  border: 2px solid var(--client-map-border);
+  border-radius: 21px;
+  background: var(--client-map-surface);
+  box-shadow: 0 18px 46px rgb(12 36 20 / 20%);
+  backdrop-filter: blur(16px);
+}
+
+.v20-client-app .v20-map-actions button {
+  min-width: 0;
+  min-height: 50px !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  border: 0 !important;
+  border-radius: 13px !important;
+  background: #f1f6ee !important;
+  color: var(--client-map-ink);
+}
+
+.v20-client-app .v20-map-actions button > i {
+  flex: none;
+}
+
+.v20-client-app .v20-map-actions button span {
+  display: grid;
+  font-size: 10px;
+  line-height: 1.12;
+  text-align: left;
+}
+
+.v20-client-app .v20-map-actions button span small {
+  color: #768178;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.v20-client-app .v20-map-actions .v20-primary {
+  background: var(--client-map-green) !important;
+  color: #fff;
+}
+
+.v20-client-app .v20-map-actions .v20-primary span {
+  display: inline;
+  text-align: center;
+}
+
+.v20-client-app .v20-map-workspace .leaflet-control-zoom {
+  margin-right: 13px !important;
+  margin-bottom: 88px !important;
+}
+
+.v20-client-app .v20-map-workspace .leaflet-control-attribution {
+  margin-bottom: 84px !important;
+}
+
+/* 2. Parceiros: mapa explorável com o mesmo vocabulário de navegação. */
+.v20-client-app .v20-partners-map {
+  position: relative;
+  height: clamp(330px, 46dvh, 470px) !important;
+  border: 6px solid #fff !important;
+  border-radius: 25px !important;
+  box-shadow: 0 16px 44px rgb(15 44 25 / 13%);
+}
+
+.v20-client-app #partners-map .leaflet-top.leaflet-right {
+  top: 11px;
+  right: 11px;
+}
+
+.v20-client-app #partners-map .leaflet-control-zoom {
+  margin-right: 11px !important;
+  margin-bottom: 11px !important;
+}
+
+/* 3. Resumo do pedido: pré-visualização limpa, sem zoom a competir com o CTA. */
+.v20-client-app .v20-active-order {
+  overflow: hidden;
+  padding: 10px;
+  border: 0;
+  border-radius: 26px;
+  box-shadow: 0 17px 50px rgb(16 45 25 / 11%);
+}
+
+.v20-client-app .v20-active-order .v20-order-map {
+  height: 235px !important;
+  border: 0 !important;
+  border-radius: 20px !important;
+}
+
+.v20-client-app .v20-active-order .v20-order-map .leaflet-control-zoom {
+  display: none !important;
+}
+
+.v20-client-app #client-active-order-map .leaflet-top.leaflet-right {
+  top: 10px;
+  right: 10px;
+}
+
+.v20-client-app #client-active-order-map .trago-map-navigation-control {
+  padding: 4px;
+  border-radius: 14px;
+}
+
+.v20-client-app #client-active-order-map .trago-map-navigation-control button {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.v20-client-app #client-active-order-map .leaflet-control-attribution {
+  margin-bottom: 4px !important;
+}
+
+/* 4. Acompanhamento: mapa, estado e conteúdo vivem numa única folha rolável. */
+.v20-client-app #order-detail-sheet {
+  align-items: center;
+  padding: 14px;
+}
+
+.v20-client-app #order-detail-sheet > .v20-order-detail {
+  position: relative;
+  width: min(880px, 100%) !important;
+  max-height: calc(100dvh - 28px) !important;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0 0 22px !important;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 35px 100px rgb(0 0 0 / 32%);
+  overscroll-behavior: contain;
+}
+
+.v20-client-app #order-detail-sheet .v20-order-detail > header.simple {
+  position: absolute;
+  z-index: 720;
+  top: 12px;
+  right: 12px;
+  left: 12px;
+  min-height: 72px;
+  margin: 0;
+  padding: 10px 11px 10px 15px;
+  border: 2px solid var(--client-map-border);
+  border-radius: 19px;
+  background: var(--client-map-surface);
+  box-shadow: var(--client-map-shadow);
+  backdrop-filter: blur(16px);
+}
+
+.v20-client-app #order-detail-sheet .v20-order-detail > header.simple h2 {
+  margin-block: 1px;
+  font-size: 20px;
+}
+
+.v20-client-app #order-detail-sheet .v20-order-detail > header.simple p {
+  max-width: 560px;
+  overflow: hidden;
+  color: #68736a;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v20-client-app #order-detail-sheet .v20-live-map {
+  width: 100%;
+  height: min(56dvh, 560px) !important;
+  min-height: 410px;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.v20-client-app #client-live-order-map .leaflet-top.leaflet-right {
+  top: 101px;
+  right: 12px;
+}
+
+.v20-client-app #client-live-order-map .leaflet-control-zoom {
+  margin-right: 12px !important;
+  margin-bottom: 44px !important;
+}
+
+.v20-client-app #client-live-order-map .leaflet-control-attribution {
+  margin-bottom: 34px !important;
+}
+
+.v20-client-app #order-detail-sheet .v20-timeline {
+  position: relative;
+  z-index: 710;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0;
+  margin: -24px 12px 0;
+  padding: 18px 8px 15px;
+  border: 1px solid #e1e8df;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 15px 38px rgb(17 43 24 / 12%);
+}
+
+.v20-client-app #order-detail-sheet .v20-timeline > span {
+  position: relative;
+  min-width: 0;
+  min-height: 58px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 7px;
+  text-align: center !important;
+}
+
+.v20-client-app #order-detail-sheet .v20-timeline > span::after {
+  position: absolute;
+  z-index: 0;
+  top: 15px !important;
+  left: 50% !important;
+  width: 100% !important;
+  height: 2px !important;
+  content: "";
+  border: 0 !important;
+  background: #dfe5dc;
+}
+
+.v20-client-app #order-detail-sheet .v20-timeline > span:last-child::after {
+  display: none;
+}
+
+.v20-client-app #order-detail-sheet .v20-timeline > span.done::after {
+  background: var(--client-map-green);
+}
+
+.v20-client-app #order-detail-sheet .v20-timeline > span > i {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+
+.v20-client-app #order-detail-sheet .v20-timeline > span > b {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  font-size: 10px;
+  line-height: 1.14;
+  text-align: center;
+}
+
+.v20-client-app #order-detail-sheet .v20-timeline > span small {
+  margin-top: 3px;
+  font-size: 8px;
+}
+
+.v20-client-app #order-detail-sheet .v20-order-contact,
+.v20-client-app #order-detail-sheet > .v20-danger-outline {
+  margin-inline: 16px;
+}
+
+/* 5. Radar: controlos abaixo do cabeçalho e acima da folha de candidatos. */
+.v20-client-app .radar-modal {
+  padding: 14px;
+}
+
+.v20-client-app .radar-modal .radar-box {
+  position: relative;
+  width: min(920px, calc(100vw - 28px));
+  height: min(780px, calc(100dvh - 28px));
+  max-height: none;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 28px;
+  background: #e9eee8;
+}
+
+.v20-client-app #driver-radar-map .leaflet-top.leaflet-right {
+  top: 132px;
+  right: 12px;
+}
+
+.v20-client-app .radar-map .leaflet-control-zoom {
+  margin-right: 12px !important;
+  margin-bottom: 215px !important;
+}
+
+.v20-client-app .radar-map .leaflet-control-attribution {
+  margin-bottom: 207px !important;
+}
+
+@media (max-width: 680px) {
+  .v20-client-app [data-panel="map"]:not(.hidden) {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .v20-client-app .v20-map-page {
+    width: 100% !important;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding-inline: 0 !important;
+  }
+
+  .v20-client-app .v20-map-page > .v20-page-header {
+    flex: 0 0 auto;
+    margin: 0 !important;
+    padding-inline: 14px;
+  }
+
+  .v20-client-app .v20-map-workspace {
+    flex: 1 1 0;
+    width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .v20-client-app .v20-map-place-search {
+    top: 11px;
+    right: 11px;
+    left: 11px;
+    width: auto;
+  }
+
+  .v20-client-app .v20-map-toolbar {
+    top: 74px;
+    right: 11px;
+    left: 11px;
+    width: auto;
+    display: flex !important;
+    border-radius: 18px;
+  }
+
+  .v20-client-app .v20-map-toolbar > div {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .v20-client-app .v20-map-toolbar button {
+    min-height: 48px !important;
+    padding: 5px 7px !important;
+  }
+
+  .v20-client-app .v20-map-toolbar button > i {
+    width: 28px;
+    height: 28px;
+  }
+
+  .v20-client-app .v20-map-toolbar > span {
+    position: absolute;
+    top: 65px;
+    right: 0;
+    min-width: 112px;
+    border: 2px solid var(--client-map-border);
+    border-radius: 14px;
+    padding: 7px 10px;
+    background: var(--client-map-surface);
+    box-shadow: 0 10px 27px rgb(14 40 22 / 15%);
+  }
+
+  .v20-client-app #client-map .leaflet-top.leaflet-right {
+    top: 186px;
+    right: 11px;
+  }
+
+  .v20-client-app .v20-map-actions {
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    left: 10px;
+    width: auto;
+    grid-template-columns: 84px 84px minmax(0, 1fr) !important;
+    padding: 7px;
+    border-radius: 19px;
+  }
+
+  .v20-client-app .v20-map-actions button {
+    min-height: 48px !important;
+    padding-inline: 7px !important;
+  }
+
+  .v20-client-app .v20-map-actions button span {
+    font-size: 9px;
+  }
+
+  .v20-client-app .v20-map-actions button span small {
+    font-size: 7px;
+  }
+
+  .v20-client-app .v20-map-workspace .leaflet-control-zoom {
+    margin-right: 11px !important;
+    margin-bottom: 82px !important;
+  }
+
+  .v20-client-app .v20-map-workspace .leaflet-control-attribution {
+    margin-bottom: 78px !important;
+  }
+
+  .v20-client-app .v20-partners-map {
+    height: 340px !important;
+    border-width: 4px !important;
+    border-radius: 21px !important;
+  }
+
+  .v20-client-app .v20-active-order .v20-order-map {
+    height: 230px !important;
+  }
+
+  .v20-client-app #order-detail-sheet {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .v20-client-app #order-detail-sheet > .v20-sheet-backdrop {
+    display: none;
+  }
+
+  .v20-client-app #order-detail-sheet > .v20-order-detail {
+    width: 100% !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+
+  .v20-client-app #order-detail-sheet .v20-live-map {
+    height: 53dvh !important;
+    min-height: 390px;
+    max-height: 520px;
+  }
+
+  .v20-client-app #order-detail-sheet .v20-order-contact {
+    grid-template-columns: 1fr;
+  }
+
+  .v20-client-app .radar-modal {
+    padding: 0;
+  }
+
+  .v20-client-app .radar-modal .radar-box {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  .v20-client-app #driver-radar-map .leaflet-top.leaflet-right {
+    top: 131px;
+    right: 10px;
+  }
+}
+
+@media (max-width: 410px) {
+  .v20-client-app .v20-map-toolbar > span {
+    top: 63px;
+  }
+
+  .v20-client-app #client-map .leaflet-top.leaflet-right {
+    top: 186px;
+  }
+
+  .v20-client-app .v20-map-actions {
+    grid-template-columns: 72px 72px minmax(0, 1fr) !important;
+  }
+
+  .v20-client-app .v20-map-actions button span {
+    display: grid;
+    justify-items: center;
+  }
+
+  .v20-client-app .v20-map-actions button span strong {
+    display: none;
+  }
+
+  .v20-client-app .v20-map-actions button span small {
+    color: inherit;
+    font-size: 8px;
+  }
+
+  .v20-client-app .v20-map-actions .v20-primary span {
+    display: inline;
+  }
+
+  .v20-client-app #order-detail-sheet .v20-order-detail > header.simple p {
+    max-width: 265px;
+  }
+
+  .v20-client-app #order-detail-sheet .v20-timeline {
+    margin-inline: 7px;
+    padding-inline: 4px;
+  }
+
+  .v20-client-app #order-detail-sheet .v20-timeline > span > b {
+    font-size: 8.5px;
+  }
+
+  .v20-client-app #order-detail-sheet .v20-timeline > span small {
+    font-size: 7px;
+  }
+
+  .v20-client-app .radar-box > header p {
+    max-width: 255px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v20-client-app .trago-map-navigation-control button {
+    transition: none;
+  }
+}
+
+/* 6. Interacção profissional: rascunho, estados de rede e câmara livre. */
+.v20-client-app .portal-map {
+  isolation: isolate;
+}
+
+.v20-client-app .portal-map:focus-visible {
+  outline: 3px solid rgb(105 190 53 / 75%);
+  outline-offset: -3px;
+}
+
+.v20-client-app .trago-map-network-state {
+  position: absolute;
+  z-index: 880;
+  top: 50%;
+  left: 50%;
+  display: none;
+  max-width: min(280px, calc(100% - 32px));
+  align-items: center;
+  gap: 9px;
+  transform: translate(-50%, -50%);
+  padding: 10px 12px;
+  border: 1px solid rgb(18 46 29 / 12%);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 12px 35px rgb(13 39 22 / 16%);
+  color: #173322;
+  font: 700 12px/1.3 Inter, sans-serif;
+  text-align: left;
+}
+
+.v20-client-app .portal-map.is-map-loading .trago-map-network-state,
+.v20-client-app .portal-map.has-map-error .trago-map-network-state {
+  display: flex;
+}
+
+.v20-client-app .portal-map.has-map-error .trago-map-network-state > i {
+  color: #d65353;
+}
+
+.v20-client-app .trago-map-network-state button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 11px;
+  padding: 7px 10px;
+  background: #69be35;
+  color: #fff;
+  font-weight: 800;
+}
+
+.v20-client-app .v20-map-center-pin {
+  position: absolute;
+  z-index: 745;
+  top: 50%;
+  left: 50%;
+  width: 38px;
+  height: 48px;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  filter: drop-shadow(0 8px 8px rgb(16 45 27 / 24%));
+}
+
+.v20-client-app .v20-map-center-pin i {
+  color: #ef4f5f;
+  font-size: 38px;
+  -webkit-text-stroke: 3px #fff;
+}
+
+.v20-client-app .v20-map-center-pin span {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  width: 15px;
+  height: 5px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: rgb(10 40 22 / 20%);
+}
+
+.v20-client-app .v20-map-draft-status {
+  position: absolute;
+  z-index: 750;
+  right: 12px;
+  bottom: 84px;
+  left: 12px;
+  width: fit-content;
+  max-width: min(520px, calc(100% - 24px));
+  margin-inline: auto;
+  padding: 8px 12px;
+  border: 1px solid rgb(16 49 27 / 10%);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 93%);
+  box-shadow: 0 8px 25px rgb(12 41 21 / 12%);
+  color: #435349;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: center;
+  pointer-events: none;
+}
+
+.v20-client-app .v20-map-workspace.has-draft-change .v20-map-draft-status {
+  border-color: rgb(105 190 53 / 38%);
+  color: #21452c;
+}
+
+.v20-client-app .v20-map-actions {
+  grid-template-columns: 82px 82px 82px minmax(150px, 1fr) !important;
+}
+
+.v20-client-app .v20-map-actions button,
+.v20-client-app .trago-map-navigation-control button,
+.v20-client-app .leaflet-control-zoom a,
+.v20-client-app #btn-clear-map-place-search {
+  min-width: 44px !important;
+  min-height: 44px !important;
+}
+
+.v20-client-app .v20-map-actions > button {
+  grid-column: auto !important;
+}
+
+.v20-client-app .v20-map-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  filter: grayscale(0.25);
+}
+
+.v20-client-app .is-estimated-route {
+  stroke-dasharray: 8 8;
+}
+
+.v20-client-app .leaflet-control-attribution {
+  min-height: 16px;
+  font-size: 9px !important;
+  line-height: 16px !important;
+}
+
+.v20-client-app .leaflet-marker-icon {
+  transition: transform 700ms linear;
+}
+
+.v20-client-app .trago-partner-cluster {
+  display: grid !important;
+  place-items: center;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: #183f28;
+  box-shadow: 0 7px 18px rgb(14 43 23 / 25%);
+  color: #fff;
+  font: 900 13px/1 Inter, sans-serif;
+}
+
+.v20-client-app .trago-radar-cluster {
+  display: grid !important;
+  place-content: center;
+  justify-items: center;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: #173d27;
+  box-shadow: 0 8px 20px rgb(14 43 23 / 28%);
+  color: #fff;
+  text-align: center;
+}
+
+.v20-client-app .trago-radar-cluster span {
+  font: 900 14px/1 Inter, sans-serif;
+}
+
+.v20-client-app .trago-radar-cluster small {
+  font: 700 7px/1 Inter, sans-serif;
+}
+
+.v20-client-app .v20-partner-map-selection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -14px 12px 16px;
+  padding: 10px 11px 10px 14px;
+  border: 1px solid rgb(105 190 53 / 34%);
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgb(14 43 23 / 13%);
+}
+
+.v20-client-app .v20-partner-map-selection[hidden] {
+  display: none;
+}
+
+.v20-client-app .v20-partner-map-selection span {
+  display: grid;
+  min-width: 0;
+}
+
+.v20-client-app .v20-partner-map-selection strong,
+.v20-client-app .v20-partner-map-selection small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v20-client-app .v20-partner-map-selection button {
+  min-width: 96px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: #eaf7e3;
+  color: #398317;
+  font-weight: 900;
+}
+
+.v20-client-app .v20-partner-card.is-map-selected {
+  outline: 3px solid rgb(105 190 53 / 42%);
+  outline-offset: 2px;
+}
+
+.v20-client-app .radar-driver-card.is-selected {
+  border-color: #69be35 !important;
+  background: #f5fcef !important;
+  box-shadow: 0 8px 24px rgb(73 142 30 / 13%);
+}
+
+.v20-client-app .radar-driver-card::after {
+  content: attr(data-eta);
+  grid-column: 2 / -1;
+  color: #4f7358;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.v20-client-app .radar-driver-card button.is-confirm {
+  background: #173d27 !important;
+  color: #fff !important;
+}
+
+.v20-client-app .is-selected-driver {
+  filter: drop-shadow(0 0 7px rgb(105 190 53 / 80%));
+}
+
+.v20-client-app :is(.v20-order-map, .v20-live-map) .leaflet-control span,
+.v20-client-app :is(.v20-order-map, .v20-live-map) .leaflet-marker-icon span {
+  position: static;
+  width: auto;
+  height: auto;
+  transform: none;
+}
+
+@media (max-width: 680px) {
+  .v20-client-app :is(
+    #client-map,
+    #partners-map,
+    #client-active-order-map,
+    #client-live-order-map,
+    #driver-radar-map
+  ) .leaflet-control-zoom {
+    display: none !important;
+  }
+
+  .v20-client-app .v20-map-actions {
+    grid-template-columns: repeat(3, 66px) minmax(96px, 1fr) !important;
+  }
+
+  .v20-client-app .v20-map-draft-status {
+    bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 410px) {
+  .v20-client-app .v20-map-actions {
+    grid-template-columns: repeat(3, 56px) minmax(92px, 1fr) !important;
+    gap: 4px !important;
+  }
+
+  .v20-client-app .v20-map-actions button {
+    padding-inline: 4px !important;
+  }
+
+  .v20-client-app .v20-map-draft-status {
+    right: 8px;
+    left: 8px;
+    max-width: calc(100% - 16px);
+    font-size: 10px;
+  }
+}
+
+@media (max-height: 650px) and (max-width: 920px) and (orientation: landscape) {
+  .v20-client-app .v20-map-page > .v20-page-header {
+    min-height: 58px !important;
+    padding-block: 6px !important;
+  }
+
+  .v20-client-app .v20-map-page > .v20-page-header p,
+  .v20-client-app .v20-map-page > .v20-page-header small {
+    display: none;
+  }
+
+  .v20-client-app .v20-map-page > .v20-page-header h1 {
+    font-size: 18px !important;
+  }
+
+  .v20-client-app .v20-map-place-search {
+    top: 8px;
+    right: auto;
+    left: 8px;
+    width: calc(50% - 12px);
+    min-height: 48px;
+  }
+
+  .v20-client-app .v20-map-toolbar {
+    top: 8px;
+    right: 8px;
+    left: auto;
+    width: calc(50% - 12px);
+    min-height: 48px;
+  }
+
+  .v20-client-app .v20-map-toolbar > span {
+    display: none !important;
+  }
+
+  .v20-client-app #client-map .leaflet-top.leaflet-right {
+    top: 80px;
+  }
+
+  .v20-client-app .v20-map-actions {
+    bottom: 7px;
+    width: min(520px, calc(100% - 14px));
+    grid-template-columns: repeat(3, 64px) minmax(130px, 1fr) !important;
+    margin-inline: auto;
+    padding: 5px;
+  }
+
+  .v20-client-app .v20-map-actions button {
+    min-height: 44px !important;
+  }
+
+  .v20-client-app .v20-map-draft-status {
+    bottom: 72px;
+    max-width: 55%;
+    padding-block: 6px;
+  }
+
+  .v20-client-app #order-detail-sheet .v20-live-map {
+    height: 58dvh !important;
+    min-height: 190px;
+  }
+}
+
+@media (max-height: 650px) and (max-width: 520px) and (orientation: portrait) {
+  .v20-client-app .v20-map-page > .v20-page-header {
+    min-height: 58px !important;
+    padding-block: 6px !important;
+  }
+
+  .v20-client-app .v20-map-page > .v20-page-header p,
+  .v20-client-app .v20-map-page > .v20-page-header small {
+    display: none;
+  }
+
+  .v20-client-app .v20-map-page > .v20-page-header h1 {
+    font-size: 18px !important;
+  }
+
+  .v20-client-app .v20-map-place-search {
+    top: 8px;
+  }
+
+  .v20-client-app .v20-map-toolbar {
+    top: 64px;
+  }
+
+  .v20-client-app .v20-map-toolbar > span {
+    display: none !important;
+  }
+
+  .v20-client-app #client-map .leaflet-top.leaflet-right {
+    top: 134px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v20-client-app .leaflet-marker-icon,
+  .v20-client-app .v20-map-center-pin {
+    transition: none !important;
+    animation: none !important;
+  }
+}

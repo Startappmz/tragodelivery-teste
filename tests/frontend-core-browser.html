@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-MZ">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TraGo — Validação da Fundação</title>
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/reset.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/client.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+  <script src="../js/trago-config.js"></script>
+</head>
+<body class="trago-client-app">
+  <header class="client-header">
+    <div class="trago-shell client-header__inner">
+      <div class="client-logo"><span class="client-logo__mark">T</span> TraGo</div>
+      <span class="trago-badge" id="suite-status">A executar testes…</span>
+    </div>
+  </header>
+  <main class="trago-shell client-section">
+    <div class="client-section__heading">
+      <div>
+        <p class="trago-muted">Fase 1</p>
+        <h1>Validação da fundação Vanilla</h1>
+      </div>
+      <button class="trago-button trago-button--primary" type="button" id="toast-demo">Testar toast</button>
+    </div>
+    <section class="trago-card" aria-labelledby="results-title">
+      <div class="trago-card__body trago-stack">
+        <h2 class="trago-card__title" id="results-title">Resultados</h2>
+        <ol id="test-results"></ol>
+      </div>
+    </section>
+  </main>
+  <script type="module">
+    import { createModal, createRouter, createStore, formatCurrency, showToast, validateData } from '../js/core/index.js';
+
+    const output = document.querySelector('#test-results');
+    const results = [];
+    const test = async (name, assertion) => {
+      const item = document.createElement('li');
+      try {
+        await assertion();
+        item.textContent = `PASS — ${name}`;
+        item.dataset.result = 'pass';
+        results.push({ name, pass: true });
+      } catch (error) {
+        item.textContent = `FAIL — ${name}: ${error.message}`;
+        item.dataset.result = 'fail';
+        results.push({ name, pass: false, message: error.message });
+      }
+      output.append(item);
+    };
+    const assert = (condition, message) => { if (!condition) throw new Error(message); };
+
+    await test('ES Modules carregados sem framework', () => assert(typeof createStore === 'function', 'módulo indisponível'));
+    await test('Store observável', () => {
+      const store = createStore({ count: 0 });
+      store.setState({ count: 1 });
+      assert(store.getState().count === 1, 'estado incorrecto');
+    });
+    await test('Validação de formulário', () => {
+      const result = validateData({ email: 'cliente@trago.co.mz' }, { email: { label: 'Email', rules: { required: true, email: true } } });
+      assert(result.valid, 'email válido rejeitado');
+    });
+    await test('Formatação monetária MZN', () => assert(formatCurrency(125).includes('125'), 'valor incorrecto'));
+    await test('Router parametrizado', () => {
+      const router = createRouter({ routes: [{ path: '/orders/:id', name: 'order' }] });
+      const route = router.resolve({ pathname: '/orders/TRG-1', search: '?tab=tracking' });
+      assert(route.params.id === 'TRG-1' && route.query.tab === 'tracking', 'rota incorrecta');
+    });
+    await test('Toast acessível', () => {
+      const toast = showToast('Fundação carregada.', { type: 'success', persistent: true });
+      assert(toast.getAttribute('role') === 'status', 'role ausente');
+      toast.querySelector('button').click();
+    });
+    await test('Modal acessível e conteúdo seguro', async () => {
+      const modal = createModal({ title: 'Teste', content: '<b>conteúdo</b>' });
+      assert(modal.dialog.getAttribute('aria-modal') === 'true', 'aria-modal ausente');
+      assert(modal.body.textContent === '<b>conteúdo</b>', 'conteúdo não foi tratado como texto');
+      modal.close(true);
+      assert(await modal.closed, 'resultado incorrecto');
+    });
+
+    const passed = results.filter((result) => result.pass).length;
+    const status = document.querySelector('#suite-status');
+    status.textContent = `${passed}/${results.length} testes passaram`;
+    status.className = `trago-badge trago-badge--${passed === results.length ? 'success' : 'danger'}`;
+    document.querySelector('#toast-demo').addEventListener('click', () => showToast('O sistema de feedback está activo.', { type: 'success' }));
+    window.__TRAGO_TEST_RESULTS__ = { passed, total: results.length, results };
+  </script>
+</body>
+</html>
