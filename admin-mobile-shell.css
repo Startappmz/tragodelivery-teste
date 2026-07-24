@@ -1,0 +1,2652 @@
+/* ============================================
+   Trago Delivery — Admin Compact Mobile Shell
+   Camada final: só ajusta layout/UX do painel admin.
+   Backend, endpoints e IDs funcionais preservados.
+============================================ */
+
+.admin-bottom-nav,
+.admin-mobile-sheet {
+    display: none;
+}
+
+/* Compactação geral também ajuda desktop sem mudar a arquitectura */
+.dashboard-body .main-content {
+    padding-top: 14px;
+}
+
+.dashboard-body .main-header {
+    margin-bottom: 14px;
+}
+
+.dashboard-body .page-title {
+    font-size: 1.22rem !important;
+}
+
+.dashboard-body .page-breadcrumb {
+    font-size: 0.72rem !important;
+}
+
+.dashboard-body .stats-grid {
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+}
+
+.dashboard-body .stat-card {
+    min-height: 82px !important;
+    padding: 12px !important;
+}
+
+.dashboard-body .stat-info h3 {
+    font-size: 0.68rem !important;
+    line-height: 1.15 !important;
+    margin-bottom: 0.26rem !important;
+}
+
+.dashboard-body .stat-info h3 i {
+    font-size: 0.86em !important;
+}
+
+.dashboard-body .stat-value {
+    font-size: 1.34rem !important;
+    line-height: 1.05 !important;
+}
+
+.dashboard-body .card-header,
+.dashboard-body .table-card .card-header {
+    padding: 11px 13px !important;
+}
+
+.dashboard-body .card-title {
+    font-size: 0.92rem !important;
+}
+
+.dashboard-body .card-subtitle,
+.dashboard-body .page-subtitle,
+.dashboard-body small {
+    font-size: 0.72rem !important;
+}
+
+.dashboard-body .btn,
+.dashboard-body .btn-action,
+.dashboard-body .btn-action-small,
+.dashboard-body .btn-action-assign,
+.dashboard-body .btn-action-report,
+.dashboard-body .nav-btn {
+    min-height: 32px !important;
+    padding: 6px 10px !important;
+    font-size: 0.76rem !important;
+    gap: 6px !important;
+}
+
+.dashboard-body .btn i,
+.dashboard-body .btn-action i,
+.dashboard-body .btn-action-small i,
+.dashboard-body .btn-action-assign i,
+.dashboard-body .btn-action-report i,
+.dashboard-body .nav-btn i {
+    font-size: 0.88em !important;
+}
+
+.dashboard-body .form-group {
+    margin-bottom: 10px !important;
+}
+
+.dashboard-body .form-group label,
+.dashboard-body label {
+    font-size: 0.75rem !important;
+    margin-bottom: 4px !important;
+}
+
+.dashboard-body .form-input,
+.dashboard-body .form-group input,
+.dashboard-body .form-group select,
+.dashboard-body .form-group textarea {
+    min-height: 34px !important;
+    padding: 8px 10px !important;
+    font-size: 0.78rem !important;
+}
+
+.dashboard-body .form-section {
+    margin-bottom: 1rem !important;
+    padding-bottom: 0.6rem !important;
+}
+
+.dashboard-body .form-section h3,
+.dashboard-body .chart-header h3,
+.dashboard-body .costs-form-card h3,
+.dashboard-body .costs-list-card h3 {
+    font-size: 0.84rem !important;
+}
+
+.dashboard-body .table-card .table-wrapper,
+.dashboard-body .table-wrapper {
+    padding: 0.65rem 0.85rem 0.85rem !important;
+}
+
+.dashboard-body .data-table th,
+.dashboard-body .data-table td {
+    padding: 0.54rem 0.7rem !important;
+    font-size: 0.74rem !important;
+}
+
+.dashboard-body .data-table th {
+    font-size: 0.62rem !important;
+}
+
+.dashboard-body .chart-container {
+    height: 292px !important;
+    min-height: 292px !important;
+    max-height: 292px !important;
+    padding: 12px !important;
+}
+
+.dashboard-body #map,
+.dashboard-body #live-map-container {
+    margin: 0.65rem 0 !important;
+    height: 340px !important;
+}
+
+/* Mobile app shell */
+@media (max-width: 820px) {
+    :root {
+        --admin-bottom-height: 62px;
+        --admin-safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html,
+    body.dashboard-body {
+        min-height: 100%;
+        background: #F6F7F2 !important;
+        overscroll-behavior-y: contain;
+    }
+
+    body.dashboard-body {
+        display: block !important;
+        padding-bottom: calc(var(--admin-bottom-height) + var(--admin-safe-bottom));
+    }
+
+    body.admin-sheet-open {
+        overflow: hidden;
+    }
+
+    .dashboard-body .sidebar {
+        width: min(292px, 86vw) !important;
+        padding: 12px 10px !important;
+        z-index: 1300 !important;
+    }
+
+    .dashboard-body .sidebar-header {
+        padding-bottom: 12px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .dashboard-body .dashboard-logo {
+        max-width: 92px !important;
+    }
+
+    .dashboard-body .nav-section-title {
+        font-size: 0.58rem !important;
+        padding: 0 8px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .dashboard-body .menu-item a,
+    .dashboard-body .submenu a {
+        min-height: 36px !important;
+        padding: 8px 9px !important;
+        gap: 8px !important;
+        font-size: 0.78rem !important;
+    }
+
+    .dashboard-body .menu-item a i {
+        width: 15px !important;
+        font-size: 0.9rem !important;
+    }
+
+    .dashboard-body .main-content {
+        margin-left: 0 !important;
+        padding: 8px 10px calc(var(--admin-bottom-height) + 18px + var(--admin-safe-bottom)) !important;
+        min-height: 100dvh !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+    }
+
+    .dashboard-body .main-header {
+        position: sticky;
+        top: 0;
+        z-index: 920;
+        display: grid !important;
+        grid-template-columns: 38px minmax(0, 1fr) auto;
+        align-items: center !important;
+        gap: 8px !important;
+        min-height: 50px;
+        margin: -8px -10px 10px !important;
+        padding: 7px 10px;
+        background: rgba(246, 247, 242, 0.96);
+        border-bottom: 1px solid rgba(224, 220, 212, 0.78);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 6px 16px rgba(39, 35, 36, 0.05);
+    }
+
+    [data-theme="dark"] .dashboard-body .main-header,
+    .dashboard-body[data-theme="dark"] .main-header {
+        background: rgba(29, 26, 27, 0.96);
+        border-bottom-color: rgba(71, 65, 66, 0.9);
+    }
+
+    .dashboard-body .page-header {
+        min-width: 0;
+        display: contents !important;
+    }
+
+    .dashboard-body .btn-mobile-menu {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 36px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        padding: 0 !important;
+        border-radius: 10px !important;
+        font-size: 0.9rem !important;
+        background: #ffffff !important;
+    }
+
+    .dashboard-body .page-title {
+        grid-column: 2;
+        margin: 0 !important;
+        font-size: 1.02rem !important;
+        line-height: 1.05 !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .dashboard-body .page-breadcrumb {
+        display: none !important;
+    }
+
+    .dashboard-body .navbar-right {
+        grid-column: 3;
+        width: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 6px !important;
+    }
+
+    .dashboard-body .notifications-shell {
+        position: relative;
+    }
+
+    .dashboard-body .notification-toggle {
+        width: 36px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        padding: 0 !important;
+        border-radius: 10px !important;
+        background: #ffffff !important;
+        border: 1px solid var(--border) !important;
+    }
+
+    .dashboard-body .notification-badge {
+        top: -4px !important;
+        right: -4px !important;
+        min-width: 16px !important;
+        height: 16px !important;
+        font-size: 0.58rem !important;
+    }
+
+    .dashboard-body .notifications-panel {
+        position: fixed !important;
+        top: 54px !important;
+        left: 10px !important;
+        right: 10px !important;
+        width: auto !important;
+        max-width: none !important;
+        max-height: min(440px, calc(100dvh - 136px)) !important;
+        border-radius: 14px !important;
+        overflow: auto !important;
+    }
+
+    .dashboard-body .admin-profile {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        padding: 0 !important;
+        border-radius: 10px !important;
+        justify-content: center !important;
+        background: #ffffff !important;
+    }
+
+    .dashboard-body .admin-profile span {
+        display: none !important;
+    }
+
+    .dashboard-body .admin-profile i {
+        font-size: 1.1rem !important;
+    }
+
+    .dashboard-body .content-area,
+    .dashboard-body .content-page {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    .dashboard-body .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .dashboard-body .stat-card {
+        min-height: 72px !important;
+        padding: 9px !important;
+        border-radius: 14px !important;
+        box-shadow: 0 6px 14px rgba(39, 35, 36, 0.05) !important;
+    }
+
+    .dashboard-body .stat-card::before {
+        height: 2px !important;
+    }
+
+    .dashboard-body .stat-info h3 {
+        font-size: 0.62rem !important;
+        letter-spacing: 0.02em !important;
+        margin-bottom: 4px !important;
+    }
+
+    .dashboard-body .stat-value,
+    .dashboard-body .stat-value-condensed {
+        font-size: 1.08rem !important;
+        line-height: 1.12 !important;
+    }
+
+    .dashboard-body .charts-grid,
+    .dashboard-body .costs-layout {
+        gap: 10px !important;
+        margin-top: 10px !important;
+    }
+
+    .dashboard-body .glass-card,
+    .dashboard-body .table-card,
+    .dashboard-body .chart-container,
+    .dashboard-body .costs-form-card,
+    .dashboard-body .costs-list-card,
+    .dashboard-body .summary-card,
+    .dashboard-body .nested-form-card {
+        border-radius: 14px !important;
+        box-shadow: 0 8px 18px rgba(39, 35, 36, 0.06) !important;
+    }
+
+    .dashboard-body .glass-card,
+    .dashboard-body .costs-form-card,
+    .dashboard-body .costs-list-card,
+    .dashboard-body .nested-form-card {
+        padding: 11px !important;
+    }
+
+    .dashboard-body .card-header,
+    .dashboard-body .table-card .card-header {
+        padding: 10px 11px !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+    }
+
+    .dashboard-body .card-title {
+        font-size: 0.88rem !important;
+        line-height: 1.15 !important;
+    }
+
+    .dashboard-body .card-title i,
+    .dashboard-body .section-title i,
+    .dashboard-body h3 i {
+        font-size: 0.9em !important;
+    }
+
+    .dashboard-body .card-subtitle,
+    .dashboard-body .page-subtitle,
+    .dashboard-body .inline-note,
+    .dashboard-body .metric-muted,
+    .dashboard-body p {
+        font-size: 0.72rem !important;
+        line-height: 1.35 !important;
+    }
+
+    .dashboard-body .section-title {
+        font-size: 0.92rem !important;
+        margin: 12px 0 8px !important;
+    }
+
+    .dashboard-body .card-actions {
+        width: auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        flex-wrap: wrap !important;
+        justify-content: flex-end !important;
+    }
+
+    .dashboard-body .card-actions .btn {
+        width: auto !important;
+    }
+
+    .dashboard-body .btn,
+    .dashboard-body .btn-action,
+    .dashboard-body .btn-action-small,
+    .dashboard-body .btn-action-assign,
+    .dashboard-body .btn-action-report,
+    .dashboard-body .btn-submit,
+    .dashboard-body .btn-secondary,
+    .dashboard-body .btn-danger {
+        min-height: 30px !important;
+        padding: 6px 9px !important;
+        font-size: 0.72rem !important;
+        border-radius: 9px !important;
+        line-height: 1.1 !important;
+    }
+
+    .dashboard-body .inline-actions,
+    .dashboard-body .form-actions,
+    .dashboard-body .modal-actions {
+        gap: 7px !important;
+    }
+
+    .dashboard-body .form-section {
+        margin-bottom: 0.82rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+
+    .dashboard-body .form-section h3,
+    .dashboard-body .costs-form-card h3,
+    .dashboard-body .costs-list-card h3,
+    .dashboard-body .chart-header h3,
+    .dashboard-body #configuracoes h3 {
+        font-size: 0.82rem !important;
+        margin: 0 0 8px !important;
+    }
+
+    .dashboard-body .form-group {
+        margin-bottom: 8px !important;
+    }
+
+    .dashboard-body .form-group label,
+    .dashboard-body label {
+        font-size: 0.7rem !important;
+        line-height: 1.18 !important;
+    }
+
+    .dashboard-body .form-input,
+    .dashboard-body .form-group input,
+    .dashboard-body .form-group select,
+    .dashboard-body .form-group textarea {
+        min-height: 32px !important;
+        padding: 7px 9px !important;
+        font-size: 0.74rem !important;
+        border-radius: 9px !important;
+    }
+
+    .dashboard-body .form-group textarea,
+    .dashboard-body textarea.form-input {
+        min-height: 70px !important;
+    }
+
+    .dashboard-body .table-card {
+        overflow: hidden !important;
+    }
+
+    .dashboard-body .table-card .table-wrapper,
+    .dashboard-body .table-wrapper {
+        padding: 0.52rem 0.58rem 0.68rem !important;
+    }
+
+    .dashboard-body .data-table,
+    .dashboard-body .table-motoristas,
+    .dashboard-body .table-pedidos {
+        border-spacing: 0 0.48rem !important;
+    }
+
+    .dashboard-body .data-table tbody tr,
+    .dashboard-body .table-motoristas tbody tr,
+    .dashboard-body .table-pedidos tbody tr {
+        padding: 0.48rem 0.62rem !important;
+        margin-bottom: 0.48rem !important;
+        border-radius: 12px !important;
+        box-shadow: 0 5px 13px rgba(39, 35, 36, 0.05) !important;
+    }
+
+    .dashboard-body .data-table td,
+    .dashboard-body .table-motoristas td,
+    .dashboard-body .table-pedidos td {
+        padding: 0.42rem 0 !important;
+        gap: 0.7rem !important;
+        font-size: 0.74rem !important;
+        line-height: 1.22 !important;
+    }
+
+    .dashboard-body .data-table td::before,
+    .dashboard-body .table-motoristas td::before,
+    .dashboard-body .table-pedidos td::before {
+        flex-basis: 38% !important;
+        max-width: 42% !important;
+        font-size: 0.56rem !important;
+        letter-spacing: 0.03em !important;
+    }
+
+    .dashboard-body .status,
+    .dashboard-body .verification-code,
+    .dashboard-body .notification-meta span {
+        min-height: 22px !important;
+        padding: 3px 7px !important;
+        font-size: 0.62rem !important;
+        border-radius: 999px !important;
+    }
+
+    .dashboard-body .chart-container {
+        height: 244px !important;
+        min-height: 244px !important;
+        max-height: 244px !important;
+        padding: 10px !important;
+    }
+
+    .dashboard-body #servicesChart,
+    .dashboard-body #deliveriesStatusChart,
+    .dashboard-body #financialPieChart,
+    .dashboard-body #costsByCategoryChart,
+    .dashboard-body #revenueVsCostsChart {
+        min-height: 190px !important;
+        max-height: 205px !important;
+    }
+
+    .dashboard-body #map,
+    .dashboard-body #live-map-container {
+        height: 300px !important;
+        border-radius: 14px !important;
+        margin: 0.55rem 0 !important;
+    }
+
+    .dashboard-body .costs-layout {
+        grid-template-columns: 1fr !important;
+    }
+
+    .dashboard-body .custos-header,
+    .dashboard-body .statement-toolbar,
+    .dashboard-body .history-toolbar,
+    .dashboard-body .driver-earnings-header,
+    .dashboard-body .driver-completed-header {
+        align-items: stretch !important;
+        gap: 8px !important;
+        margin-bottom: 9px !important;
+    }
+
+    .dashboard-body .history-search-box,
+    .dashboard-body .history-period-group,
+    .dashboard-body .driver-period-group,
+    .dashboard-body .driver-completed-period-group {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    .dashboard-body #configuracoes .glass-card,
+    .dashboard-body #zona-de-perigo {
+        padding: 11px !important;
+        border-radius: 14px !important;
+    }
+
+    .dashboard-body #zona-de-perigo p {
+        font-size: 0.72rem !important;
+        margin-bottom: 0.7rem !important;
+    }
+
+    .dashboard-body .modal-backdrop {
+        padding: 10px !important;
+        align-items: flex-end !important;
+    }
+
+    .dashboard-body .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: min(88dvh, 720px) !important;
+        overflow: auto !important;
+        border-radius: 16px 16px 0 0 !important;
+    }
+
+    .dashboard-body .modal-header,
+    .dashboard-body .modal-body,
+    .dashboard-body .modal-actions {
+        padding: 11px !important;
+    }
+
+    .dashboard-body .modal-header h3 {
+        font-size: 0.92rem !important;
+    }
+
+    .dashboard-body .modal-close-btn {
+        width: 32px !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        padding: 0 !important;
+        border-radius: 10px !important;
+        font-size: 1rem !important;
+    }
+
+    .dashboard-body .scroll-compact,
+    .dashboard-body .scroll-medium {
+        max-height: 235px !important;
+    }
+
+    .admin-bottom-nav {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        bottom: calc(8px + var(--admin-safe-bottom));
+        z-index: 1180;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 4px;
+        height: var(--admin-bottom-height);
+        padding: 6px;
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(224, 220, 212, 0.9);
+        border-radius: 18px;
+        box-shadow: 0 16px 36px rgba(39, 35, 36, 0.15);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+    }
+
+    [data-theme="dark"] .admin-bottom-nav {
+        background: rgba(39, 35, 36, 0.96);
+        border-color: rgba(71, 65, 66, 0.94);
+    }
+
+    .admin-bottom-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        border: 0;
+        background: transparent;
+        color: var(--text-muted);
+        border-radius: 13px;
+        font: inherit;
+        font-size: 0.62rem;
+        font-weight: 800;
+        line-height: 1;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .admin-bottom-item i {
+        font-size: 0.95rem;
+        line-height: 1;
+    }
+
+    .admin-bottom-item span {
+        white-space: nowrap;
+    }
+
+    .admin-bottom-item.active {
+        color: #272324;
+        background: rgba(141, 197, 67, 0.16);
+    }
+
+    [data-theme="dark"] .admin-bottom-item.active {
+        color: #ffffff;
+    }
+
+    .admin-bottom-primary {
+        color: #ffffff !important;
+        background: linear-gradient(135deg, var(--brand-green), var(--brand-orange)) !important;
+        box-shadow: 0 8px 18px rgba(141, 197, 67, 0.25);
+    }
+
+    .admin-mobile-sheet {
+        position: fixed;
+        inset: 0;
+        z-index: 1250;
+        display: block;
+    }
+
+    .admin-mobile-sheet.hidden {
+        display: none !important;
+    }
+
+    .admin-sheet-backdrop {
+        position: absolute;
+        inset: 0;
+        border: 0;
+        background: rgba(10, 15, 13, 0.45);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+    }
+
+    .admin-sheet-panel {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 8px 10px calc(14px + var(--admin-safe-bottom));
+        background: #ffffff;
+        border-radius: 20px 20px 0 0;
+        border: 1px solid rgba(224, 220, 212, 0.92);
+        box-shadow: 0 -18px 42px rgba(39, 35, 36, 0.20);
+    }
+
+    [data-theme="dark"] .admin-sheet-panel {
+        background: #272324;
+        border-color: rgba(71, 65, 66, 0.94);
+    }
+
+    .admin-sheet-handle {
+        width: 36px;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(122, 116, 117, 0.34);
+        margin: 0 auto 8px;
+    }
+
+    .admin-sheet-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .admin-sheet-header strong {
+        display: block;
+        font-size: 0.92rem;
+        color: var(--text-primary);
+        line-height: 1.1;
+    }
+
+    .admin-sheet-header small {
+        display: block;
+        margin-top: 2px;
+        font-size: 0.68rem !important;
+        color: var(--text-muted);
+    }
+
+    .admin-sheet-close {
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface-subtle);
+        color: var(--text-primary);
+        font-size: 1.12rem;
+        font-weight: 800;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .admin-sheet-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+    }
+
+    .admin-sheet-grid-services {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-sheet-grid button {
+        min-height: 54px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--surface-subtle);
+        color: var(--text-primary);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 8px 6px;
+        font: inherit;
+        font-size: 0.68rem;
+        font-weight: 800;
+        line-height: 1.05;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .admin-sheet-grid button i {
+        color: var(--brand-green-dark);
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 380px) {
+    .dashboard-body .main-content {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    .dashboard-body .stats-grid {
+        gap: 7px !important;
+    }
+
+    .dashboard-body .stat-card {
+        min-height: 68px !important;
+        padding: 8px !important;
+    }
+
+    .dashboard-body .stat-value,
+    .dashboard-body .stat-value-condensed {
+        font-size: 0.98rem !important;
+    }
+
+    .admin-bottom-nav {
+        left: 7px;
+        right: 7px;
+        gap: 3px;
+        padding: 5px;
+    }
+
+    .admin-bottom-item {
+        font-size: 0.57rem;
+    }
+
+    .admin-bottom-item i {
+        font-size: 0.86rem;
+    }
+
+    .admin-sheet-grid {
+        gap: 6px;
+    }
+
+    .admin-sheet-grid button {
+        min-height: 50px;
+        font-size: 0.62rem;
+    }
+}
+
+/* =========================================================
+   Admin · Realtime Map UX + motion layer
+   ========================================================= */
+.live-map-dashboard-shell {
+    display: grid;
+    gap: 10px;
+    animation: adminPageRise 0.34s ease both;
+}
+
+.live-map-toolbar,
+.live-map-stats,
+.live-drivers-panel {
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08) !important;
+}
+
+.live-map-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px !important;
+}
+
+.live-map-heading { min-width: 0; }
+.live-map-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+    color: #6b7280;
+    font-size: 0.64rem;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.live-map-heading h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.02rem;
+    font-weight: 900;
+    letter-spacing: -0.025em;
+}
+
+.live-map-heading small {
+    display: block;
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.live-map-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.live-map-action,
+.live-map-stat {
+    appearance: none;
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    background: #ffffff;
+    color: #334155;
+    font: inherit;
+    cursor: pointer;
+    transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.live-map-action {
+    min-height: 34px;
+    padding: 0 10px;
+    border-radius: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.74rem;
+    font-weight: 850;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.05);
+}
+
+.live-map-action:hover,
+.live-map-stat:hover,
+.live-driver-item:hover {
+    transform: translateY(-1px);
+    border-color: rgba(47, 122, 60, 0.32);
+    box-shadow: 0 8px 18px rgba(47, 122, 60, 0.12);
+}
+
+.live-map-action:active,
+.live-map-stat:active,
+.live-driver-item:active { transform: translateY(0) scale(0.985); }
+
+.live-map-action i { color: #2f7a3c; font-size: 0.78rem; }
+.live-map-action.active,
+.live-map-action[aria-pressed="true"] {
+    background: #2f7a3c;
+    border-color: #2f7a3c;
+    color: #ffffff;
+}
+.live-map-action.active i,
+.live-map-action[aria-pressed="true"] i { color: #ffffff; }
+
+.live-map-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+    padding: 8px !important;
+}
+
+.live-map-stat {
+    min-width: 0;
+    min-height: 54px;
+    border-radius: 13px;
+    padding: 7px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    text-align: left;
+}
+
+.live-map-stat strong {
+    font-size: 1.1rem;
+    line-height: 1;
+    font-weight: 950;
+    color: #172033;
+}
+
+.live-map-stat span {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 0.66rem;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.live-map-stat.active {
+    background: linear-gradient(135deg, rgba(47, 122, 60, 0.12), rgba(141, 197, 67, 0.16));
+    border-color: rgba(47, 122, 60, 0.28);
+}
+
+.live-map-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.34fr);
+    gap: 10px;
+    align-items: stretch;
+}
+
+.live-map-card-enhanced {
+    position: relative;
+    overflow: hidden;
+    min-height: 420px;
+}
+
+.dashboard-body .live-map-card-enhanced #live-map-container {
+    height: clamp(420px, 66vh, 720px) !important;
+    margin: 0 !important;
+    border-radius: 16px !important;
+    overflow: hidden;
+}
+
+.live-map-corner-panel {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    z-index: 600;
+    min-height: 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border: 1px solid rgba(15, 23, 42, 0.09);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #334155;
+    font-size: 0.72rem;
+    font-weight: 850;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+    backdrop-filter: blur(12px);
+}
+
+.live-map-corner-panel[data-state="loading"] .pulse-dot { background: #f59e0b; }
+.live-map-corner-panel[data-state="error"] .pulse-dot { background: #ef4444; }
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #22c55e;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45);
+    animation: liveMapPulse 1.45s ease-out infinite;
+}
+
+.live-drivers-panel {
+    align-self: stretch;
+    min-height: 420px;
+    padding: 10px !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.live-drivers-panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 2px 2px 10px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.live-drivers-panel-header strong {
+    display: block;
+    color: #172033;
+    font-size: 0.86rem;
+    font-weight: 900;
+}
+
+.live-drivers-panel-header small {
+    display: block;
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+
+#live-map-visible-count {
+    min-width: 27px;
+    height: 27px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    color: #172033;
+    font-size: 0.74rem;
+    font-weight: 900;
+}
+
+.live-drivers-list {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    display: grid;
+    align-content: start;
+    gap: 7px;
+    padding-top: 9px;
+    scrollbar-width: thin;
+}
+
+.live-driver-item {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 13px;
+    background: #ffffff;
+    padding: 8px 9px;
+    display: grid;
+    grid-template-columns: 10px minmax(0, 1fr) 12px;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+    animation: adminCardIn 0.26s ease both;
+}
+
+.live-driver-item.active {
+    border-color: rgba(47, 122, 60, 0.36);
+    background: linear-gradient(135deg, rgba(47, 122, 60, 0.09), rgba(141, 197, 67, 0.12));
+}
+
+.live-driver-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    display: inline-block;
+}
+.live-driver-dot-free { background: #22c55e; box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.11); }
+.live-driver-dot-busy { background: #f59e0b; box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.13); }
+.live-driver-dot-offline { background: #ef4444; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.11); }
+
+.live-driver-copy { min-width: 0; }
+.live-driver-copy strong {
+    display: block;
+    overflow: hidden;
+    color: #172033;
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.live-driver-copy small {
+    display: block;
+    margin-top: 2px;
+    overflow: hidden;
+    color: #64748b;
+    font-size: 0.65rem;
+    font-weight: 740;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.live-driver-item i { color: #94a3b8; font-size: 0.66rem; }
+
+.live-driver-empty {
+    min-height: 120px;
+    border: 1px dashed rgba(15, 23, 42, 0.14);
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    gap: 6px;
+    color: #64748b;
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-align: center;
+    padding: 18px;
+}
+.live-driver-empty i { font-size: 1.35rem; color: #94a3b8; }
+
+.live-map-popup { display: grid; gap: 5px; min-width: 165px; }
+.live-map-popup strong { font-size: 0.9rem; color: #172033; }
+.live-map-popup small { color: #64748b; font-size: 0.72rem; font-weight: 700; }
+.live-map-popup-status {
+    width: max-content;
+    border-radius: 999px;
+    padding: 3px 7px;
+    font-size: 0.65rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.live-map-popup-free { color: #166534; background: rgba(34, 197, 94, 0.13); }
+.live-map-popup-busy { color: #92400e; background: rgba(245, 158, 11, 0.14); }
+.live-map-popup-offline { color: #991b1b; background: rgba(239, 68, 68, 0.13); }
+.live-map-popup button {
+    margin-top: 3px;
+    min-height: 28px;
+    border: 0;
+    border-radius: 9px;
+    background: #2f7a3c;
+    color: #fff;
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 850;
+    cursor: pointer;
+}
+
+.driver-dot-marker {
+    width: 28px !important;
+    height: 28px !important;
+    margin-left: -14px !important;
+    margin-top: -14px !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.driver-dot-marker span {
+    position: absolute;
+    inset: 7px;
+    border-radius: 999px;
+    border: 3px solid #ffffff;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.32);
+    z-index: 2;
+}
+.driver-dot-marker i {
+    position: absolute;
+    inset: 1px;
+    border-radius: 999px;
+    opacity: 0.34;
+    animation: adminMarkerPulse 1.5s ease-out infinite;
+    z-index: 1;
+}
+.driver-dot-green i { background: #22c55e; }
+.driver-dot-orange i { background: #f59e0b; }
+.driver-dot-red i { background: #ef4444; animation: none; opacity: 0.16; }
+.driver-marker-selected span { box-shadow: 0 0 0 5px rgba(47, 122, 60, 0.22), 0 10px 24px rgba(15, 23, 42, 0.35) !important; }
+.driver-marker-dimmed { filter: grayscale(1); }
+
+.dashboard-body .content-page:not(.hidden) .glass-card,
+.dashboard-body .content-page:not(.hidden) .table-card,
+.dashboard-body .content-page:not(.hidden) .stat-card,
+.dashboard-body .content-page:not(.hidden) .chart-card {
+    animation: adminCardIn 0.28s ease both;
+}
+
+.dashboard-body button,
+.dashboard-body .btn,
+.dashboard-body .form-input,
+.dashboard-body .mobile-header-btn {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.dashboard-body button:active,
+.dashboard-body .btn:active,
+.dashboard-body .mobile-header-btn:active {
+    transform: scale(0.985);
+}
+
+@keyframes adminPageRise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes adminCardIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes liveMapPulse {
+    0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45); }
+    70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+@keyframes adminMarkerPulse {
+    0% { transform: scale(0.75); opacity: 0.38; }
+    75% { transform: scale(1.55); opacity: 0; }
+    100% { transform: scale(1.55); opacity: 0; }
+}
+
+@media (max-width: 980px) {
+    .live-map-layout { grid-template-columns: 1fr; }
+    .live-drivers-panel { min-height: 0; max-height: 245px; }
+}
+
+@media (max-width: 820px) {
+    .live-map-dashboard-shell { gap: 8px; }
+    .live-map-toolbar {
+        padding: 10px !important;
+        align-items: flex-start;
+        border-radius: 15px !important;
+    }
+    .live-map-heading h2 { font-size: 0.92rem; }
+    .live-map-heading small { font-size: 0.66rem; }
+    .live-map-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        min-width: 148px;
+    }
+    .live-map-action {
+        min-height: 30px;
+        padding: 0 7px;
+        gap: 5px;
+        font-size: 0.64rem;
+        border-radius: 10px;
+    }
+    .live-map-action i { font-size: 0.68rem; }
+    .live-map-stats {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        padding: 6px !important;
+        border-radius: 15px !important;
+        gap: 5px;
+    }
+    .live-map-stat {
+        min-height: 47px;
+        padding: 6px;
+        border-radius: 11px;
+    }
+    .live-map-stat strong { font-size: 0.95rem; }
+    .live-map-stat span { font-size: 0.54rem; letter-spacing: 0.02em; }
+    .dashboard-body .live-map-card-enhanced #live-map-container {
+        height: min(58dvh, 430px) !important;
+        min-height: 330px !important;
+        border-radius: 14px !important;
+    }
+    .live-map-card-enhanced { min-height: 330px; }
+    .live-map-corner-panel {
+        left: 9px;
+        top: 9px;
+        min-height: 26px;
+        padding: 5px 8px;
+        font-size: 0.62rem;
+    }
+    .live-drivers-panel {
+        padding: 8px !important;
+        max-height: 222px;
+        border-radius: 15px !important;
+    }
+    .live-driver-item {
+        min-height: 43px;
+        border-radius: 11px;
+        padding: 7px 8px;
+    }
+    .live-driver-copy strong { font-size: 0.72rem; }
+    .live-driver-copy small { font-size: 0.6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-body .content-page:not(.hidden) .glass-card,
+    .dashboard-body .content-page:not(.hidden) .table-card,
+    .dashboard-body .content-page:not(.hidden) .stat-card,
+    .dashboard-body .content-page:not(.hidden) .chart-card,
+    .driver-dot-marker i,
+    .pulse-dot,
+    .live-driver-item,
+    .live-map-dashboard-shell {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+
+/* =========================================================
+   Admin · Ultra Compact UI
+   Camada visual extra: mais densidade, menos altura e textos menores.
+   ========================================================= */
+.dashboard-body {
+    --admin-ultra-radius: 12px;
+}
+
+.dashboard-body .main-content { padding-top: 10px !important; }
+.dashboard-body .main-header { margin-bottom: 10px !important; }
+.dashboard-body .page-title { font-size: 1.06rem !important; letter-spacing: -0.035em !important; }
+.dashboard-body .page-breadcrumb { font-size: 0.63rem !important; }
+.dashboard-body .page-subtitle,
+.dashboard-body .card-subtitle { font-size: 0.66rem !important; line-height: 1.25 !important; }
+.dashboard-body .stats-grid { gap: 7px !important; margin-bottom: 10px !important; }
+.dashboard-body .stat-card { min-height: 68px !important; padding: 9px !important; border-radius: var(--admin-ultra-radius) !important; }
+.dashboard-body .stat-info h3 { font-size: 0.58rem !important; margin-bottom: 0.18rem !important; letter-spacing: 0.02em !important; }
+.dashboard-body .stat-value { font-size: 1.12rem !important; }
+.dashboard-body .stat-icon { width: 30px !important; height: 30px !important; border-radius: 10px !important; font-size: 0.82rem !important; }
+.dashboard-body .glass-card,
+.dashboard-body .table-card,
+.dashboard-body .chart-card { border-radius: 13px !important; }
+.dashboard-body .card-header,
+.dashboard-body .table-card .card-header { padding: 8px 10px !important; }
+.dashboard-body .card-title { font-size: 0.82rem !important; letter-spacing: -0.015em !important; }
+.dashboard-body .btn,
+.dashboard-body .btn-action,
+.dashboard-body .btn-action-small,
+.dashboard-body .btn-action-assign,
+.dashboard-body .btn-action-report,
+.dashboard-body .nav-btn {
+    min-height: 28px !important;
+    padding: 4px 8px !important;
+    border-radius: 9px !important;
+    gap: 5px !important;
+    font-size: 0.68rem !important;
+    line-height: 1.1 !important;
+}
+.dashboard-body .btn i,
+.dashboard-body .btn-action i,
+.dashboard-body .btn-action-small i,
+.dashboard-body .btn-action-assign i,
+.dashboard-body .btn-action-report i,
+.dashboard-body .nav-btn i { font-size: 0.78em !important; }
+.dashboard-body .form-group { margin-bottom: 8px !important; }
+.dashboard-body .form-group label,
+.dashboard-body label { font-size: 0.67rem !important; margin-bottom: 3px !important; }
+.dashboard-body .form-input,
+.dashboard-body .form-group input,
+.dashboard-body .form-group select,
+.dashboard-body .form-group textarea {
+    min-height: 30px !important;
+    padding: 6px 8px !important;
+    border-radius: 9px !important;
+    font-size: 0.7rem !important;
+}
+.dashboard-body textarea.form-input,
+.dashboard-body .form-group textarea { min-height: 62px !important; }
+.dashboard-body .form-section { margin-bottom: 0.75rem !important; padding-bottom: 0.45rem !important; }
+.dashboard-body .form-section h3,
+.dashboard-body .chart-header h3,
+.dashboard-body .costs-form-card h3,
+.dashboard-body .costs-list-card h3 { font-size: 0.76rem !important; }
+.dashboard-body .table-card .table-wrapper,
+.dashboard-body .table-wrapper { padding: 0.45rem 0.6rem 0.65rem !important; }
+.dashboard-body .data-table th,
+.dashboard-body .data-table td { padding: 0.4rem 0.5rem !important; font-size: 0.66rem !important; }
+.dashboard-body .data-table th { font-size: 0.55rem !important; }
+.dashboard-body .chart-container { height: 250px !important; min-height: 250px !important; max-height: 250px !important; padding: 9px !important; }
+.dashboard-body #map,
+.dashboard-body #live-map-container { height: 306px !important; margin: 0.45rem 0 !important; }
+
+.live-map-dashboard-shell { gap: 7px !important; }
+.live-map-toolbar { padding: 8px !important; border-radius: 13px !important; }
+.live-map-kicker { font-size: 0.55rem !important; gap: 4px !important; }
+.live-map-heading h2 { font-size: 0.88rem !important; margin-top: 1px !important; }
+.live-map-heading small { font-size: 0.58rem !important; }
+.live-map-actions { gap: 5px !important; }
+.live-map-action { min-height: 26px !important; padding: 0 6px !important; gap: 4px !important; border-radius: 8px !important; font-size: 0.58rem !important; }
+.live-map-action i { font-size: 0.62rem !important; }
+.live-map-stats { gap: 5px !important; padding: 5px !important; border-radius: 13px !important; }
+.live-map-stat { min-height: 40px !important; padding: 5px !important; border-radius: 9px !important; }
+.live-map-stat strong { font-size: 0.88rem !important; }
+.live-map-stat span { font-size: 0.48rem !important; letter-spacing: 0.015em !important; }
+.live-map-layout { gap: 7px !important; }
+.live-map-card-enhanced { min-height: 300px !important; border-radius: 13px !important; }
+.dashboard-body .live-map-card-enhanced #live-map-container { min-height: 292px !important; height: min(52dvh, 360px) !important; border-radius: 12px !important; }
+.live-map-corner-panel { left: 7px !important; top: 7px !important; min-height: 23px !important; padding: 4px 7px !important; gap: 5px !important; border-radius: 999px !important; font-size: 0.55rem !important; }
+.pulse-dot { width: 6px !important; height: 6px !important; }
+.live-drivers-panel { padding: 7px !important; border-radius: 13px !important; gap: 6px !important; }
+.live-drivers-panel-header strong { font-size: 0.72rem !important; }
+.live-drivers-panel-header small { font-size: 0.55rem !important; }
+#live-map-visible-count { min-width: 24px !important; height: 24px !important; font-size: 0.66rem !important; }
+.live-drivers-list { gap: 5px !important; padding-top: 5px !important; }
+.live-driver-item { min-height: 36px !important; padding: 6px 7px !important; border-radius: 9px !important; grid-template-columns: 8px minmax(0, 1fr) 10px !important; gap: 6px !important; }
+.live-driver-dot { width: 8px !important; height: 8px !important; }
+.live-driver-copy strong { font-size: 0.65rem !important; }
+.live-driver-copy small { font-size: 0.53rem !important; margin-top: 1px !important; }
+.live-driver-item i { font-size: 0.55rem !important; }
+.live-map-popup { gap: 3px !important; min-width: 138px !important; }
+.live-map-popup strong { font-size: 0.78rem !important; }
+.live-map-popup small { font-size: 0.62rem !important; }
+.live-map-popup-status { padding: 2px 6px !important; font-size: 0.55rem !important; }
+.live-map-popup button { min-height: 24px !important; border-radius: 7px !important; font-size: 0.62rem !important; }
+.driver-dot-marker { width: 24px !important; height: 24px !important; margin-left: -12px !important; margin-top: -12px !important; }
+.driver-dot-marker span { inset: 6px !important; border-width: 2px !important; }
+.driver-dot-marker i { inset: 2px !important; }
+
+@media (max-width: 820px) {
+    :root { --admin-bottom-height: 54px; }
+    body.dashboard-body { padding-bottom: calc(var(--admin-bottom-height) + var(--admin-safe-bottom)) !important; }
+    .dashboard-body .main-content { padding: 6px 8px calc(var(--admin-bottom-height) + 12px + var(--admin-safe-bottom)) !important; }
+    .dashboard-body .main-header {
+        grid-template-columns: 32px minmax(0, 1fr) auto !important;
+        min-height: 43px !important;
+        margin: -6px -8px 8px !important;
+        padding: 5px 8px !important;
+        gap: 6px !important;
+    }
+    .dashboard-body .mobile-header-btn { width: 32px !important; height: 32px !important; border-radius: 10px !important; font-size: 0.72rem !important; }
+    .dashboard-body .page-title { font-size: 0.93rem !important; }
+    .dashboard-body .page-breadcrumb { font-size: 0.56rem !important; }
+    .dashboard-body .content-page:not(.hidden) { gap: 8px !important; }
+    .dashboard-body .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 6px !important; }
+    .dashboard-body .stat-card { min-height: 60px !important; padding: 8px !important; }
+    .dashboard-body .stat-info h3 { font-size: 0.52rem !important; }
+    .dashboard-body .stat-value { font-size: 1.02rem !important; }
+    .dashboard-body .card-header,
+    .dashboard-body .table-card .card-header { padding: 7px 8px !important; }
+    .dashboard-body .card-title { font-size: 0.74rem !important; }
+    .dashboard-body .card-subtitle { font-size: 0.58rem !important; }
+    .dashboard-body .admin-bottom-nav {
+        width: min(calc(100% - 14px), 500px) !important;
+        min-height: 50px !important;
+        bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+        padding: 4px !important;
+        gap: 2px !important;
+        border-radius: 16px !important;
+    }
+    .dashboard-body .admin-bottom-nav-item { min-height: 40px !important; border-radius: 12px !important; gap: 1px !important; font-size: 0.52rem !important; }
+    .dashboard-body .admin-bottom-nav-item i { font-size: 0.78rem !important; }
+    .admin-mobile-sheet-content { border-radius: 18px 18px 0 0 !important; padding: 9px !important; }
+    .admin-mobile-sheet-header { min-height: 34px !important; margin-bottom: 6px !important; }
+    .admin-mobile-sheet-header strong { font-size: 0.78rem !important; }
+    .admin-mobile-sheet-close { width: 30px !important; height: 30px !important; font-size: 0.72rem !important; }
+    .admin-mobile-sheet-list { gap: 5px !important; }
+    .admin-mobile-sheet-action { min-height: 40px !important; padding: 7px 8px !important; border-radius: 10px !important; gap: 7px !important; font-size: 0.68rem !important; }
+    .admin-mobile-sheet-action i { width: 26px !important; height: 26px !important; border-radius: 8px !important; font-size: 0.72rem !important; }
+    .live-map-toolbar { grid-template-columns: 1fr !important; align-items: stretch !important; padding: 7px !important; }
+    .live-map-actions { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; min-width: 0 !important; width: 100% !important; }
+    .live-map-action span { white-space: nowrap !important; }
+    .live-map-stats { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+    .dashboard-body .live-map-card-enhanced #live-map-container { height: min(50dvh, 340px) !important; min-height: 285px !important; }
+    .live-drivers-panel { max-height: 178px !important; }
+    .dashboard-body .data-table tr { padding: 7px !important; gap: 3px !important; border-radius: 10px !important; }
+    .dashboard-body .data-table td { padding: 3px 0 !important; font-size: 0.64rem !important; }
+    .dashboard-body .data-table td::before { font-size: 0.52rem !important; }
+}
+
+
+/* =========================================================
+   Admin · Balanced Compact Refinement
+   Ajuste pós-teste: barra inferior menos apertada e mapa realtime mais baixo.
+   ========================================================= */
+@media (max-width: 820px) {
+    :root {
+        --admin-bottom-height: 50px !important;
+    }
+
+    body.dashboard-body {
+        padding-bottom: calc(var(--admin-bottom-height) + var(--admin-safe-bottom)) !important;
+    }
+
+    .dashboard-body .main-content {
+        padding: 6px 9px calc(var(--admin-bottom-height) + 12px + var(--admin-safe-bottom)) !important;
+    }
+
+    .dashboard-body .main-header {
+        min-height: 42px !important;
+        margin: -6px -9px 8px !important;
+        padding: 5px 9px !important;
+    }
+
+    .dashboard-body .page-title {
+        font-size: 0.88rem !important;
+        line-height: 1.08 !important;
+    }
+
+    .dashboard-body .card-title,
+    .dashboard-body .form-section h3,
+    .dashboard-body .chart-header h3,
+    .dashboard-body .costs-form-card h3,
+    .dashboard-body .costs-list-card h3 {
+        font-size: 0.74rem !important;
+        line-height: 1.14 !important;
+    }
+
+    .dashboard-body .page-subtitle,
+    .dashboard-body .card-subtitle,
+    .dashboard-body small {
+        font-size: 0.6rem !important;
+        line-height: 1.24 !important;
+    }
+
+    .dashboard-body .btn,
+    .dashboard-body .btn-action,
+    .dashboard-body .btn-action-small,
+    .dashboard-body .btn-action-assign,
+    .dashboard-body .btn-action-report,
+    .dashboard-body .nav-btn {
+        min-height: 30px !important;
+        padding: 5px 8px !important;
+        font-size: 0.66rem !important;
+        line-height: 1.15 !important;
+        gap: 5px !important;
+        white-space: nowrap !important;
+    }
+
+    .dashboard-body .btn i,
+    .dashboard-body .btn-action i,
+    .dashboard-body .btn-action-small i,
+    .dashboard-body .btn-action-assign i,
+    .dashboard-body .btn-action-report i,
+    .dashboard-body .nav-btn i {
+        font-size: 0.76em !important;
+    }
+
+    .dashboard-body .admin-bottom-nav {
+        left: 9px !important;
+        right: 9px !important;
+        width: min(calc(100% - 18px), 500px) !important;
+        min-height: 46px !important;
+        height: 46px !important;
+        bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+        padding: 4px !important;
+        gap: 3px !important;
+        border-radius: 15px !important;
+    }
+
+    .dashboard-body .admin-bottom-item {
+        min-height: 36px !important;
+        height: 36px !important;
+        padding: 0 3px !important;
+        gap: 1px !important;
+        border-radius: 11px !important;
+        font-size: 0.5rem !important;
+        line-height: 1.05 !important;
+        overflow: hidden !important;
+    }
+
+    .dashboard-body .admin-bottom-item i {
+        font-size: 0.76rem !important;
+        line-height: 1 !important;
+    }
+
+    .dashboard-body .admin-bottom-item span {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .dashboard-body .admin-bottom-primary {
+        transform: none !important;
+        box-shadow: 0 6px 14px rgba(141, 197, 67, 0.2) !important;
+    }
+
+    .dashboard-body .stats-grid {
+        gap: 7px !important;
+    }
+
+    .dashboard-body .stat-card {
+        min-height: 62px !important;
+        padding: 8px !important;
+    }
+
+    .dashboard-body .stat-info h3 {
+        font-size: 0.52rem !important;
+        line-height: 1.1 !important;
+    }
+
+    .dashboard-body .stat-value {
+        font-size: 1rem !important;
+        line-height: 1.04 !important;
+    }
+
+    .dashboard-body .card-header,
+    .dashboard-body .table-card .card-header,
+    .live-map-toolbar {
+        padding: 7px 8px !important;
+    }
+
+    .live-map-dashboard-shell {
+        gap: 6px !important;
+    }
+
+    .live-map-toolbar {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 6px !important;
+        border-radius: 12px !important;
+    }
+
+    .live-map-heading h2 {
+        font-size: 0.78rem !important;
+        line-height: 1.08 !important;
+    }
+
+    .live-map-heading small {
+        font-size: 0.55rem !important;
+        line-height: 1.2 !important;
+    }
+
+    .live-map-actions {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+        width: 100% !important;
+    }
+
+    .live-map-action {
+        min-height: 26px !important;
+        padding: 0 4px !important;
+        gap: 3px !important;
+        border-radius: 8px !important;
+        font-size: 0.55rem !important;
+        line-height: 1.05 !important;
+        overflow: hidden !important;
+    }
+
+    .live-map-action i {
+        font-size: 0.6rem !important;
+        flex: 0 0 auto !important;
+    }
+
+    .live-map-action span {
+        min-width: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .live-map-stats {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+        padding: 4px !important;
+        border-radius: 12px !important;
+    }
+
+    .live-map-stat {
+        min-height: 36px !important;
+        padding: 4px 3px !important;
+        border-radius: 9px !important;
+    }
+
+    .live-map-stat strong {
+        font-size: 0.82rem !important;
+        line-height: 1 !important;
+    }
+
+    .live-map-stat span {
+        font-size: 0.48rem !important;
+        line-height: 1.05 !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .live-map-layout {
+        gap: 6px !important;
+    }
+
+    .live-map-card-enhanced {
+        min-height: unset !important;
+        padding: 6px !important;
+        border-radius: 12px !important;
+    }
+
+    .dashboard-body #map,
+    .dashboard-body #live-map-container,
+    .dashboard-body .live-map-card-enhanced #live-map-container {
+        height: clamp(185px, 32dvh, 230px) !important;
+        min-height: 185px !important;
+        max-height: 230px !important;
+        margin: 0 !important;
+        border-radius: 11px !important;
+    }
+
+    .live-map-corner-panel {
+        left: 6px !important;
+        top: 6px !important;
+        min-height: 22px !important;
+        padding: 3px 6px !important;
+        font-size: 0.52rem !important;
+        gap: 4px !important;
+    }
+
+    .live-drivers-panel {
+        max-height: 138px !important;
+        padding: 7px !important;
+        gap: 5px !important;
+    }
+
+    .live-drivers-panel-header strong {
+        font-size: 0.7rem !important;
+        line-height: 1.1 !important;
+    }
+
+    .live-drivers-panel-header small {
+        font-size: 0.52rem !important;
+        line-height: 1.15 !important;
+    }
+
+    .live-driver-item {
+        min-height: 34px !important;
+        padding: 5px 6px !important;
+        gap: 5px !important;
+    }
+
+    .live-driver-copy strong {
+        font-size: 0.62rem !important;
+        line-height: 1.1 !important;
+    }
+
+    .live-driver-copy small {
+        font-size: 0.5rem !important;
+        line-height: 1.15 !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .dashboard-body .admin-bottom-nav {
+        height: 43px !important;
+        min-height: 43px !important;
+    }
+
+    .dashboard-body .admin-bottom-item {
+        height: 33px !important;
+        min-height: 33px !important;
+        font-size: 0.46rem !important;
+    }
+
+    .dashboard-body .admin-bottom-item i {
+        font-size: 0.72rem !important;
+    }
+
+    .dashboard-body #map,
+    .dashboard-body #live-map-container,
+    .dashboard-body .live-map-card-enhanced #live-map-container {
+        height: 176px !important;
+        min-height: 176px !important;
+    }
+}
+
+/* =========================================================
+   TRAGO DELIVERY · V6 mapa realtime funcional + UI ultra-compacta
+   Pedido: mapa menos comprido, elementos sem cortes e mais interacções.
+   ========================================================= */
+.dashboard-body,
+.dashboard-body button,
+.dashboard-body input,
+.dashboard-body select,
+.dashboard-body textarea {
+    letter-spacing: -0.012em;
+}
+
+.dashboard-body .main-content {
+    padding-inline: clamp(10px, 1.4vw, 16px) !important;
+}
+
+.dashboard-body .content-area {
+    gap: 10px !important;
+}
+
+.dashboard-body .glass-card,
+.dashboard-body .table-card,
+.dashboard-body .form-section,
+.dashboard-body .chart-container {
+    border-radius: 14px !important;
+}
+
+.dashboard-body .page-title {
+    font-size: clamp(1rem, 1.12vw, 1.18rem) !important;
+    line-height: 1.08 !important;
+}
+
+.dashboard-body .section-title,
+.dashboard-body .card-title,
+.dashboard-body .chart-header h3,
+.dashboard-body .form-section h3 {
+    font-size: clamp(0.82rem, 0.9vw, 0.98rem) !important;
+    line-height: 1.14 !important;
+}
+
+.dashboard-body .btn,
+.dashboard-body .btn-action,
+.dashboard-body .btn-action-small,
+.dashboard-body .btn-action-assign,
+.dashboard-body .btn-action-report,
+.dashboard-body .nav-btn,
+.dashboard-body .live-map-action {
+    min-height: 30px !important;
+    padding: 5px 8px !important;
+    font-size: 0.68rem !important;
+    line-height: 1.12 !important;
+    gap: 5px !important;
+}
+
+.dashboard-body .live-map-dashboard-shell {
+    gap: 7px !important;
+}
+
+.dashboard-body .live-map-toolbar {
+    padding: 8px 9px !important;
+    gap: 8px !important;
+    border-radius: 13px !important;
+}
+
+.dashboard-body .live-map-heading h2 {
+    font-size: 0.88rem !important;
+    line-height: 1.05 !important;
+}
+
+.dashboard-body .live-map-heading small,
+.dashboard-body .live-map-kicker {
+    font-size: 0.58rem !important;
+    line-height: 1.15 !important;
+}
+
+.dashboard-body .live-map-actions {
+    gap: 5px !important;
+}
+
+.dashboard-body .live-map-stats {
+    gap: 5px !important;
+    padding: 5px !important;
+    border-radius: 13px !important;
+}
+
+.dashboard-body .live-map-stat {
+    min-height: 42px !important;
+    padding: 5px 6px !important;
+    border-radius: 10px !important;
+}
+
+.dashboard-body .live-map-stat strong {
+    font-size: 0.94rem !important;
+}
+
+.dashboard-body .live-map-stat span {
+    font-size: 0.5rem !important;
+    line-height: 1.05 !important;
+}
+
+.dashboard-body .live-map-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.28fr) !important;
+    gap: 7px !important;
+}
+
+.dashboard-body .live-map-card-enhanced,
+.dashboard-body .live-drivers-panel {
+    min-height: 0 !important;
+    border-radius: 13px !important;
+}
+
+.dashboard-body .live-map-card-enhanced {
+    padding: 6px !important;
+}
+
+.dashboard-body .live-map-card-enhanced #live-map-container,
+.dashboard-body #live-map-container {
+    height: clamp(260px, 46dvh, 460px) !important;
+    min-height: 260px !important;
+    max-height: 460px !important;
+    border-radius: 12px !important;
+}
+
+.dashboard-body .live-map-mini-mode .live-map-card-enhanced #live-map-container,
+.dashboard-body .live-map-mini-mode #live-map-container {
+    height: clamp(210px, 34dvh, 320px) !important;
+    min-height: 210px !important;
+    max-height: 320px !important;
+}
+
+.dashboard-body .live-map-panel-hidden .live-map-layout {
+    grid-template-columns: 1fr !important;
+}
+
+.dashboard-body .live-map-panel-hidden .live-drivers-panel {
+    display: none !important;
+}
+
+.live-map-floating-controls {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 650;
+    display: inline-flex;
+    gap: 4px;
+    max-width: calc(100% - 16px);
+}
+
+.live-map-float-btn {
+    min-height: 26px;
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 7px;
+    font: inherit;
+    font-size: 0.58rem;
+    font-weight: 850;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+    backdrop-filter: blur(12px);
+    transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.live-map-float-btn:hover { transform: translateY(-1px); }
+.live-map-float-btn:active { transform: scale(0.97); }
+.live-map-float-btn.active,
+.live-map-float-btn[aria-pressed="true"] {
+    background: #2f7a3c;
+    color: #ffffff;
+}
+
+.live-map-focus-card {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    z-index: 640;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 8px;
+    border: 1px solid rgba(15, 23, 42, 0.09);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #475569;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14);
+    backdrop-filter: blur(14px);
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.live-map-focus-card i {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(47, 122, 60, 0.11);
+    color: #2f7a3c;
+    font-size: 0.68rem;
+}
+
+.live-map-focus-card span {
+    min-width: 0;
+    display: grid;
+    gap: 1px;
+    font-size: 0.62rem;
+    font-weight: 750;
+    line-height: 1.12;
+}
+
+.live-map-focus-card strong,
+.live-map-focus-card small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.live-map-focus-card strong { color: #172033; font-size: 0.7rem; }
+.live-map-focus-card small { color: #64748b; font-size: 0.57rem; }
+
+.live-drivers-panel {
+    max-height: clamp(260px, 46dvh, 460px) !important;
+    padding: 8px !important;
+}
+
+.live-map-mini-mode .live-drivers-panel {
+    max-height: clamp(210px, 34dvh, 320px) !important;
+}
+
+.live-driver-item {
+    min-height: 38px !important;
+    padding: 6px 7px !important;
+    border-radius: 10px !important;
+    gap: 6px !important;
+}
+
+.live-driver-copy strong { font-size: 0.68rem !important; }
+.live-driver-copy small { font-size: 0.54rem !important; }
+
+.leaflet-pane .trago-live-trail-animated {
+    stroke-dasharray: 10 10;
+    animation: tragoLiveTrailFlow 16s linear infinite;
+}
+
+@keyframes tragoLiveTrailFlow {
+    to { stroke-dashoffset: -180; }
+}
+
+@media (max-width: 820px) {
+    :root { --admin-bottom-height: 46px !important; }
+
+    body.dashboard-body {
+        padding-bottom: calc(var(--admin-bottom-height) + var(--admin-safe-bottom) + 6px) !important;
+    }
+
+    .dashboard-body .main-content {
+        padding: 5px 8px calc(var(--admin-bottom-height) + 12px + var(--admin-safe-bottom)) !important;
+    }
+
+    .dashboard-body .main-header {
+        min-height: 38px !important;
+        padding: 4px 8px !important;
+        margin: -5px -8px 7px !important;
+    }
+
+    .dashboard-body .page-title { font-size: 0.82rem !important; }
+    .dashboard-body .page-breadcrumb,
+    .dashboard-body .admin-profile span { display: none !important; }
+
+    .dashboard-body .admin-bottom-nav {
+        left: 8px !important;
+        right: 8px !important;
+        width: min(calc(100% - 16px), 480px) !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        padding: 3px !important;
+        gap: 2px !important;
+        border-radius: 14px !important;
+    }
+
+    .dashboard-body .admin-bottom-item,
+    .dashboard-body .admin-bottom-nav-item {
+        height: 34px !important;
+        min-height: 34px !important;
+        padding: 0 2px !important;
+        gap: 1px !important;
+        border-radius: 10px !important;
+        font-size: 0.46rem !important;
+        line-height: 1.02 !important;
+    }
+
+    .dashboard-body .admin-bottom-item i,
+    .dashboard-body .admin-bottom-nav-item i {
+        font-size: 0.7rem !important;
+    }
+
+    .dashboard-body .admin-bottom-item span,
+    .dashboard-body .admin-bottom-nav-item span {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .dashboard-body .live-map-layout {
+        grid-template-columns: 1fr !important;
+    }
+
+    .dashboard-body .live-map-card-enhanced #live-map-container,
+    .dashboard-body #live-map-container {
+        height: clamp(188px, 32dvh, 248px) !important;
+        min-height: 188px !important;
+        max-height: 248px !important;
+    }
+
+    .dashboard-body .live-map-mini-mode .live-map-card-enhanced #live-map-container,
+    .dashboard-body .live-map-mini-mode #live-map-container {
+        height: clamp(154px, 25dvh, 194px) !important;
+        min-height: 154px !important;
+        max-height: 194px !important;
+    }
+
+    .live-map-floating-controls {
+        top: 6px;
+        right: 6px;
+        gap: 3px;
+    }
+
+    .live-map-float-btn {
+        min-height: 23px;
+        padding: 0 5px;
+        font-size: 0.5rem;
+    }
+
+    .live-map-focus-card {
+        left: 6px;
+        right: 6px;
+        bottom: 6px;
+        min-height: 29px;
+        padding: 4px 6px;
+        border-radius: 10px;
+    }
+
+    .live-map-focus-card i { width: 18px; height: 18px; min-width: 18px; font-size: 0.56rem; }
+    .live-map-focus-card span { font-size: 0.54rem; }
+    .live-map-focus-card strong { font-size: 0.6rem; }
+    .live-map-focus-card small { font-size: 0.5rem; }
+
+    .live-drivers-panel {
+        max-height: 132px !important;
+        padding: 6px !important;
+    }
+
+    .live-map-actions {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        width: 100% !important;
+    }
+
+    .live-map-action {
+        min-height: 24px !important;
+        font-size: 0.52rem !important;
+        padding: 0 4px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .dashboard-body .admin-bottom-item,
+    .dashboard-body .admin-bottom-nav-item {
+        font-size: 0.42rem !important;
+    }
+
+    .dashboard-body .admin-bottom-item i,
+    .dashboard-body .admin-bottom-nav-item i {
+        font-size: 0.66rem !important;
+    }
+
+    .live-map-float-btn span { display: none !important; }
+    .live-map-float-btn { width: 24px; padding: 0 !important; }
+}
+
+/* =========================================================
+   TRAGO ADMIN · PRIORIDADE 2026-06-19
+   6 correcções prioritárias pedidas pelo utilizador.
+   ========================================================= */
+.vehicle-card-header {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+}
+
+.btn-compact-toggle {
+    min-height: 30px !important;
+    padding: 0 10px !important;
+    border: 1px solid rgba(141, 197, 67, 0.32) !important;
+    border-radius: 10px !important;
+    background: rgba(141, 197, 67, 0.12) !important;
+    color: #2f7a3c !important;
+    font-size: 0.72rem !important;
+    font-weight: 850 !important;
+    flex: 0 0 auto;
+}
+
+.btn-compact-toggle.is-open {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.28) !important;
+    color: #9a6700 !important;
+}
+
+.inline-vehicle-form.is-collapsed,
+.inline-vehicle-form[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 820px) {
+    /* 1) Formulário de viatura fechado por padrão e mais limpo */
+    .dashboard-body .inline-vehicle-form {
+        margin-top: 6px !important;
+        padding: 9px !important;
+        border-radius: 12px !important;
+    }
+
+    /* 2) Menu lateral compacto, mas com mais respiro */
+    .dashboard-body .sidebar {
+        width: min(278px, 84vw) !important;
+        padding: 10px 9px 10px !important;
+    }
+
+    .dashboard-body .sidebar-header {
+        padding-bottom: 10px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .dashboard-body .sidebar-menu {
+        padding: 10px 4px 8px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 3px !important;
+    }
+
+    .dashboard-body .sidebar-menu > li > ul,
+    .dashboard-body .sidebar-menu ul {
+        display: grid !important;
+        gap: 3px !important;
+    }
+
+    .dashboard-body .nav-section-title {
+        font-size: 0.56rem !important;
+        padding: 0 10px !important;
+        margin-bottom: 7px !important;
+        letter-spacing: 0.08em !important;
+    }
+
+    .dashboard-body .menu-item,
+    .dashboard-body .menu-item-logout {
+        margin: 0 !important;
+    }
+
+    .dashboard-body .menu-item a,
+    .dashboard-body .submenu a,
+    .dashboard-body .menu-item-logout a {
+        min-height: 37px !important;
+        padding: 8px 10px !important;
+        gap: 9px !important;
+        font-size: 0.74rem !important;
+        line-height: 1.18 !important;
+        border-radius: 10px !important;
+    }
+
+    .dashboard-body .menu-item a i,
+    .dashboard-body .submenu a i,
+    .dashboard-body .menu-item-logout a i {
+        width: 15px !important;
+        flex: 0 0 15px !important;
+        font-size: 0.84rem !important;
+    }
+
+    .dashboard-body .sidebar-footer {
+        position: sticky !important;
+        bottom: 8px !important;
+        margin-top: auto !important;
+        padding: 10px 6px 6px !important;
+        background: linear-gradient(180deg, rgba(17, 21, 19, 0), rgba(17, 21, 19, 0.98) 22%) !important;
+        z-index: 3 !important;
+    }
+
+    .dashboard-body .user-profile {
+        min-height: 52px !important;
+        padding: 9px !important;
+        margin-bottom: 6px !important;
+        gap: 9px !important;
+        border-radius: 10px !important;
+    }
+
+    .dashboard-body .user-avatar {
+        width: 32px !important;
+        height: 32px !important;
+        flex: 0 0 32px !important;
+        font-size: 0.92rem !important;
+    }
+
+    .dashboard-body .user-name {
+        font-size: 0.82rem !important;
+        line-height: 1.08 !important;
+    }
+
+    .dashboard-body .user-role {
+        font-size: 0.64rem !important;
+        line-height: 1.1 !important;
+    }
+
+    /* 3) afastar hamburger do título */
+    .dashboard-body .main-header {
+        grid-template-columns: 40px minmax(0, 1fr) auto !important;
+        gap: 12px !important;
+        padding: 5px 10px !important;
+    }
+
+    .dashboard-body .btn-mobile-menu {
+        margin-right: 2px !important;
+    }
+
+    .dashboard-body .page-title {
+        padding-left: 4px !important;
+    }
+
+    /* 4) barra flutuante sobe um pouco */
+    .dashboard-body .admin-bottom-nav {
+        bottom: calc(14px + var(--admin-safe-bottom)) !important;
+        box-shadow: 0 14px 30px rgba(39, 35, 36, 0.15) !important;
+    }
+
+    /* 5) mapa em tempo real mais curto */
+    .dashboard-body .live-map-card-enhanced {
+        min-height: unset !important;
+    }
+
+    .dashboard-body .live-map-card-enhanced #live-map-container,
+    .dashboard-body #live-map-container {
+        height: clamp(164px, 27dvh, 214px) !important;
+        min-height: 164px !important;
+        max-height: 214px !important;
+    }
+
+    .dashboard-body .live-map-mini-mode .live-map-card-enhanced #live-map-container,
+    .dashboard-body .live-map-mini-mode #live-map-container {
+        height: clamp(142px, 22dvh, 176px) !important;
+        min-height: 142px !important;
+        max-height: 176px !important;
+    }
+
+    .live-drivers-panel {
+        max-height: 124px !important;
+        padding: 6px !important;
+    }
+
+    .live-map-focus-card {
+        bottom: 5px !important;
+    }
+
+    /* 6) logout/cartão do admin sobem um pouco */
+    .dashboard-body .menu-item-logout {
+        margin-top: 4px !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .dashboard-body .sidebar {
+        width: min(272px, 84vw) !important;
+    }
+
+    .dashboard-body .menu-item a,
+    .dashboard-body .submenu a,
+    .dashboard-body .menu-item-logout a {
+        min-height: 36px !important;
+        font-size: 0.72rem !important;
+        padding: 7px 9px !important;
+    }
+
+    .dashboard-body .page-title {
+        font-size: 0.78rem !important;
+    }
+
+    .dashboard-body .admin-bottom-nav {
+        bottom: calc(12px + var(--admin-safe-bottom)) !important;
+    }
+}
+
+/* =========================================================
+   TRAGO ADMIN · AJUSTE FINO 2026-06-19 (2ª ronda)
+   Pedido: mapa realtime mais curto + sheets menos apertados.
+   ========================================================= */
+@media (max-width: 820px) {
+    /* 5) mapa em tempo real ainda mais curto */
+    .dashboard-body .live-map-card-enhanced {
+        padding: 5px !important;
+        border-radius: 12px !important;
+    }
+
+    .dashboard-body .live-map-card-enhanced #live-map-container,
+    .dashboard-body #live-map-container {
+        height: clamp(142px, 24dvh, 176px) !important;
+        min-height: 142px !important;
+        max-height: 176px !important;
+    }
+
+    .dashboard-body .live-map-mini-mode .live-map-card-enhanced #live-map-container,
+    .dashboard-body .live-map-mini-mode #live-map-container {
+        height: clamp(126px, 20dvh, 154px) !important;
+        min-height: 126px !important;
+        max-height: 154px !important;
+    }
+
+    .live-map-floating-controls {
+        top: 4px !important;
+        right: 4px !important;
+        gap: 2px !important;
+    }
+
+    .live-map-float-btn {
+        min-height: 22px !important;
+        padding: 0 4px !important;
+        font-size: 0.48rem !important;
+    }
+
+    .live-drivers-panel {
+        max-height: 118px !important;
+        padding: 5px !important;
+    }
+
+    /* 2) sheets "Mais opções" e "Nova entrega" com mais respiro e mais compactos */
+    .admin-sheet-panel {
+        padding: 8px 12px calc(16px + var(--admin-safe-bottom)) !important;
+        border-radius: 20px 20px 0 0 !important;
+    }
+
+    .admin-sheet-handle {
+        margin-bottom: 10px !important;
+    }
+
+    .admin-sheet-header {
+        margin-bottom: 12px !important;
+        gap: 12px !important;
+    }
+
+    .admin-sheet-header strong {
+        font-size: 0.86rem !important;
+        line-height: 1.08 !important;
+    }
+
+    .admin-sheet-header small {
+        margin-top: 3px !important;
+        font-size: 0.64rem !important;
+        line-height: 1.18 !important;
+    }
+
+    .admin-sheet-close {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        border-radius: 9px !important;
+        font-size: 0.86rem !important;
+    }
+
+    .admin-sheet-grid,
+    .admin-sheet-grid-services {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 9px !important;
+    }
+
+    .admin-sheet-grid button {
+        min-height: 50px !important;
+        padding: 9px 8px !important;
+        gap: 6px !important;
+        border-radius: 12px !important;
+        font-size: 0.64rem !important;
+        line-height: 1.08 !important;
+    }
+
+    .admin-sheet-grid button i {
+        font-size: 0.86rem !important;
+    }
+
+    .admin-sheet-grid button span {
+        display: block !important;
+        max-width: 100% !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .dashboard-body .live-map-card-enhanced #live-map-container,
+    .dashboard-body #live-map-container {
+        height: clamp(136px, 23dvh, 168px) !important;
+        min-height: 136px !important;
+        max-height: 168px !important;
+    }
+
+    .dashboard-body .live-map-mini-mode .live-map-card-enhanced #live-map-container,
+    .dashboard-body .live-map-mini-mode #live-map-container {
+        height: clamp(122px, 19dvh, 148px) !important;
+        min-height: 122px !important;
+        max-height: 148px !important;
+    }
+
+    .admin-sheet-grid button {
+        min-height: 48px !important;
+        font-size: 0.62rem !important;
+    }
+}
+
+/* =========================================================
+   TRAGO ADMIN · ALINHAMENTO MOBILE DO MAPA REALTIME
+   Pedido corrigido: afectar apenas o modo mobile.
+   O desktop mantém o tamanho anterior; no mobile espelha
+   driver.css: body.driver-compact-ui .driver-map-stage.
+   ========================================================= */
+@media (max-width: 820px) {
+    #mapa-tempo-real .map-card-shell.live-map-card-enhanced,
+    #mapa-tempo-real .live-map-card-enhanced,
+    .dashboard-body .live-map-card-enhanced {
+        min-height: unset !important;
+        height: auto !important;
+    }
+
+    #mapa-tempo-real .live-map-card-enhanced #live-map-container,
+    #mapa-tempo-real #live-map-container,
+    .dashboard-body .live-map-card-enhanced #live-map-container,
+    .dashboard-body #live-map-container {
+        height: clamp(210px, 38dvh, 290px) !important;
+        min-height: 210px !important;
+        max-height: 290px !important;
+        width: 100% !important;
+        flex: 0 0 auto !important;
+    }
+
+    #mapa-tempo-real.live-map-mini-mode .live-map-card-enhanced #live-map-container,
+    #mapa-tempo-real.live-map-mini-mode #live-map-container,
+    .dashboard-body .live-map-mini-mode .live-map-card-enhanced #live-map-container,
+    .dashboard-body .live-map-mini-mode #live-map-container {
+        height: clamp(126px, 21dvh, 158px) !important;
+        min-height: 126px !important;
+        max-height: 158px !important;
+    }
+}
+
+@media (max-width: 380px) {
+    #mapa-tempo-real .live-map-card-enhanced #live-map-container,
+    #mapa-tempo-real #live-map-container,
+    .dashboard-body .live-map-card-enhanced #live-map-container,
+    .dashboard-body #live-map-container {
+        height: 146px !important;
+        min-height: 146px !important;
+        max-height: 146px !important;
+    }
+}
+
+/* =========================================================
+   V6.5 — Header mobile fixo no Admin + remoção do botão de tema
+   - Apenas mobile do admin: fixa o header no topo durante o scroll.
+   - Garante espaço útil para o conteúdo não ficar escondido por baixo do header.
+   - Esconde qualquer botão de alternar tema que ainda exista noutra interface.
+   ========================================================= */
+.theme-toggle-float,
+#theme-toggle {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+@media (max-width: 820px) {
+    body.dashboard-body {
+        --admin-fixed-header-height: 56px;
+        padding-top: 0 !important;
+    }
+
+    .dashboard-body .main-content {
+        padding-top: calc(var(--admin-fixed-header-height) + 8px) !important;
+    }
+
+    .dashboard-body .main-header {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: var(--admin-fixed-header-height) !important;
+        height: var(--admin-fixed-header-height) !important;
+        margin: 0 !important;
+        padding: 8px 10px !important;
+        grid-template-columns: 40px minmax(0, 1fr) auto !important;
+        gap: 10px !important;
+        border-radius: 0 !important;
+        border-left: 0 !important;
+        border-right: 0 !important;
+        border-top: 0 !important;
+        z-index: 1200 !important;
+        box-sizing: border-box !important;
+    }
+
+    .dashboard-body .notifications-panel {
+        top: calc(var(--admin-fixed-header-height) + 8px) !important;
+    }
+}
+

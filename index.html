@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="pt-mz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Trago Delivery</title>
+    <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/tokens.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="trago-system.css">
+    <link rel="stylesheet" href="admin-mobile-shell.css">
+    <link rel="stylesheet" href="css/support-hub.css">
+    <link rel="stylesheet" href="css/admin-support-v20.css">
+    
+
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="trago-final-fixes.css">
+    <link rel="stylesheet" href="css/feedback.css?v=20260723-r360-1">
+    <link rel="stylesheet" href="css/experience-360.css?v=20260724-driver-choice-1">
+</head>
+<body class="dashboard-body">
+    <!-- Animated Background -->
+    <div class="background"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="assets/logo.svg" alt="Logotipo Trago Delivery" class="dashboard-logo">
+        </div>
+
+        <ul class="sidebar-menu">
+            <li class="nav-section">
+                <span class="nav-section-title">Menu Principal</span>
+                <ul>
+                    <li class="menu-item active" id="nav-visao-geral">
+                        <a href="#">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Visão Geral</span>
+                        </a>
+                    </li>
+
+                    <li class="menu-item has-submenu">
+                        <a href="#">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Nova Entrega</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a href="#" id="nav-form-rapido"><i class="fas fa-bolt"></i> Delivery Rápido</a></li>
+                            <li><a href="#" id="nav-form-doc"><i class="fas fa-file-alt"></i> Tramitação de Documentos</a></li>
+                            <li><a href="#" id="nav-form-farma"><i class="fas fa-pills"></i> Produtos Farmacêuticos</a></li>
+                            <li><a href="#" id="nav-form-carga"><i class="fas fa-truck"></i> Transporte de Cargas</a></li>
+                            <li><a href="#" id="nav-form-restaurante-comida"><i class="fas fa-utensils"></i> Comida de Restaurante</a></li>
+                            <li><a href="#" id="nav-form-mercadoria-cp"><i class="fas fa-boxes-stacked"></i> Mercadoria C/P</a></li>
+                            <li><a href="#" id="nav-form-refeicao-restaurante-p"><i class="fas fa-bowl-food"></i> Refeição Restaurante P</a></li>
+                            <li><a href="#" id="nav-form-outros"><i class="fas fa-ellipsis-h"></i> Outros Serviços</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="menu-item" id="nav-entregas">
+                        <a href="#">
+                            <i class="fas fa-tasks"></i>
+                            <span>Entregas Activas</span>
+                        </a>
+                    </li>
+
+                    <li class="menu-item" id="nav-motoristas">
+                        <a href="#">
+                            <i class="fas fa-motorcycle"></i>
+                            <span>Motoristas</span>
+                        </a>
+                    </li>
+
+                    <li class="menu-item" id="nav-clientes">
+                        <a href="#">
+                            <i class="fas fa-users"></i>
+                            <span>Clientes</span>
+                        </a>
+                    </li>
+
+                    <li class="menu-item" id="nav-custos">
+                        <a href="#">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Custos</span>
+                        </a>
+                    </li>
+
+                    <li class="menu-item" id="nav-cargos">
+                        <a href="#">
+                            <i class="fas fa-id-badge"></i>
+                            <span>Cargos</span>
+                        </a>
+                    </li>
+
+                    <li class="menu-item" id="nav-historico">
+                        <a href="#">
+                            <i class="fas fa-history"></i>
+                            <span>Histórico</span>
+                        </a>
+                    </li>
+
+                    <li class="menu-item" id="nav-mapa">
+                        <a href="#">
+                            <i class="fas fa-map-marked-alt"></i>
+                            <span>Mapa em Tempo Real</span>
+                        </a>
+                    </li>
+
+                    <li class="menu-item" id="nav-support">
+                        <a href="#">
+                            <i class="fas fa-headset"></i>
+                            <span>Suporte Interno</span>
+                            <b class="admin-support-nav-badge" id="admin-support-nav-badge">•</b>
+                        </a>
+                    </li>
+
+                    <li class="menu-item has-submenu" id="nav-portais">
+                        <a href="#">
+                            <i class="fas fa-link"></i>
+                            <span>Portais</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a href="login-cliente.html" target="_blank" rel="noopener"><i class="fas fa-user"></i> Portal Cliente</a></li>
+                            <li><a href="login-restaurante.html" target="_blank" rel="noopener"><i class="fas fa-store"></i> Portal Restaurante</a></li>
+                            <li><a href="login-motorista.html" target="_blank" rel="noopener"><i class="fas fa-motorcycle"></i> Portal Motorista</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="menu-item" id="nav-config">
+                        <a href="#">
+                            <i class="fas fa-cog"></i>
+                            <span>Configurações</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="user-info">
+                    <div class="user-name" id="admin-name">Admin</div>
+                    <div class="user-role">Administrador</div>
+                </div>
+            </div>
+            <div class="menu-item-logout" id="admin-logout">
+                <a href="#">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Sair</span>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="page-header">
+                <button class="btn-mobile-menu" id="mobile-menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="page-title" id="main-title">Visão Geral</h1>
+                <div class="page-breadcrumb">
+                    <a href="#">Dashboard</a>
+                    <span>/</span>
+                    <span id="current-page">Visão Geral</span>
+                </div>
+            </div>
+            <div class="navbar-right">
+                <div class="notifications-shell">
+                    <button class="nav-btn notification-toggle" id="notifications-toggle" title="Notificações do sistema" aria-label="Notificações do sistema" aria-expanded="false">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge hidden" id="notifications-count">0</span>
+                    </button>
+                    <div class="notifications-panel hidden" id="notifications-panel" role="dialog" aria-label="Notificações do sistema">
+                        <div class="notifications-header">
+                            <div>
+                                <strong>Notificações</strong>
+                                <small>Controlo operacional da Trago</small>
+                            </div>
+                            <button type="button" class="btn-link-small" id="mark-all-notifications-read">Marcar todas como lidas</button>
+                        </div>
+                        <div class="notifications-list" id="notifications-list">
+                            <div class="notification-empty">Sem notificações por ler.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="admin-profile">
+                    <span>Olá, <strong id="admin-name-header">Admin</strong></span>
+                    <i class="fas fa-user-circle"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-area">
+
+            <!-- VISÃO GERAL -->
+            <div id="visao-geral" class="content-page">
+                <!-- Stats Cards -->
+                <section class="stats-grid">
+                    <div class="glass-card glass-card-3d stat-card card-warning">
+                        <div class="stat-card-inner">
+                            <div class="stat-info">
+                                <h3><i class="fas fa-clock"></i> Pendentes</h3>
+                                <div class="stat-value" id="stats-pendentes">.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card glass-card-3d stat-card card-info">
+                        <div class="stat-card-inner">
+                            <div class="stat-info">
+                                <h3><i class="fas fa-truck"></i> Em Trânsito</h3>
+                                <div class="stat-value" id="stats-em-transito">.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card glass-card-3d stat-card card-success">
+                        <div class="stat-card-inner">
+                            <div class="stat-info">
+                                <h3><i class="fas fa-check-circle"></i> Concluídas (Hoje)</h3>
+                                <div class="stat-value" id="stats-concluidas-hoje">.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card glass-card-3d stat-card card-success">
+                        <div class="stat-card-inner">
+                            <div class="stat-info">
+                                <h3><i class="fas fa-motorcycle"></i> Motoristas Online</h3>
+                                <div class="stat-value" id="stats-motoristas-online">.</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Financial Stats -->
+                <div class="financial-section-header">
+                    <h2 class="section-title" id="financial-section-title">Financeiro — Este Mês</h2>
+                    <div class="form-group compact-select-group">
+                        <label for="financial-period-select">Período</label>
+                        <select id="financial-period-select" class="form-input">
+                            <option value="day">Hoje</option>
+                            <option value="week">Esta Semana</option>
+                            <option value="month" selected>Este Mês</option>
+                        </select>
+                    </div>
+                </div>
+                <section class="stats-grid">
+                    <div class="glass-card glass-card-3d stat-card card-success">
+                        <div class="stat-card-inner">
+                            <div class="stat-info">
+                                <h3><i class="fas fa-dollar-sign"></i> Receita Total</h3>
+                                <div class="stat-value" id="stats-receita-total">.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card glass-card-3d stat-card card-info">
+                        <div class="stat-card-inner">
+                            <div class="stat-info">
+                                <h3><i class="fas fa-wallet"></i> Lucro da Empresa</h3>
+                                <div class="stat-value" id="stats-lucro-empresa">.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card glass-card-3d stat-card card-warning">
+                        <div class="stat-card-inner">
+                            <div class="stat-info">
+                                <h3><i class="fas fa-motorcycle"></i> Ganhos (Motoristas)</h3>
+                                <div class="stat-value" id="stats-ganhos-motorista">.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card glass-card-3d stat-card">
+                        <div class="stat-card-inner">
+                            <div class="stat-info">
+                                <h3><i class="fas fa-trophy"></i> Top Motorista</h3>
+                                <div class="stat-value stat-value-condensed" id="stats-top-driver">.</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts -->
+                <section class="charts-grid">
+                    <div class="glass-card chart-container" id="main-chart-container">
+                        <div class="chart-header">
+                            <h3>Desempenho dos Serviços</h3>
+                            
+                        </div>
+                        <canvas id="servicesChart"></canvas>
+                    </div>
+                    
+                    <div class="glass-card chart-container" id="deliveries-chart-container">
+                        <h3>Entregas Ativas</h3>
+                        <canvas id="deliveriesStatusChart"></canvas>
+                    </div>
+                    
+                    <div class="glass-card chart-container" id="financialChartContainer">
+                        <h3 id="financial-chart-title">Divisão da Receita — Este Mês</h3>
+                        <canvas id="financialPieChart"></canvas>
+                    </div>
+                </section>
+            </div>
+
+            <!-- NOVA ENTREGA -->
+            <div id="form-nova-entrega" class="content-page hidden">
+                <div class="glass-card">
+                    <form id="delivery-form">
+                        <input type="hidden" id="service-type" name="service_type">
+                        <input type="hidden" id="delivery-client-id" name="clientId">
+                        
+                        <h2 class="section-title">Nova Entrega</h2>
+                        
+                        <div class="form-section">
+                            <h3>Cliente</h3>
+                            <div class="form-group form-group-large">
+                                <label for="delivery-client-select">Cliente Registado (Opcional)</label>
+                                <select id="delivery-client-select" class="form-input">
+                                    <option value="">-- Ou digite manualmente abaixo --</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h3>Dados do Cliente/Destinatário</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="client-name">Nome Completo</label>
+                                    <input type="text" id="client-name" name="client_name" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="client-phone1">Número Principal</label>
+                                    <input type="tel" id="client-phone1" name="client_phone1" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="client-phone2">Número Alternativo</label>
+                                    <input type="tel" id="client-phone2" name="client_phone2" class="form-input">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h3>Detalhes da Encomenda</h3>
+                            <div class="form-row form-row-compact">
+                                <div class="form-group">
+                                    <label for="delivery-price">Preço do Serviço (MZN)</label>
+                                    <input type="number" id="delivery-price" name="service_price" min="0" step="0.01" class="form-input" required placeholder="Ex: 500.00">
+                                    <small>Valor base do serviço/encomenda antes da taxa por distância.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>Taxa por Distância</label>
+                                    <div class="readonly-price" id="delivery-fee-label">0,00 MZN</div>
+                                    <small>200 MZN até 11,6 km + 15 MZN/km extra.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>Total a Cobrar</label>
+                                    <div class="readonly-price total" id="total-price-label">0,00 MZN</div>
+                                    <small id="route-source-label">Seleccione recolha e entrega</small>
+                                </div>
+                            </div>
+                            <input type="hidden" id="final-order-price" name="price" value="0">
+                            <input type="hidden" id="delivery-fee" name="delivery_fee" value="0">
+                            <input type="hidden" id="route-distance-km" name="route_distance_km" value="">
+                            <input type="hidden" id="route-duration-min" name="route_duration_min" value="">
+                            
+                            <div class="form-group">
+                                <label for="payment-method">Método de Pagamento</label>
+                                <select id="payment-method" name="payment_method" class="form-input">
+                                    <option value="cash">Dinheiro</option>
+                                    <option value="mpesa">M-Pesa</option>
+                                    <option value="emola">Emola</option>
+                                    <option value="mkesh">M-Kesh</option>
+                                    <option value="bank_transfer">Transferência Bancária</option>
+                                    <option value="pos">POS</option>
+                                    <option value="postpaid_credit">Cliente Pós-pago / Crédito</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="delivery-image"><i class="fas fa-image"></i> Imagem da Encomenda (Opcional)</label>
+                                <input type="file" id="delivery-image" name="deliveryImage" accept="image/*" class="form-input">
+                                <small>Faça upload de uma foto da encomenda para fácil identificação.</small>
+                                <div id="image-preview" class="image-preview hidden">
+                                    <img src="" alt="Pré-visualização da Imagem" class="preview-img">
+                                    <button type="button" class="remove-image-btn" onclick="removeImage()">×</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h3>Pontos da Entrega</h3>
+                            <div class="form-row form-row-compact">
+                                <div class="form-group form-group-large geo-field">
+                                    <label for="pickup-address">Ponto de Recolha</label>
+                                    <input type="text" id="pickup-address" name="pickup_address_text" class="form-input" placeholder="Ex: Restaurante, loja, armazém ou morada de recolha" autocomplete="off">
+                                    <small>Pesquise e seleccione uma sugestão para obter coordenadas exactas.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="pickup-contact-name">Responsável na Recolha</label>
+                                    <input type="text" id="pickup-contact-name" name="pickup_contact_name" class="form-input" placeholder="Ex: Gerente, caixa, fornecedor">
+                                </div>
+                                <div class="form-group">
+                                    <label for="pickup-contact-phone">Contacto da Recolha</label>
+                                    <input type="tel" id="pickup-contact-phone" name="pickup_contact_phone" class="form-input" placeholder="Ex: 84 000 0000">
+                                </div>
+                                <div class="form-group form-group-large geo-field">
+                                    <label for="delivery-address">Ponto de Entrega</label>
+                                    <input type="text" id="delivery-address" name="address_text" class="form-input" placeholder="Ex: Av. Julius Nyerere, 123, Maputo" autocomplete="off">
+                                    <small>O preço por distância é calculado entre recolha e entrega.</small>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="pickup-notes">Orientações para Recolha</label>
+                                <textarea id="pickup-notes" name="pickup_notes" class="form-input" rows="3" placeholder="Ex: perguntar por Fulano, recolher no balcão, confirmar volumes, referência do pedido..."></textarea>
+                                <small>Estas informações seguem para o painel do motorista.</small>
+                            </div>
+                            <div class="route-summary-card">
+                                <span>Distância estimada</span>
+                                <strong id="route-distance-label">—</strong>
+                            </div>
+                            <label>Pin do Ponto de Entrega no Mapa</label>
+                            <div id="map"></div>
+                            <input type="hidden" id="pickup-lng" name="pickup_lng">
+                            <input type="hidden" id="pickup-lat" name="pickup_lat">
+                            <input type="hidden" id="delivery-lng" name="lng">
+                            <input type="hidden" id="delivery-lat" name="lat">
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="autoAssignCheckbox" name="autoAssign" value="true">
+                                <span>Atribuir automaticamente (motorista mais próximo)</span>
+                            </label>
+                            <small>Requer que um pin seja definido no mapa.</small>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Gerar Pedido
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- GESTÃO DE MOTORISTAS -->
+            <div id="gestao-motoristas" class="content-page hidden">
+                <div class="glass-card table-card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Motoristas Registados</h2>
+                            <p class="card-subtitle">Lista de todos os motoristas da frota</p>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-primary" onclick="showAddDriverForm(true)">
+                                <i class="fas fa-plus"></i> Novo Motorista
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table table-motoristas">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Telefone</th>
+                                    <th>Viatura</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Acções</th>
+                                </tr>
+                            </thead>
+                            <tbody id="drivers-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="glass-card table-card section-spaced">
+                    <div class="card-header vehicle-card-header">
+                        <div>
+                            <h2 class="card-title">Veículos Registados</h2>
+                            <p class="card-subtitle">Controlo de matrículas, estado operacional e associação à frota</p>
+                        </div>
+                        <button type="button" class="btn btn-outline btn-compact-toggle" id="toggle-vehicle-form-motoristas" data-target-form="form-add-veiculo-motoristas" aria-expanded="false">
+                            <i class="fas fa-plus"></i>
+                            <span>Novo Veículo</span>
+                        </button>
+                    </div>
+                    <form id="form-add-veiculo-motoristas" class="nested-form-card inline-vehicle-form is-collapsed" data-collapsible-form="true" hidden>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vehicle-plate-motoristas">Matrícula</label>
+                                <input type="text" id="vehicle-plate-motoristas" class="form-input" required placeholder="Ex: MXX-123-MP">
+                            </div>
+                            <div class="form-group">
+                                <label for="vehicle-type-motoristas">Tipo</label>
+                                <select id="vehicle-type-motoristas" class="form-input">
+                                    <option value="mota">Mota</option>
+                                    <option value="carro">Carro</option>
+                                    <option value="carrinha">Carrinha</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="vehicle-status-motoristas">Estado</label>
+                                <select id="vehicle-status-motoristas" class="form-input">
+                                    <option value="ativo">Activo</option>
+                                    <option value="manutencao">Manutenção</option>
+                                    <option value="inativo">Inactivo</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vehicle-brand-motoristas">Marca</label>
+                                <input type="text" id="vehicle-brand-motoristas" class="form-input" placeholder="Ex: Honda">
+                            </div>
+                            <div class="form-group">
+                                <label for="vehicle-model-motoristas">Modelo</label>
+                                <input type="text" id="vehicle-model-motoristas" class="form-input" placeholder="Ex: CB125">
+                            </div>
+                            <div class="form-group">
+                                <label for="vehicle-notes-motoristas">Notas</label>
+                                <input type="text" id="vehicle-notes-motoristas" class="form-input" placeholder="Seguro, combustível, manutenção...">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Adicionar Veículo</button>
+                    </form>
+                    <div class="table-wrapper scroll-compact section-spaced">
+                        <table class="data-table table-pedidos">
+                            <thead>
+                                <tr>
+                                    <th>Matrícula</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Marca/Modelo</th>
+                                    <th>Acções</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vehicles-table-body-motoristas"><tr><td colspan="5">A carregar...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GESTÃO DE CLIENTES -->
+            <div id="gestao-clientes" class="content-page hidden">
+                <div class="glass-card table-card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Clientes Registados</h2>
+                            <p class="card-subtitle">Lista de todos os clientes</p>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-primary" onclick="showAddClientForm(true)">
+                                <i class="fas fa-plus"></i> Novo Cliente
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table table-motoristas">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Telefone</th>
+                                    <th>Empresa</th>
+                                    <th>Tipo</th>
+                                    <th>Crédito</th>
+                                    <th>Acções</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clients-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CUSTOS -->
+            <div id="custos" class="content-page hidden">
+                <div class="custos-header">
+                    <div>
+                        <h2 class="page-title">Gestão de Custos</h2>
+                        <p class="page-subtitle">Registe despesas da empresa e acompanhe o histórico</p>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="btn-export-costs-excel">
+                        <i class="fas fa-file-excel"></i> Exportar Excel
+                    </button>
+                </div>
+            
+                <section class="stats-grid">
+                    <div class="glass-card stat-card card-danger">
+                        <div class="stat-info">
+                            <h3><i class="fas fa-file-invoice-dollar"></i> Despesas da Empresa</h3>
+                            <div class="stat-value" id="stats-despesas-mes">.</div>
+                        </div>
+                    </div>
+                    <div class="glass-card stat-card card-success">
+                        <div class="stat-info">
+                            <h3><i class="fas fa-chart-line"></i> Saldo (Receita - Despesas)</h3>
+                            <div class="stat-value" id="stats-saldo-mes">.</div>
+                        </div>
+                    </div>
+                </section>
+            
+                <div class="costs-layout">
+                    <!-- Formulário -->
+                    <div class="glass-card costs-form-card">
+                        <h3><i class="fas fa-plus-circle"></i> Registar Custo da Empresa</h3>
+                        <form id="form-add-cost">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cost-category">Categoria</label>
+                                    <select id="cost-category" class="form-input" required>
+                                        <option value="">-- Selecione --</option>
+                                        <option value="manutencao">Manutenção</option>
+                                        <option value="combustivel">Combustível</option>
+                                        <option value="emprestimo">Empréstimo</option>
+                                        <option value="credito">Crédito</option>
+                                        <option value="taxa_trans_levant">Taxa Trans/Levant</option>
+                                        <option value="consumiveis">Consumíveis</option>
+                                        <option value="despesas_aplicativo">Despesas aplicativo</option>
+                                        <option value="diversos">Diversos</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cost-amount">Valor (MZN)</label>
+                                    <input type="number" id="cost-amount" min="0" step="0.01" class="form-input" required placeholder="Ex: 15000.00">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cost-assigned-entity">Atribuir a (opcional)</label>
+                                <select id="cost-assigned-entity" class="form-input">
+                                    <option value="">-- Não atribuir --</option>
+                                </select>
+                                <small>Selecione um funcionário, cliente ou veículo/matrícula para associar este custo.</small>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cost-date">Data</label>
+                                    <input type="date" id="cost-date" class="form-input">
+                                </div>
+                            </div>
+            
+                            <div class="form-group">
+                                <label for="cost-description">Descrição</label>
+                                <input type="text" id="cost-description" class="form-input" placeholder="Ex: combustível, manutenção, taxa de transferência, consumíveis.">
+                            </div>
+            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Custo
+                            </button>
+                        </form>
+                    </div>
+            
+                    <!-- Tabela de últimos custos -->
+                    <div class="glass-card costs-list-card">
+                        <h3><i class="fas fa-list-ul"></i> Últimos Custos Registados</h3>
+                        <div class="table-wrapper scroll-compact">
+                            <table class="data-table table-pedidos">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Categoria</th>
+                                        <th>Atribuído a</th>
+                                        <th>Descrição</th>
+                                        <th>Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="costs-latest-table-body">
+                                    <tr><td colspan="5">Sem registos de custos.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            
+                <div class="charts-grid">
+                    <div class="glass-card chart-container" id="costsByCategoryContainer">
+                        <h3>Despesas por Categoria (Mês Atual)</h3>
+                        <canvas id="costsByCategoryChart"></canvas>
+                    </div>
+            
+                    <div class="glass-card chart-container" id="revenueVsCostsContainer">
+                        <h3>Receita vs Custos (Histórico)</h3>
+                        <canvas id="revenueVsCostsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARGOS -->
+            <div id="cargos" class="content-page hidden">
+                <div class="glass-card">
+                    <h2 class="section-title">Gestão de Cargos & Perfis</h2>
+                    <p class="page-subtitle">Crie novos utilizadores do sistema: motoristas, gestores e clientes.</p>
+                
+                    <div class="form-section section-spaced">
+                        <h3>Funcionários (Motoristas)</h3>
+                        <button class="btn btn-primary" onclick="showAddDriverForm(true)" id="btn-show-driver-form">
+                            <i class="fas fa-plus"></i> Adicionar Novo Motorista
+                        </button>
+                
+                        <form id="form-add-motorista" class="hidden glass-card nested-form-card">
+                            <h3>Dados do Novo Motorista</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="driver-name">Nome Completo</label>
+                                    <input type="text" id="driver-name" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="driver-phone">Telefone</label>
+                                    <input type="tel" id="driver-phone" class="form-input" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="driver-email">Email (para login)</label>
+                                    <input type="email" id="driver-email" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="driver-password">Senha (para o motorista)</label>
+                                    <input type="password" id="driver-password" class="form-input" required minlength="6">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="driver-type">Tipo de Motorista</label>
+                                    <select id="driver-type" class="form-input">
+                                        <option value="freelancer" selected>Freelancer</option>
+                                        <option value="official">Oficial Trago</option>
+                                    </select>
+                                    <small>Motoristas oficiais não têm acesso a comissões.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="driver-vehicle-id">Veículo registado</label>
+                                    <select id="driver-vehicle-id" class="form-input">
+                                        <option value="">-- Sem veículo associado --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="driver-plate">Viatura (Placa manual)</label>
+                                    <input type="text" id="driver-plate" class="form-input" placeholder="Ex: MXX-123-MP">
+                                </div>
+                                <div class="form-group">
+                                    <label for="driver-commission">Comissão (%)</label>
+                                    <input type="number" id="driver-commission" value="20" min="0" max="100" step="1" class="form-input">
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Salvar Motorista</button>
+                                <button type="button" class="btn btn-secondary" onclick="showAddDriverForm(false)">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="form-section section-spaced">
+                        <h3>Veículos</h3>
+                        <form id="form-add-veiculo" class="glass-card nested-form-card">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="vehicle-plate">Matrícula</label>
+                                    <input type="text" id="vehicle-plate" class="form-input" required placeholder="Ex: MXX-123-MP">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vehicle-type">Tipo</label>
+                                    <select id="vehicle-type" class="form-input">
+                                        <option value="mota">Mota</option>
+                                        <option value="carro">Carro</option>
+                                        <option value="carrinha">Carrinha</option>
+                                        <option value="outro">Outro</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="vehicle-status">Estado</label>
+                                    <select id="vehicle-status" class="form-input">
+                                        <option value="ativo">Activo</option>
+                                        <option value="manutencao">Manutenção</option>
+                                        <option value="inativo">Inactivo</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="vehicle-brand">Marca</label>
+                                    <input type="text" id="vehicle-brand" class="form-input" placeholder="Ex: Honda">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vehicle-model">Modelo</label>
+                                    <input type="text" id="vehicle-model" class="form-input" placeholder="Ex: CB125">
+                                </div>
+                                <div class="form-group">
+                                    <label for="vehicle-notes">Notas</label>
+                                    <input type="text" id="vehicle-notes" class="form-input" placeholder="Seguro, combustível, manutenção...">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Adicionar Veículo</button>
+                        </form>
+                        <div class="table-wrapper scroll-compact section-spaced">
+                            <table class="data-table table-pedidos">
+                                <thead>
+                                    <tr>
+                                        <th>Matrícula</th>
+                                        <th>Tipo</th>
+                                        <th>Estado</th>
+                                        <th>Marca/Modelo</th>
+                                        <th>Acções</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vehicles-table-body"><tr><td colspan="5">A carregar...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                
+                    <div class="form-section section-spaced">
+                        <h3>Clientes</h3>
+                        <button class="btn btn-primary" onclick="showAddClientForm(true)" id="btn-show-client-form">
+                            <i class="fas fa-plus"></i> Adicionar Novo Cliente
+                        </button>
+                
+                        <form id="form-add-cliente" class="hidden glass-card nested-form-card">
+                            <h3>Dados do Novo Cliente</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="client-nome">Nome Completo</label>
+                                    <input type="text" id="client-nome" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="client-telefone">Telefone (Obrigatório)</label>
+                                    <input type="tel" id="client-telefone" class="form-input" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="client-empresa">Empresa (Opcional)</label>
+                                    <input type="text" id="client-empresa" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="client-email">Email (Opcional)</label>
+                                    <input type="email" id="client-email" class="form-input">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="client-nuit">NUIT (Opcional)</label>
+                                    <input type="text" id="client-nuit" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="client-endereco">Endereço (Opcional)</label>
+                                    <input type="text" id="client-endereco" class="form-input">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="client-billing-type">Modelo de Pagamento</label>
+                                    <select id="client-billing-type" class="form-input">
+                                        <option value="prepaid">Normal / pagamento por entrega</option>
+                                        <option value="postpaid">Cliente pós-pago</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="client-credit-limit">Crédito Mensal (MZN)</label>
+                                    <input type="number" id="client-credit-limit" class="form-input" min="0" step="0.01" value="0">
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Salvar Cliente</button>
+                                <button type="button" class="btn btn-secondary" onclick="showAddClientForm(false)">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ENTREGAS ATIVAS -->
+            <div id="entregas-activas" class="content-page hidden">
+                <div class="glass-card table-card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Gestão de Encomendas Activas</h2>
+                            <p class="card-subtitle">Acompanhe e atribua encomendas em tempo real</p>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table table-pedidos">
+                            <thead>
+                                <tr>
+                                    <th>ID Pedido</th>
+                                    <th>Cliente</th>
+                                    <th>Telefone</th>
+                                    <th>Estado</th>
+                                    <th>Motorista</th>
+                                    <th>Código</th>
+                                    <th>Acção</th>
+                                </tr>
+                            </thead>
+                            <tbody id="active-orders-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HISTÓRICO -->
+            <div id="historico" class="content-page hidden">
+                <div class="glass-card table-card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Histórico de Encomendas</h2>
+                            <p class="card-subtitle">Todas as encomendas concluídas e arquivadas</p>
+                        </div>
+                    </div>
+                    
+                    <div class="history-toolbar">
+                        <div class="search-container history-search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="history-search-input" class="form-input" placeholder="Pesquisar no histórico (ID, Cliente, Motorista...)">
+                        </div>
+                        <div class="form-group compact-select-group history-period-group">
+                            <label for="history-period-select">Período</label>
+                            <select id="history-period-select" class="form-input">
+                                <option value="day">Hoje</option>
+                                <option value="week">Esta Semana</option>
+                                <option value="month" selected>Este Mês</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <table class="data-table table-pedidos">
+                            <thead>
+                                <tr>
+                                    <th>ID Pedido</th>
+                                    <th>Cliente</th>
+                                    <th>Natureza do Pedido</th>
+                                    <th>Motorista</th>
+                                    <th>Pagamento</th>
+                                    <th>Duração</th>
+                                    <th>Código</th>
+                                    <th>Acções</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-orders-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MAPA TEMPO REAL -->
+            <div id="mapa-tempo-real" class="content-page hidden">
+                <div class="live-map-dashboard-shell">
+                    <div class="live-map-toolbar glass-card">
+                        <div class="live-map-heading">
+                            <span class="live-map-kicker"><i class="fas fa-satellite-dish"></i> Live</span>
+                            <h2>Mapa Live</h2>
+                            <small id="live-map-last-updated">A aguardar GPS...</small>
+                        </div>
+                        <div class="live-map-actions" aria-label="Acções rápidas do mapa">
+                            <button type="button" class="live-map-action" id="btn-live-map-refresh"><i class="fas fa-rotate"></i><span>Sync</span></button>
+                            <button type="button" class="live-map-action" id="btn-live-map-fit"><i class="fas fa-expand"></i><span>Todos</span></button>
+                            <button type="button" class="live-map-action" id="btn-live-map-maputo"><i class="fas fa-location-crosshairs"></i><span>Maputo</span></button>
+                            <button type="button" class="live-map-action live-map-action-toggle" id="btn-live-map-follow" aria-pressed="false"><i class="fas fa-crosshairs"></i><span>Seguir</span></button>
+                        </div>
+                    </div>
+
+                    <div class="live-map-stats glass-card" aria-label="Resumo do mapa em tempo real">
+                        <button type="button" class="live-map-stat active" data-driver-filter="all">
+                            <strong id="live-map-count-all">0</strong>
+                            <span>Todos</span>
+                        </button>
+                        <button type="button" class="live-map-stat" data-driver-filter="free">
+                            <strong id="live-map-count-free">0</strong>
+                            <span>Livre</span>
+                        </button>
+                        <button type="button" class="live-map-stat" data-driver-filter="busy">
+                            <strong id="live-map-count-busy">0</strong>
+                            <span>Ocup.</span>
+                        </button>
+                        <button type="button" class="live-map-stat" data-driver-filter="offline">
+                            <strong id="live-map-count-offline">0</strong>
+                            <span>Inact.</span>
+                        </button>
+                    </div>
+
+                    <div class="live-map-layout">
+                        <div class="glass-card map-card-shell live-map-card-enhanced">
+                            <div id="live-map-container"></div>
+                            <div class="live-map-corner-panel" id="live-map-corner-panel">
+                                <span class="pulse-dot"></span>
+                                <span id="live-map-sync-state">Live activo</span>
+                            </div>
+                            <div class="live-map-floating-controls" aria-label="Ferramentas rápidas do mapa">
+                                <button type="button" id="btn-live-map-trails" class="live-map-float-btn" aria-pressed="true" title="Mostrar ou ocultar trilhos"><i class="fas fa-route"></i><span>Trilhos</span></button>
+                                <button type="button" id="btn-live-map-panel" class="live-map-float-btn" aria-pressed="true" title="Mostrar ou ocultar lista"><i class="fas fa-list"></i><span>Lista</span></button>
+                                <button type="button" id="btn-live-map-density" class="live-map-float-btn" aria-pressed="false" title="Alternar mapa compacto"><i class="fas fa-compress-alt"></i><span>Mini</span></button>
+                            </div>
+                            <div class="live-map-focus-card" id="live-map-focus-card">
+                                <i class="fas fa-hand-pointer"></i>
+                                <span>Toque num motorista para seguir, ver estado e última posição.</span>
+                            </div>
+                        </div>
+                        <aside class="glass-card live-drivers-panel" aria-label="Motoristas rastreados">
+                            <div class="live-drivers-panel-header">
+                                <div>
+                                    <strong>Equipa</strong>
+                                    <small id="live-drivers-panel-copy">Toque para focar.</small>
+                                </div>
+                                <span id="live-map-visible-count">0</span>
+                            </div>
+                            <div id="live-drivers-list" class="live-drivers-list">
+                                <div class="live-driver-empty"><i class="fas fa-location-dot"></i><span>Nenhuma localização activa.</span></div>
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUPORTE INTERNO -->
+            <div id="support-center" class="content-page hidden admin-support-page">
+                <section class="admin-support-hero">
+                    <div><span><i class="fas fa-headset"></i></span><div><small>CENTRO DE COMUNICAÇÃO TRAGO</small><h2>Suporte interno</h2><p>Uma única caixa de entrada para clientes, motoristas e restaurantes.</p></div></div>
+                    <nav aria-label="Portais interligados"><a href="cliente.html" target="_blank" rel="noopener"><i class="fas fa-user"></i> Cliente</a><a href="painel-de-entrega.html" target="_blank" rel="noopener"><i class="fas fa-motorcycle"></i> Motorista</a><a href="restaurante.html" target="_blank" rel="noopener"><i class="fas fa-utensils"></i> Restaurante</a></nav>
+                </section>
+                <div class="admin-support-metrics"><article><span class="role-client"><i class="fas fa-user"></i></span><div><small>CLIENTES</small><strong>Atendimento directo</strong></div></article><article><span class="role-driver"><i class="fas fa-motorcycle"></i></span><div><small>MOTORISTAS</small><strong>Apoio operacional</strong></div></article><article><span class="role-restaurant"><i class="fas fa-utensils"></i></span><div><small>RESTAURANTES</small><strong>Pedidos e cozinha</strong></div></article><article><span class="role-admin"><i class="fas fa-shield-halved"></i></span><div><small>ADMIN</small><strong>Gestão central</strong></div></article></div>
+                <div class="trago-support-hub admin-support-hub" data-support-hub data-support-role="admin">
+                    <div class="support-hub-top"><div><h2>Caixa de entrada operacional</h2><p>Responda, priorize e encerre conversas de todos os perfis.</p></div><button type="button" class="support-refresh admin-support-refresh" data-support-refresh><i class="fas fa-rotate"></i> Actualizar</button></div>
+                    <div class="support-notice" data-support-notice hidden></div>
+                    <div class="support-workspace"><aside class="support-sidebar"><div class="support-sidebar-head"><strong>Conversas <b data-support-count>0</b></strong><select data-support-filter aria-label="Filtrar por estado"><option value="">Todas</option><option value="open">Abertas</option><option value="pending">Em atendimento</option><option value="resolved">Resolvidas</option><option value="closed">Fechadas</option></select><button type="button" class="support-refresh" data-support-refresh aria-label="Actualizar"><i class="fas fa-rotate"></i></button></div><div class="support-thread-list" data-support-list></div></aside><div class="support-conversation-area"><div class="support-conversation-empty" data-support-conversation-empty><i class="far fa-comments"></i><h3>Seleccione um atendimento</h3><p>O histórico completo e os dados do solicitante aparecem aqui.</p></div><div class="support-conversation" data-support-conversation hidden><header class="support-conversation-head"><div><h3 data-support-subject>Conversa</h3><p data-support-meta></p><p class="support-requester" data-support-requester></p></div><div class="support-toolbar"><label>Prioridade<select data-support-priority><option value="low">Baixa</option><option value="normal">Normal</option><option value="high">Alta</option><option value="urgent">Urgente</option></select></label><label>Estado<select data-support-status><option value="open">Aberto</option><option value="pending">Em atendimento</option><option value="resolved">Resolvido</option><option value="closed">Fechado</option></select></label></div></header><div class="support-message-stream" data-support-messages></div><form class="support-reply" data-support-reply-form><textarea data-support-reply maxlength="2000" required placeholder="Responder como Administração TraGo…"></textarea><button type="submit" aria-label="Enviar"><i class="fas fa-paper-plane"></i></button></form></div></div></div>
+                </div>
+            </div>
+
+            <!-- CONFIGURAÇÕES -->
+            <div id="configuracoes" class="content-page hidden">
+                <div class="glass-card">
+                    <h2 class="section-title">Segurança da Conta</h2>
+                    
+                    <form id="form-change-password">
+                        <p>Altere a sua senha de administrador. Você será desconectado após a alteração.</p>
+                        
+                        <div class="form-group">
+                            <label for="admin-pass-antiga">Senha Antiga</label>
+                            <input type="password" id="admin-pass-antiga" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="admin-pass-nova">Nova Senha (mín. 6 caracteres)</label>
+                                <input type="password" id="admin-pass-nova" class="form-input" required minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="admin-pass-confirmar">Confirmar Nova Senha</label>
+                                <input type="password" id="admin-pass-confirmar" class="form-input" required minlength="6">
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-key"></i> Atualizar Senha
+                        </button>
+                    </form>
+                    
+                    <div class="form-section section-spaced-lg">
+                        <h3 class="danger-title">Zona de Perigo</h3>
+                        <div id="zona-de-perigo">
+                            <p>Ações administrativas perigosas. Estas ações são irreversíveis.</p>
+                            
+                            <div class="danger-menu-row">
+                                <div class="actions-menu">
+                                    <button type="button" class="action-menu-toggle" aria-label="Mais opções"><i class="fas fa-ellipsis-v"></i></button>
+                                    <div class="action-menu-panel" role="menu">
+                                        <button type="button" class="action-menu-item danger" id="btn-delete-old-history" role="menuitem">
+                                            <i class="fas fa-trash"></i><span>Eliminar histórico antigo</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="inline-note">Apaga todas as encomendas concluídas com mais de 30 dias.</small>
+                            
+                            <button class="btn btn-danger section-spaced" disabled>
+                                <i class="fas fa-users-slash"></i> Apagar Clientes Inativos (brevemente)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAIS -->
+        <div id="assign-modal" class="modal-backdrop hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Atribuir Encomenda <span id="modal-order-id"></span></h3>
+                    <button class="modal-close-btn" onclick="closeAssignModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p>Selecione um motorista disponível:</p>
+                    <select id="driver-select-dropdown" class="form-input">
+                        <option value="">A carregar...</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-primary" id="btn-confirm-assign">Confirmar</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAssignModal()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="edit-driver-modal" class="modal-backdrop hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Editar Motorista</h3>
+                    <button class="modal-close-btn" onclick="closeEditDriverModal()">×</button>
+                </div>
+                <form id="form-edit-motorista">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-driver-id">
+                        
+                        <div class="form-group">
+                            <label for="edit-driver-name">Nome Completo</label>
+                            <input type="text" id="edit-driver-name" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit-driver-phone">Telefone</label>
+                            <input type="tel" id="edit-driver-phone" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-driver-type">Tipo de Motorista</label>
+                                <select id="edit-driver-type" class="form-input">
+                                    <option value="freelancer">Freelancer</option>
+                                    <option value="official">Oficial Trago</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-driver-vehicle-id">Veículo registado</label>
+                                <select id="edit-driver-vehicle-id" class="form-input">
+                                    <option value="">-- Sem veículo associado --</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit-driver-plate">Viatura (Placa manual)</label>
+                            <input type="text" id="edit-driver-plate" class="form-input">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-driver-commission">Comissão (%)</label>
+                                <input type="number" id="edit-driver-commission" value="20" min="0" max="100" step="1" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-driver-status">Estado</label>
+                                <select id="edit-driver-status" class="form-input" required>
+                                    <option value="online_livre">Online (Livre)</option>
+                                    <option value="online_ocupado">Online (Ocupado)</option>
+                                    <option value="offline">Offline</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeEditDriverModal()">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div id="history-detail-modal" class="modal-backdrop hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Detalhes da Encomenda <span id="history-modal-id"></span></h3>
+                    <button class="modal-close-btn" onclick="closeHistoryDetailModal()">×</button>
+                </div>
+                <div class="modal-body" id="history-modal-body">
+                    <p>A carregar detalhes...</p>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeHistoryDetailModal()">Fechar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="custom-alert-modal" class="modal-backdrop hidden">
+            <div class="modal-content modal-alert">
+                <div class="modal-header">
+                    <h3 id="custom-alert-title"></h3>
+                    <button class="modal-close-btn" onclick="closeCustomAlert()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p id="custom-alert-message"></p>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-primary" onclick="closeCustomAlert()">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="driver-report-modal" class="modal-backdrop hidden">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3 id="driver-report-title">Relatório do Motorista</h3>
+                    <button class="modal-close-btn" onclick="closeDriverReportModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="report-summary">
+                        <div class="summary-card">
+                            <span>Total de Entregas</span>
+                            <strong id="report-total-entregas">...</strong>
+                        </div>
+                        <div class="summary-card">
+                            <span>Tempo Total em Rota</span>
+                            <strong id="report-total-duracao">...</strong>
+                        </div>
+                    </div>
+                    <h4>Histórico de Entregas Concluídas</h4>
+                    <div class="table-wrapper scroll-medium">
+                        <table class="data-table table-pedidos">
+                            <thead>
+                                <tr>
+                                    <th>ID Pedido</th>
+                                    <th>Cliente</th>
+                                    <th>Natureza</th>
+                                    <th>Concluído Em</th>
+                                    <th>Duração</th>
+                                </tr>
+                            </thead>
+                            <tbody id="driver-report-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeDriverReportModal()">Fechar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="edit-client-modal" class="modal-backdrop hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Editar Cliente</h3>
+                    <button class="modal-close-btn" onclick="closeEditClientModal()">×</button>
+                </div>
+                <form id="form-edit-cliente">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-client-id">
+                        
+                        <div class="form-group">
+                            <label for="edit-client-nome">Nome Completo</label>
+                            <input type="text" id="edit-client-nome" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit-client-telefone">Telefone</label>
+                            <input type="tel" id="edit-client-telefone" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-client-empresa">Empresa</label>
+                                <input type="text" id="edit-client-empresa" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-client-email">Email</label>
+                                <input type="email" id="edit-client-email" class="form-input">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-client-nuit">NUIT</label>
+                                <input type="text" id="edit-client-nuit" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-client-endereco">Endereço</label>
+                                <input type="text" id="edit-client-endereco" class="form-input">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-client-billing-type">Modelo de Pagamento</label>
+                                <select id="edit-client-billing-type" class="form-input">
+                                    <option value="prepaid">Normal / pagamento por entrega</option>
+                                    <option value="postpaid">Cliente pós-pago</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-client-credit-limit">Crédito Mensal (MZN)</label>
+                                <input type="number" id="edit-client-credit-limit" class="form-input" min="0" step="0.01" value="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeEditClientModal()">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="statement-modal" class="modal-backdrop hidden">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3 id="statement-client-name">Extrato do Cliente</h3>
+                    <button class="modal-close-btn" onclick="closeStatementModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="statement-client-id">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="statement-start-date">De:</label>
+                            <input type="date" id="statement-start-date" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="statement-end-date">Até:</label>
+                            <input type="date" id="statement-end-date" class="form-input">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group inline-actions">
+                        <button type="button" class="btn btn-secondary btn-set-date" data-range="this_week">Esta Semana</button>
+                        <button type="button" class="btn btn-secondary btn-set-date" data-range="this_month">Este Mês</button>
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary" id="btn-generate-statement">
+                        <i class="fas fa-search"></i> Gerar Extrato
+                    </button>
+                    
+                    <div id="statement-results" class="hidden statement-results">
+                        <hr>
+                        <div class="report-summary">
+                            <div class="summary-card">
+                                <span>Total Gasto (MZN)</span>
+                                <strong id="statement-total-value">...</strong>
+                            </div>
+                            <div class="summary-card">
+                                <span>Total de Pedidos</span>
+                                <strong id="statement-total-orders">...</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="statement-toolbar">
+                            <h4 id="statement-date-range">Pedidos Concluídos</h4>
+                            <button type="button" class="btn btn-primary" id="btn-download-pdf">
+                                <i class="fas fa-file-pdf"></i> Baixar PDF
+                            </button>
+                        </div>
+                        
+                        <div class="table-wrapper">
+                            <table class="data-table table-pedidos">
+                                <thead>
+                                    <tr>
+                                        <th>Data Conclusão</th>
+                                        <th>ID Pedido</th>
+                                        <th>Natureza</th>
+                                        <th>Valor (MZN)</th>
+                                        <th>Pagamento</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="statement-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeStatementModal()">Fechar</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="confirmation-modal" class="modal-backdrop hidden">
+            <div class="modal-content modal-alert">
+                <div class="modal-header error">
+                    <h3 id="confirmation-title">Confirmar Ação</h3>
+                    <button class="modal-close-btn" id="btn-close-confirmation-modal">×</button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmation-message" class="confirmation-message">Tem a certeza? Esta ação não pode ser revertida.</p>
+                    <div class="form-group">
+                        <label for="confirmation-input" id="confirmation-input-label">Para confirmar, digite a palavra:</label>
+                        <input type="text" id="confirmation-input" class="form-input confirmation-input">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger" id="btn-confirm-action" disabled>Confirmar e Apagar</button>
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-confirmation-modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+
+
+    <!-- ADMIN MOBILE SHELL -->
+    <nav class="admin-bottom-nav" id="admin-bottom-nav" aria-label="Navegação rápida do administrador">
+        <button type="button" class="admin-bottom-item active" data-mobile-nav="nav-visao-geral" aria-label="Visão Geral">
+            <i class="fas fa-chart-line"></i>
+            <span>Visão</span>
+        </button>
+        <button type="button" class="admin-bottom-item" data-mobile-nav="nav-entregas" aria-label="Entregas activas">
+            <i class="fas fa-route"></i>
+            <span>Entregas</span>
+        </button>
+        <button type="button" class="admin-bottom-item admin-bottom-primary" data-mobile-role="new" id="admin-mobile-new-toggle" aria-label="Nova entrega">
+            <i class="fas fa-plus"></i>
+            <span>Novo</span>
+        </button>
+        <button type="button" class="admin-bottom-item" data-mobile-nav="nav-motoristas" aria-label="Motoristas">
+            <i class="fas fa-motorcycle"></i>
+            <span>Equipa</span>
+        </button>
+        <button type="button" class="admin-bottom-item" data-mobile-role="more" id="admin-mobile-more-toggle" aria-label="Mais opções">
+            <i class="fas fa-ellipsis-h"></i>
+            <span>Mais</span>
+        </button>
+    </nav>
+
+    <div class="admin-mobile-sheet hidden" id="admin-mobile-new-sheet" aria-hidden="true">
+        <button type="button" class="admin-sheet-backdrop" data-mobile-sheet-close="new" aria-label="Fechar"></button>
+        <section class="admin-sheet-panel" role="dialog" aria-modal="true" aria-label="Criar nova entrega">
+            <div class="admin-sheet-handle"></div>
+            <div class="admin-sheet-header">
+                <div>
+                    <strong>Nova entrega</strong>
+                    <small>Escolha o tipo de serviço</small>
+                </div>
+                <button type="button" class="admin-sheet-close" data-mobile-sheet-close="new" aria-label="Fechar">×</button>
+            </div>
+            <div class="admin-sheet-grid admin-sheet-grid-services">
+                <button type="button" data-mobile-service="rapido"><i class="fas fa-bolt"></i><span>Delivery rápido</span></button>
+                <button type="button" data-mobile-service="doc"><i class="fas fa-file-alt"></i><span>Documentos</span></button>
+                <button type="button" data-mobile-service="farma"><i class="fas fa-pills"></i><span>Farmácia</span></button>
+                <button type="button" data-mobile-service="carga"><i class="fas fa-truck"></i><span>Cargas</span></button>
+                <button type="button" data-mobile-service="restaurante_comida"><i class="fas fa-utensils"></i><span>Restaurante</span></button>
+                <button type="button" data-mobile-service="mercadoria_cp"><i class="fas fa-boxes-stacked"></i><span>Mercadoria C/P</span></button>
+                <button type="button" data-mobile-service="refeicao_restaurante_p"><i class="fas fa-bowl-food"></i><span>Refeição P</span></button>
+                <button type="button" data-mobile-service="outros"><i class="fas fa-ellipsis-h"></i><span>Outros</span></button>
+            </div>
+        </section>
+    </div>
+
+    <div class="admin-mobile-sheet hidden" id="admin-mobile-more-sheet" aria-hidden="true">
+        <button type="button" class="admin-sheet-backdrop" data-mobile-sheet-close="more" aria-label="Fechar"></button>
+        <section class="admin-sheet-panel" role="dialog" aria-modal="true" aria-label="Mais opções do administrador">
+            <div class="admin-sheet-handle"></div>
+            <div class="admin-sheet-header">
+                <div>
+                    <strong>Mais opções</strong>
+                    <small>Gestão e relatórios</small>
+                </div>
+                <button type="button" class="admin-sheet-close" data-mobile-sheet-close="more" aria-label="Fechar">×</button>
+            </div>
+            <div class="admin-sheet-grid">
+                <button type="button" data-mobile-nav="nav-clientes"><i class="fas fa-users"></i><span>Clientes</span></button>
+                <button type="button" data-mobile-nav="nav-custos"><i class="fas fa-money-bill-wave"></i><span>Custos</span></button>
+                <button type="button" data-mobile-nav="nav-cargos"><i class="fas fa-id-badge"></i><span>Cargos</span></button>
+                <button type="button" data-mobile-nav="nav-historico"><i class="fas fa-history"></i><span>Histórico</span></button>
+                <button type="button" data-mobile-nav="nav-mapa"><i class="fas fa-map-marked-alt"></i><span>Mapa</span></button>
+                <button type="button" data-mobile-nav="nav-support"><i class="fas fa-headset"></i><span>Suporte</span></button>
+                <button type="button" onclick="window.open('login-cliente.html','_blank','noopener')"><i class="fas fa-user"></i><span>Cliente</span></button>
+                <button type="button" onclick="window.open('login-restaurante.html','_blank','noopener')"><i class="fas fa-store"></i><span>Rest.</span></button>
+                <button type="button" onclick="window.open('login-motorista.html','_blank','noopener')"><i class="fas fa-motorcycle"></i><span>Motorista</span></button>
+                <button type="button" data-mobile-nav="nav-config"><i class="fas fa-cog"></i><span>Config.</span></button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Scripts -->
+    <script src="templatemo-glass-admin-script.js"></script>
+    <script src="js/common/supabaseConfig.js"></script>
+    <script src="js/common/api.js"></script>
+    <script src="js/common/http.js"></script>
+    <script src="js/common/sw-register.js"></script>
+    <script src="js/common/feedback.js?v=20260723-r360-1"></script>
+    <script src="js/common/auth.js?v=20260724-driver-choice-1"></script>
+    <script src="js/common/ui.js?v=20260723-r360-3"></script>
+    <script src="js/common/supabaseRealtime.js?v=20260723-r360-4"></script>
+    <script src="js/common/support.js?v=r360-3"></script>
+    <script src="js/common/geoPricing.js"></script>
+    <script src="js/admin/adminCharts.js?v=20260723-r360-4"></script>
+    <script src="js/admin/adminMap.js?v=20260724-driver-choice-1"></script>
+    <script src="js/admin/adminApi.js?v=20260724-driver-choice-1"></script>
+    <script src="js/admin/adminModals.js?v=20260724-driver-choice-1"></script>
+    <script src="js/admin/admin.js?v=20260724-driver-choice-1"></script>
+    
+
+    
+</body>
+</html>

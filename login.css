@@ -1,0 +1,313 @@
+/* ============================================
+   Trago Delivery - Login Styles
+   Based on TemplateMo Glass Admin
+   VERSÃO FINAL - CONSISTÊNCIA TOTAL
+============================================ */
+
+/* ============================================
+   LOGIN PAGE
+============================================ */
+.login-body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: var(--bg-dark);
+}
+
+.motorista-body {
+    /* Specific styles for driver login if needed */
+}
+
+/* ============================================
+   LOGIN CONTAINER
+============================================ */
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* ============================================
+   LOGIN CARD
+============================================ */
+.login-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px var(--glass-shadow);
+}
+
+.login-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+}
+
+/* ============================================
+   LOGIN HEADER
+============================================ */
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-logo {
+    max-width: 150px;
+    height: auto;
+    margin: 0 auto 1.5rem;
+}
+
+.login-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.login-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* ============================================
+   LOGIN FORM
+============================================ */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--emerald-light);
+    box-shadow: 0 0 20px rgba(167, 216, 107, 0.2);
+}
+
+/* ============================================
+   LOGIN BUTTON
+============================================ */
+.btn-login {
+    width: 100%;
+    background: linear-gradient(135deg, var(--emerald), var(--emerald-light));
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: 0 4px 12px rgba(141, 197, 67, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 0.5rem;
+}
+
+.btn-login:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(141, 197, 67, 0.4);
+}
+
+.btn-login:active {
+    transform: translateY(0);
+}
+
+/* ============================================
+   FORM ROW (Remember me)
+============================================ */
+.form-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--emerald);
+}
+
+/* ============================================
+   DIVIDER
+============================================ */
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 1.5rem 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--glass-border);
+}
+
+.divider span {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* ============================================
+   LOGIN FOOTER
+============================================ */
+.login-footer {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 1rem;
+}
+
+.login-footer a {
+    color: var(--emerald-light);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.login-footer a:hover {
+    color: var(--gold);
+}
+
+/* ============================================
+   FLOATING THEME TOGGLE
+============================================ */
+.theme-toggle-float {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100;
+    transition: all var(--transition-fast);
+}
+
+.theme-toggle-float:hover {
+    background: var(--glass-hover);
+    border-color: var(--emerald-light);
+}
+
+.theme-toggle-float svg {
+    width: 18px;
+    height: 18px;
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   SITE FOOTER
+============================================ */
+.site-footer {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-top: 1rem;
+}
+
+/* ============================================
+   ANIMATIONS
+============================================ */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   RESPONSIVE
+============================================ */
+@media (max-width: 768px) {
+    .login-card {
+        padding: 1.5rem;
+    }
+    
+    .login-logo {
+        max-width: 120px;
+    }
+    
+    .login-title {
+        font-size: 1.3rem;
+    }
+    
+    .theme-toggle-float {
+        top: 16px;
+        right: 16px;
+        width: 36px;
+        height: 36px;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-card {
+        padding: 1.25rem;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .btn-login {
+        padding: 10px 20px;
+    }
+}

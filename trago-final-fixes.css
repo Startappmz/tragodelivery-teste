@@ -1,0 +1,269 @@
+/* =========================================================
+   TRAGO DELIVERY · FIXES FINAIS VALIDADOS
+   - Cantos rectos sem mexer na lógica do mapa
+   - Modais centralizados no mobile
+   - Mapa em tempo real mais utilizável no mobile
+   - Menus de 3 pontos para acções perigosas
+   ========================================================= */
+
+:root {
+  --border-radius: 0 !important;
+  --border-radius-sm: 0 !important;
+  --radius-card: 0 !important;
+  --radius-control: 0 !important;
+  --radius-pill: 0 !important;
+  --admin-ultra-radius: 0 !important;
+}
+
+html body,
+html body *:not(svg):not(path):not(circle):not(polyline):not(line):not(polygon),
+html body *::before,
+html body *::after {
+  border-radius: 0 !important;
+}
+
+/* Mantém SVGs e ícones estáveis; apenas o contentor visual fica recto. */
+svg, svg * {
+  border-radius: initial;
+}
+
+/* Modais: centro real em desktop e mobile, sem sheet colado ao fundo. */
+.modal-backdrop:not(.hidden),
+.dashboard-body .modal-backdrop:not(.hidden),
+.login-body .modal-backdrop:not(.hidden),
+.motorista-body .modal-backdrop:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 14px !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 100vw !important;
+  min-height: 100dvh !important;
+  z-index: 3000 !important;
+}
+
+.modal-backdrop.hidden,
+.dashboard-body .modal-backdrop.hidden,
+.login-body .modal-backdrop.hidden,
+.motorista-body .modal-backdrop.hidden {
+  display: none !important;
+}
+
+.modal-content,
+.dashboard-body .modal-content,
+.login-body .modal-content,
+.motorista-body .modal-content {
+  width: min(560px, calc(100vw - 28px)) !important;
+  max-width: calc(100vw - 28px) !important;
+  max-height: calc(100dvh - 28px) !important;
+  overflow: auto !important;
+  margin: auto !important;
+  transform: none !important;
+}
+
+.modal-backdrop:not(.hidden) .modal-content {
+  opacity: 1 !important;
+}
+
+/* Login: link/botão de recuperação sem alterar o fluxo de entrada. */
+.login-secondary-action {
+  width: 100%;
+  margin-top: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reset-password-hint {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  opacity: 0.86;
+}
+
+/* Mapa real-time: mais alto no mobile, sem overlays a bloquear o Leaflet. */
+#mapa-tempo-real .live-map-card-enhanced,
+#mapa-tempo-real .map-card-shell {
+  position: relative !important;
+}
+
+#mapa-tempo-real #live-map-container,
+#mapa-tempo-real .leaflet-container,
+#mapa-tempo-real .leaflet-pane,
+#mapa-tempo-real .leaflet-control-container,
+#mapa-tempo-real .leaflet-interactive {
+  pointer-events: auto !important;
+}
+
+#mapa-tempo-real #live-map-container {
+  touch-action: pan-x pan-y !important;
+}
+
+#mapa-tempo-real .live-map-corner-panel,
+#mapa-tempo-real .live-map-floating-controls,
+#mapa-tempo-real .live-map-focus-card {
+  pointer-events: auto !important;
+}
+
+@media (max-width: 820px) {
+  #mapa-tempo-real .live-map-layout {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  #mapa-tempo-real .live-map-card-enhanced,
+  .dashboard-body #mapa-tempo-real .live-map-card-enhanced {
+    min-height: 320px !important;
+    height: auto !important;
+    overflow: hidden !important;
+  }
+
+  #mapa-tempo-real .live-map-card-enhanced #live-map-container,
+  #mapa-tempo-real #live-map-container,
+  .dashboard-body #mapa-tempo-real .live-map-card-enhanced #live-map-container,
+  .dashboard-body #mapa-tempo-real #live-map-container {
+    height: clamp(310px, 48dvh, 390px) !important;
+    min-height: 310px !important;
+    max-height: 390px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+  }
+
+  #mapa-tempo-real.live-map-mini-mode .live-map-card-enhanced #live-map-container,
+  #mapa-tempo-real.live-map-mini-mode #live-map-container,
+  .dashboard-body #mapa-tempo-real.live-map-mini-mode .live-map-card-enhanced #live-map-container,
+  .dashboard-body #mapa-tempo-real.live-map-mini-mode #live-map-container {
+    height: clamp(230px, 35dvh, 300px) !important;
+    min-height: 230px !important;
+    max-height: 300px !important;
+  }
+
+  #mapa-tempo-real .live-drivers-panel,
+  .dashboard-body #mapa-tempo-real .live-drivers-panel {
+    min-height: 118px !important;
+    max-height: 210px !important;
+    overflow: hidden !important;
+  }
+
+  #mapa-tempo-real .live-drivers-list {
+    overflow: auto !important;
+    max-height: 154px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  #mapa-tempo-real .live-map-card-enhanced #live-map-container,
+  #mapa-tempo-real #live-map-container,
+  .dashboard-body #mapa-tempo-real .live-map-card-enhanced #live-map-container,
+  .dashboard-body #mapa-tempo-real #live-map-container {
+    height: clamp(290px, 46dvh, 360px) !important;
+    min-height: 290px !important;
+    max-height: 360px !important;
+  }
+}
+
+/* Acções perigosas atrás dos 3 pontos. Sem listeners globais para não quebrar mapa/botões. */
+.actions-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+.action-menu-toggle {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border, rgba(15, 23, 42, 0.12));
+  background: var(--surface, rgba(255, 255, 255, 0.92));
+  color: var(--text-primary, #172033);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.action-menu-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 2500;
+  min-width: 150px;
+  display: none;
+  padding: 6px;
+  border: 1px solid var(--border, rgba(15, 23, 42, 0.12));
+  background: var(--surface, #ffffff);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
+}
+
+.actions-menu:focus-within .action-menu-panel,
+.actions-menu:hover .action-menu-panel {
+  display: grid;
+  gap: 4px;
+}
+
+.action-menu-item {
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary, #172033);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.action-menu-item:hover,
+.action-menu-item:focus {
+  background: rgba(15, 23, 42, 0.06);
+  outline: none;
+}
+
+.action-menu-item.danger {
+  color: #b91c1c;
+}
+
+.table-actions,
+.danger-menu-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+
+/* Restauração de password por email: fluxo em 2 passos. */
+.password-reset-modal-content {
+  max-width: 430px !important;
+}
+
+.reset-confirm-section.hidden,
+.reset-request-actions.hidden {
+  display: none !important;
+}
+
+.reset-confirm-section {
+  display: grid;
+  gap: 12px;
+}
+
+#reset-email[readonly] {
+  opacity: 0.82;
+  cursor: not-allowed;
+}

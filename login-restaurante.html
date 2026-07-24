@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-mz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TraGo — Acesso do Restaurante</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="global.css">
+  <link rel="stylesheet" href="login.css">
+  <link rel="stylesheet" href="trago-system.css">
+  <link rel="stylesheet" href="customer-restaurant.css">
+  <link rel="stylesheet" href="css/access-v20.css?v=20260723-r360-2">
+  <link rel="stylesheet" href="css/feedback.css?v=20260723-r360-1">
+</head>
+<body class="login-body portal-body v20-access-app v20-restaurant-access">
+  <div class="background"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="login-card portal-login">
+    <div class="login-header">
+      <img src="assets/logo.svg" alt="Trago Delivery" class="login-logo">
+      <h1 class="login-title">Portal do Restaurante</h1>
+      <p class="login-subtitle">Publique comidas, organize categorias e acompanhe pedidos.</p>
+    </div>
+
+    <div class="login-mode-switch">
+      <button type="button" class="active" data-mode="login">Entrar</button>
+      <button type="button" data-mode="register">Registar</button>
+    </div>
+
+    <form id="restaurant-login-form" class="form-stack">
+      <div class="portal-field register-only hidden">
+        <label for="restaurant-name">Nome do restaurante</label>
+        <input type="text" id="restaurant-name" placeholder="Ex: KFC Maputo">
+      </div>
+      <div class="portal-field">
+        <label for="restaurant-email">Email</label>
+        <input type="email" id="restaurant-email" placeholder="restaurante@email.com" required>
+      </div>
+      <div class="portal-field register-only hidden">
+        <label for="restaurant-phone">Telefone</label>
+        <input type="tel" id="restaurant-phone" placeholder="Ex: 84 000 0000">
+      </div>
+      <div class="portal-field register-only hidden">
+        <label for="restaurant-address">Endereço do restaurante</label>
+        <input type="text" id="restaurant-address" placeholder="Ex: Av. 24 de Julho, Maputo">
+      </div>
+      <div class="portal-field">
+        <label for="restaurant-password">Password</label>
+        <input type="password" id="restaurant-password" placeholder="Mínimo 6 caracteres" required minlength="6">
+      </div>
+      <button type="submit" class="btn-login">
+        <span id="restaurant-submit-label">Entrar no Restaurante</span>
+        <i class="fas fa-arrow-right"></i>
+      </button>
+    </form>
+
+    <div class="divider"><span>Área reservada para parceiros de restauração</span></div>
+    <p class="login-footer">Acesso exclusivo para restaurantes registados na Trago Delivery.</p>
+  </div>
+
+  <script src="js/common/supabaseConfig.js"></script>
+  <script src="js/common/api.js"></script>
+  <script src="js/common/http.js"></script>
+  <script src="js/common/sw-register.js"></script>
+  <script src="js/common/feedback.js?v=20260723-r360-1"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      let mode = 'login';
+      const token = localStorage.getItem('tragoRestaurantToken');
+      if (token) window.location.replace('restaurante.html');
+      const modeButtons = document.querySelectorAll('[data-mode]');
+      const registerOnly = document.querySelectorAll('.register-only');
+      const submitLabel = document.getElementById('restaurant-submit-label');
+      function setMode(nextMode) {
+        mode = nextMode;
+        modeButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === mode));
+        registerOnly.forEach((el) => el.classList.toggle('hidden', mode !== 'register'));
+        document.getElementById('restaurant-name').required = mode === 'register';
+        document.getElementById('restaurant-phone').required = mode === 'register';
+        submitLabel.textContent = mode === 'register' ? 'Criar restaurante' : 'Entrar no Restaurante';
+      }
+      modeButtons.forEach((btn) => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+      document.getElementById('restaurant-login-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const button = event.target.querySelector('button[type="submit"]');
+        const payload = {
+          name: document.getElementById('restaurant-name').value.trim(),
+          email: document.getElementById('restaurant-email').value.trim(),
+          phone: document.getElementById('restaurant-phone').value.trim(),
+          address_text: document.getElementById('restaurant-address').value.trim(),
+          password: document.getElementById('restaurant-password').value
+        };
+        if (mode === 'register' && (!payload.name || !payload.phone)) {
+          window.TragoFeedback?.notify('Preencha nome e telefone do restaurante.', { type: 'error' });
+          return;
+        }
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> A validar...';
+        try {
+          const endpoint = mode === 'register' ? '/api/public/restaurants/register' : '/api/public/restaurants/login';
+          const response = await fetch(`${API_URL}${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await readJsonResponse(response);
+          if (!response.ok) throw new Error(data.message || 'Não foi possível iniciar sessão.');
+          localStorage.setItem('tragoRestaurantToken', data.token);
+          localStorage.setItem('tragoRestaurantProfile', JSON.stringify(data.restaurant));
+          window.location.replace('restaurante.html');
+        } catch (error) {
+          window.TragoFeedback?.notify(error.message, { type: 'error' });
+        } finally {
+          button.disabled = false;
+          button.innerHTML = `<span id="restaurant-submit-label">${mode === 'register' ? 'Criar restaurante' : 'Entrar no Restaurante'}</span><i class="fas fa-arrow-right"></i>`;
+        }
+      });
+      setMode(mode);
+    });
+  </script>
+</body>
+</html>

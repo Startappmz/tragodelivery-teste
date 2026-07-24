@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-mz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TraGo — Acesso do Cliente</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="global.css">
+  <link rel="stylesheet" href="login.css">
+  <link rel="stylesheet" href="trago-system.css">
+  <link rel="stylesheet" href="customer-restaurant.css">
+  <link rel="stylesheet" href="css/access-v20.css?v=20260723-r360-2">
+  <link rel="stylesheet" href="css/feedback.css?v=20260723-r360-1">
+</head>
+<body class="login-body portal-body v20-access-app v20-client-access">
+  <div class="background"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="login-card portal-login client-login-card">
+    <div class="login-header">
+      <img src="assets/logo.svg" alt="Trago Delivery" class="login-logo">
+      <h1 class="login-title">Portal do Cliente</h1>
+      <p class="login-subtitle">Entre com email e palavra-passe, continue como convidado ou use a sua conta Google.</p>
+    </div>
+
+    <div class="google-auth-zone">
+      <div id="google-signin-button" class="google-signin-button" aria-label="Entrar com Google"></div>
+      <p id="google-auth-help" class="google-auth-help">Login Google opcional. O cliente continua a poder pedir sem cadastro.</p>
+    </div>
+
+    <div class="divider"><span>ou</span></div>
+
+    <div class="login-mode-switch client-mode-switch" role="tablist" aria-label="Tipo de acesso do cliente">
+      <button type="button" class="active" data-client-mode="login">Entrar</button>
+      <button type="button" data-client-mode="register">Registar</button>
+      <button type="button" data-client-mode="guest">Convidado</button>
+    </div>
+
+    <form id="client-login-form" class="form-stack">
+      <div class="portal-field" id="client-name-field">
+        <label for="client-name">Nome completo</label>
+        <input type="text" id="client-name" placeholder="Ex: Edmilson Mula" required>
+      </div>
+      <div class="portal-field" id="client-phone-field">
+        <label for="client-phone">Contacto principal</label>
+        <input type="tel" id="client-phone" placeholder="Ex: 84 000 0000" required minlength="9">
+      </div>
+      <div class="portal-field">
+        <label for="client-email">Email <span id="client-email-mode-label" style="color:#7c8679;font-weight:600"></span></label>
+        <input type="email" id="client-email" autocomplete="email" placeholder="cliente@email.com">
+      </div>
+      <div class="portal-field" id="client-password-field">
+        <label for="client-password">Palavra-passe</label>
+        <input type="password" id="client-password" autocomplete="current-password" maxlength="128" placeholder="Mínimo de 8 caracteres">
+      </div>
+      <small class="portal-help" id="client-login-help">Modo convidado: cria sessão apenas neste dispositivo, sem cadastro obrigatório.</small>
+      <button type="submit" class="btn-login">
+        <span id="client-submit-label">Continuar como convidado</span>
+        <i class="fas fa-arrow-right"></i>
+      </button>
+    </form>
+  </div>
+
+  <script src="js/common/supabaseConfig.js"></script>
+  <script src="js/common/api.js"></script>
+  <script src="js/common/http.js"></script>
+  <script src="js/common/sw-register.js"></script>
+  <script src="js/common/feedback.js?v=20260723-r360-1"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const SESSION_KEY = 'tragoClientSession';
+      let mode = 'login';
+      const existing = localStorage.getItem(SESSION_KEY);
+      if (existing) {
+        try {
+          const session = JSON.parse(existing);
+          if (session?.name) {
+            document.getElementById('client-name').value = session.name || '';
+            document.getElementById('client-phone').value = session.phone || '';
+            document.getElementById('client-email').value = session.email || '';
+          }
+        } catch (_) {}
+      }
+
+      function saveSession(session) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify({
+          id: session.id || `client_${String(session.phone || session.email || Date.now()).replace(/\W/g, '')}_${Date.now()}`,
+          name: session.name || 'Cliente',
+          phone: session.phone || '',
+          email: session.email || '',
+          avatar_url: session.avatar_url || '',
+          token: session.token || '',
+          registered: Boolean(session.registered),
+          auth_provider: session.auth_provider || (session.registered ? 'local' : 'guest'),
+          createdAt: session.createdAt || new Date().toISOString()
+        }));
+        window.location.replace('cliente.html');
+      }
+
+      function setMode(nextMode) {
+        mode = nextMode;
+        document.querySelectorAll('[data-client-mode]').forEach((btn) => btn.classList.toggle('active', btn.dataset.clientMode === mode));
+        document.getElementById('client-submit-label').textContent = mode === 'register' ? 'Criar conta e entrar' : mode === 'login' ? 'Entrar na minha conta' : 'Continuar como convidado';
+        document.getElementById('client-login-help').textContent = mode === 'register'
+          ? 'A conta sincroniza perfil, endereços, pedidos, mensagens e benefícios.'
+          : mode === 'login' ? 'Use o email e a palavra-passe definidos no cadastro.' : 'Modo convidado: cria sessão apenas neste dispositivo, sem cadastro.';
+        document.getElementById('client-email-mode-label').textContent = mode === 'guest' ? '(opcional)' : '(obrigatório)';
+        document.getElementById('client-email').required = mode !== 'guest';
+        document.getElementById('client-name-field').hidden = mode === 'login';
+        document.getElementById('client-phone-field').hidden = mode === 'login';
+        document.getElementById('client-name').required = mode !== 'login';
+        document.getElementById('client-phone').required = mode !== 'login';
+        document.getElementById('client-password-field').hidden = mode === 'guest';
+        document.getElementById('client-password').required = mode !== 'guest';
+        document.getElementById('client-password').minLength = mode === 'register' ? 8 : 4;
+        document.getElementById('client-password').autocomplete = mode === 'register' ? 'new-password' : 'current-password';
+      }
+
+      document.querySelectorAll('[data-client-mode]').forEach((btn) => btn.addEventListener('click', () => setMode(btn.dataset.clientMode)));
+
+      document.getElementById('client-login-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const button = event.target.querySelector('button[type="submit"]');
+        const name = document.getElementById('client-name').value.trim();
+        const phone = document.getElementById('client-phone').value.trim();
+        const email = document.getElementById('client-email').value.trim();
+        const password = document.getElementById('client-password').value;
+        if (mode !== 'login' && (!name || phone.replace(/\D/g, '').length < 9)) {
+          window.TragoFeedback?.notify('Preencha nome e contacto válido.', { type: 'error' });
+          return;
+        }
+        if (mode === 'register' && !email) {
+          window.TragoFeedback?.notify('Para registar o cliente, indique o email.', { type: 'error' });
+          return;
+        }
+        if (mode === 'login' && !email) {
+          window.TragoFeedback?.notify('Indique o email usado na conta.', { type: 'error' });
+          return;
+        }
+        if (mode === 'register' && password.length < 8) {
+          window.TragoFeedback?.notify('A palavra-passe deve ter pelo menos 8 caracteres.', { type: 'error' });
+          return;
+        }
+        if (mode === 'guest') {
+          saveSession({ name, phone, email, registered: false, auth_provider: 'guest' });
+          return;
+        }
+        button.disabled = true;
+        button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${mode === 'register' ? 'A criar conta...' : 'A entrar...'}`;
+        try {
+          const response = await fetch(`${API_URL}${mode === 'register' ? '/api/public/clients/register' : '/api/public/clients/login'}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(mode === 'register' ? { name, phone, email, password } : { email, password })
+          });
+          const data = await readJsonResponse(response);
+          if (!response.ok) throw new Error(data.message || 'Não foi possível registar o cliente.');
+          saveSession({
+            id: data.client?.id || data.client?._id,
+            name: data.client?.name || data.client?.nome || name,
+            phone: data.client?.phone || data.client?.telefone || phone,
+            email: data.client?.email || email,
+            avatar_url: data.client?.avatar_url || '',
+            token: data.token || '',
+            registered: true,
+            auth_provider: 'local'
+          });
+        } catch (error) {
+          window.TragoFeedback?.notify(error.message, { type: 'error' });
+        } finally {
+          button.disabled = false;
+          button.innerHTML = `<span id="client-submit-label">${mode === 'register' ? 'Criar conta e entrar' : mode === 'login' ? 'Entrar na minha conta' : 'Continuar como convidado'}</span><i class="fas fa-arrow-right"></i>`;
+        }
+      });
+
+      window.handleTragoGoogleCredential = async (response) => {
+        const help = document.getElementById('google-auth-help');
+        try {
+          help.textContent = 'A validar conta Google...';
+          const apiResponse = await fetch(`${API_URL}/api/public/clients/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_token: response.credential })
+          });
+          const data = await readJsonResponse(apiResponse);
+          if (!apiResponse.ok) throw new Error(data.message || 'Não foi possível validar a conta Google.');
+          saveSession({
+            id: data.client?.id || data.client?._id,
+            name: data.client?.name || data.client?.nome || data.google?.name || 'Cliente Google',
+            phone: data.client?.phone || data.client?.telefone || '',
+            email: data.client?.email || data.google?.email || '',
+            avatar_url: data.client?.avatar_url || data.google?.picture || '',
+            token: data.token || '',
+            registered: true,
+            auth_provider: 'google'
+          });
+        } catch (error) {
+          help.textContent = error.message;
+          help.classList.add('error');
+        }
+      };
+
+      function initGoogleButton() {
+        const help = document.getElementById('google-auth-help');
+        const holder = document.getElementById('google-signin-button');
+        const clientId = window.TRAGO_GOOGLE_CLIENT_ID || '';
+        if (!clientId) {
+          holder.innerHTML = '<button type="button" class="google-placeholder" disabled><span class="google-g">G</span><span>Entrar com Google</span></button>';
+          help.textContent = 'A entrada com Google está temporariamente indisponível. Use email e palavra-passe.';
+          return;
+        }
+        if (!window.google?.accounts?.id) {
+          setTimeout(initGoogleButton, 250);
+          return;
+        }
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: window.handleTragoGoogleCredential,
+          ux_mode: 'popup'
+        });
+        window.google.accounts.id.renderButton(holder, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'continue_with',
+          shape: 'pill',
+          logo_alignment: 'left',
+          width: Math.min(360, holder.clientWidth || 360)
+        });
+        help.textContent = 'Cadastro/entrada Google opcional. Contacto pode ser preenchido depois no pedido.';
+      }
+
+      setMode(mode);
+      window.addEventListener('load', initGoogleButton);
+      setTimeout(initGoogleButton, 600);
+    });
+  </script>
+</body>
+</html>

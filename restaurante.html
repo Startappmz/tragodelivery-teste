@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="pt-MZ">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#79b933">
+  <title>TraGo — Restaurante</title>
+  <link rel="icon" href="assets/v20/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/restaurant.css">
+  <link rel="stylesheet" href="css/portal-reference.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/portal-v20.css">
+  <link rel="stylesheet" href="css/restaurant-v20.css">
+  <link rel="stylesheet" href="css/support-hub.css">
+  <link rel="stylesheet" href="css/experience-polish.css">
+  <link rel="stylesheet" href="css/feedback.css?v=20260723-r360-1">
+  <link rel="stylesheet" href="css/experience-360.css?v=20260724-uiux-2">
+</head>
+<body class="v20-app v20-restaurant-app">
+  <header class="v20-restaurant-topbar">
+    <div class="v20-restaurant-shell"><a href="#" data-jump-restaurant="overview" data-nav-root aria-label="Abrir resumo do restaurante"><img src="assets/v20/logo.svg" alt="TraGo"><span><strong>TraGo</strong><small>RESTAURANTE</small></span></a><div><button class="v20-store-status" type="button"><i></i> Loja aberta</button><button class="v20-icon-button" type="button" data-restaurant-notifications aria-label="Abrir notificações"><i class="fa-regular fa-bell"></i><b class="v20-alert-dot"></b></button><button class="v20-restaurant-account" type="button" data-jump-restaurant="profile" aria-label="Abrir perfil do restaurante"><span id="restaurant-avatar-label">R</span><b><strong id="restaurant-name-label">Restaurante</strong><small>Parceiro TraGo</small></b><i class="fa-solid fa-chevron-down"></i></button><button class="v20-icon-button" type="button" id="btn-restaurant-logout" title="Terminar sessão" aria-label="Terminar sessão"><i class="fa-solid fa-arrow-right-from-bracket"></i></button></div></div>
+  </header>
+
+  <main class="v20-restaurant-shell v20-restaurant-main">
+    <section class="v20-restaurant-hero portal-hero">
+      <div class="v20-restaurant-cover"></div>
+      <div class="v20-restaurant-identity"><span id="restaurant-preview-avatar">R</span><div><small>PAINEL DO RESTAURANTE</small><h1 id="restaurant-preview-name">Restaurante</h1><p><i class="fa-solid fa-location-dot"></i> <b id="restaurant-preview-address">Por configurar</b></p></div><button type="button" id="btn-restaurant-refresh"><i class="fa-solid fa-rotate"></i><span>Actualizar</span></button></div>
+    </section>
+
+    <nav class="v20-restaurant-tabs" aria-label="Área do restaurante">
+      <button class="portal-tab active" data-panel="overview"><i class="fa-solid fa-chart-pie"></i><span>Resumo</span></button>
+      <button class="portal-tab" data-panel="orders"><i class="fa-regular fa-clipboard"></i><span>Pedidos</span><b id="sidebar-orders-count">0</b></button>
+      <button class="portal-tab" data-panel="menu"><i class="fa-solid fa-burger"></i><span>Produtos</span></button>
+      <button class="portal-tab" data-panel="profile"><i class="fa-regular fa-building"></i><span>Perfil</span></button>
+      <button class="portal-tab" data-panel="communication"><i class="fa-regular fa-message"></i><span>Comunicação</span></button>
+      <button class="portal-tab" data-panel="reviews"><i class="fa-regular fa-star"></i><span>Avaliações</span></button>
+    </nav>
+
+    <section class="portal-panel" data-panel="overview">
+      <header class="v20-restaurant-section-head"><div><small>OPERAÇÃO DE HOJE</small><h2>Resumo do negócio</h2><p>Indicadores, disponibilidade e acções rápidas.</p></div><span><i class="fa-regular fa-clock"></i> Actualizado agora</span></header>
+      <section class="v20-restaurant-metrics">
+        <article><span><i class="fa-solid fa-coins"></i></span><div><small>RECEITA TOTAL</small><strong id="metric-revenue">0,00 MZN</strong><b><i class="fa-solid fa-arrow-trend-up"></i> operação acumulada</b></div></article>
+        <article><span><i class="fa-regular fa-clipboard"></i></span><div><small>PEDIDOS</small><strong id="metric-orders">0</strong><b id="metric-orders-state">sem pedidos pendentes</b></div></article>
+        <article><span><i class="fa-regular fa-clock"></i></span><div><small>PREPARAÇÃO MÉDIA</small><strong id="metric-prep-time">—</strong><b>calculada pelo menu publicado</b></div></article>
+        <article><span><i class="fa-solid fa-star"></i></span><div><small>AVALIAÇÃO</small><strong id="metric-rating">—</strong><b id="metric-rating-count">Sem avaliações</b></div></article>
+      </section>
+
+      <div class="v20-overview-grid">
+        <section class="v20-operation-card"><header><div><small>ESTADO DA LOJA</small><h3>Operação</h3></div><label class="v20-switch"><input type="checkbox" id="restaurant-open-toggle" checked><span></span></label></header><div class="v20-operation-status"><i></i><span><strong>Aberta e a receber pedidos</strong><small>Os produtos disponíveis estão visíveis no Cliente.</small></span></div><div class="v20-operation-items"><span><i class="fa-solid fa-burger"></i><b><strong id="metric-menu-items">0</strong><small>Produtos publicados</small></b></span><span><i class="fa-solid fa-location-dot"></i><b><strong>—</strong><small>Áreas de entrega</small></b></span><span><i class="fa-solid fa-motorcycle"></i><b><strong>—</strong><small>Raio configurado</small></b></span><span><i class="fa-solid fa-phone"></i><b><strong id="restaurant-preview-phone">Por configurar</strong><small>Contacto público</small></b></span></div><button class="v20-secondary-button" data-jump-restaurant="profile"><i class="fa-solid fa-sliders"></i> Configurar operação</button></section>
+        <section class="v20-coupon-card"><header><div><small>PROMOÇÕES</small><h3>Publicar cupão</h3><p>Crie um desconto que ficará associado ao seu restaurante.</p></div><i class="fa-solid fa-ticket"></i></header><form id="restaurant-coupon-form"><label>Código<input id="restaurant-coupon-code" maxlength="20" placeholder="EX.: TRAGO10" required></label><div><label>Desconto<select id="restaurant-coupon-type"><option value="percentage">Percentagem</option><option value="fixed">Valor fixo</option><option value="delivery">Entrega grátis</option></select></label><label>Valor<input id="restaurant-coupon-value" type="number" min="1" value="10"></label></div><div><label>Pedido mínimo<input id="restaurant-coupon-min" type="number" min="0" value="500"></label><label>Limite de usos<input id="restaurant-coupon-limit" type="number" min="1" value="50"></label></div><button class="v20-primary" type="submit"><i class="fa-solid fa-bullhorn"></i> Publicar cupão</button></form></section>
+      </div>
+      <section class="v20-published-coupons"><header><div><small>PUBLICADOS</small><h3>Cupões do restaurante</h3></div></header><div id="restaurant-coupon-list"><div class="empty-state">A carregar cupões…</div></div></section>
+    </section>
+
+    <section class="portal-panel hidden" data-panel="orders">
+      <header class="v20-restaurant-section-head"><div><small>OPERAÇÃO EM TEMPO REAL</small><h2>Pedidos recebidos</h2><p>Aceite, prepare e sinalize a recolha.</p></div><button class="v20-secondary-button" id="btn-refresh-orders"><i class="fa-solid fa-rotate"></i> Actualizar</button></header>
+      <div class="v20-order-tabs"><button class="active" data-restaurant-order-filter="new">Novos <b data-restaurant-order-count="new" hidden>0</b></button><button data-restaurant-order-filter="preparing">Em preparação <b data-restaurant-order-count="preparing" hidden>0</b></button><button data-restaurant-order-filter="ready">Prontos <b data-restaurant-order-count="ready" hidden>0</b></button><button data-restaurant-order-filter="done">Concluídos <b data-restaurant-order-count="done" hidden>0</b></button><button data-restaurant-order-filter="cancelled">Cancelados <b data-restaurant-order-count="cancelled" hidden>0</b></button></div>
+      <div id="restaurant-orders-list" class="v20-restaurant-orders-list"><div class="empty-state">A carregar pedidos…</div></div>
+    </section>
+
+    <section class="portal-panel hidden" data-panel="menu">
+      <header class="v20-restaurant-section-head"><div><small>CATÁLOGO</small><h2>Produtos e categorias</h2><p>Configure exactamente o que o Cliente vê e pode pedir.</p></div><button class="v20-primary" id="btn-quick-add"><i class="fa-solid fa-plus"></i> Novo produto</button></header>
+      <div class="v20-products-layout">
+        <aside class="v20-product-editor" id="restaurant-editor-card"><header><span><i class="fa-solid fa-burger"></i></span><div><small>EDITOR</small><h3 id="restaurant-product-form-title">Adicionar produto</h3><p>Campos marcados são visíveis no Cliente.</p></div></header>
+          <form id="menu-form"><input type="hidden" id="menu-item-id">
+            <label>Nome do produto<input id="menu-name" required placeholder="Ex.: Frango à Zambeziana"></label>
+            <div class="v20-form-two"><label>Categoria<input id="menu-category" list="menu-category-list" required placeholder="Pratos principais"><datalist id="menu-category-list"><option value="Pratos principais"><option value="Frango"><option value="Burgers"><option value="Pizza"><option value="Bebidas"><option value="Sobremesas"></datalist></label><label>Preço (MZN)<input id="menu-price" type="number" min="0" step="0.01" required></label></div>
+            <label>Imagem do produto<span class="v20-image-input"><i class="fa-regular fa-image"></i><input id="menu-image" type="url" placeholder="Cole a URL ou carregue uma imagem"><button type="button" id="btn-menu-image-file">Carregar</button><input id="menu-image-file" type="file" accept="image/jpeg,image/png,image/webp" hidden></span></label>
+            <div class="v20-form-two"><label>Tempo de preparação<input id="menu-prep-time" type="number" min="0" placeholder="25 min"></label><label>Stock diário<input id="menu-daily-stock" type="number" min="0" placeholder="Sem limite"></label></div>
+            <label>Descrição<textarea id="menu-description" placeholder="Apresentação curta para o Cliente"></textarea></label>
+            <label>Ingredientes<textarea id="menu-ingredients" placeholder="Frango, leite de coco, limão…"></textarea></label>
+            <label>Detalhes e alergénios<textarea id="menu-details" placeholder="Serve 1 pessoa · contém lacticínios…"></textarea></label>
+            <label>Etiquetas<input id="menu-tags" placeholder="Popular, picante, sem glúten"></label>
+            <section class="v20-options-builder"><header><span><strong>Opções do produto</strong><small>Ex.: tamanho, acompanhamento ou extras.</small></span><button type="button" id="btn-add-option-group"><i class="fa-solid fa-plus"></i> Grupo</button></header><div id="menu-option-groups"></div></section>
+            <label class="v20-toggle-row"><span><strong>Desactivar quando esgotar</strong><small>Usa o stock diário configurado</small></span><input type="checkbox" id="menu-auto-disable"></label>
+            <label>Motivo de indisponibilidade<input id="menu-unavailable-reason" placeholder="Ex.: ingrediente em falta"></label>
+            <label class="v20-toggle-row"><span><strong>Disponível para venda</strong><small>Mostrar imediatamente no Cliente</small></span><input type="checkbox" id="menu-available" checked></label>
+            <div class="v20-editor-actions"><button type="button" class="v20-secondary-button hidden" id="btn-cancel-menu-edit">Cancelar</button><button type="submit" class="v20-primary"><i class="fa-solid fa-floppy-disk"></i><span id="menu-submit-label">Adicionar produto</span></button></div>
+          </form>
+        </aside>
+        <section class="v20-products-card"><header><div><small>MENU PUBLICADO</small><h3>Produtos disponíveis</h3><p>Edite disponibilidade, stock e conteúdo.</p></div><div class="v20-product-tools"><label><i class="fa-solid fa-magnifying-glass"></i><input id="restaurant-menu-search" type="search" placeholder="Pesquisar produto"></label><button type="button" id="btn-menu-grid" class="active" aria-label="Vista em grelha"><i class="fa-solid fa-table-cells-large"></i></button><button type="button" id="btn-menu-list" aria-label="Vista em lista"><i class="fa-solid fa-list"></i></button></div></header><div class="v20-product-filter"><button class="active">Todos</button><button>Disponíveis</button><button>Indisponíveis</button><button>Stock baixo</button></div><div id="restaurant-menu-list" class="restaurant-menu-list"><div class="empty-state">A carregar menu…</div></div></section>
+      </div>
+    </section>
+
+    <section class="portal-panel hidden" data-panel="profile">
+      <header class="v20-restaurant-section-head"><div><small>PERFIL PÚBLICO</small><h2>Dados do restaurante</h2><p>Estas informações aparecem no Cliente.</p></div><button class="v20-secondary-button" data-preview-public><i class="fa-regular fa-eye"></i> Pré-visualizar</button></header>
+      <div class="v20-profile-layout">
+        <aside class="v20-public-preview"><div class="v20-public-cover"><span id="v20-public-avatar">R</span><b>ABERTO</b></div><h3 id="v20-public-name">Restaurante</h3><p>Restaurante parceiro TraGo</p><div><span><i class="fa-solid fa-star"></i><strong data-restaurant-public-rating>—</strong><small>Avaliação</small></span><span><i class="fa-regular fa-clock"></i><strong data-restaurant-public-prep>—</strong><small>Minutos</small></span><span><i class="fa-solid fa-motorcycle"></i><strong>—</strong><small>Raio</small></span></div><section><p><i class="fa-solid fa-location-dot"></i><span><small>LOCALIZAÇÃO</small><strong id="v20-public-address">Por configurar</strong></span></p><p><i class="fa-solid fa-phone"></i><span><small>CONTACTO</small><strong id="v20-public-phone">Por configurar</strong></span></p></section></aside>
+        <form id="restaurant-profile-form" class="v20-profile-form">
+          <section><header><span>1</span><div><h3>Identidade do negócio</h3><p>Dados principais e apresentação</p></div></header><div class="v20-form-two"><label>Tipo de negócio<select id="profile-business-type"><option>Restaurante</option><option>Take-away</option><option>Pastelaria</option><option>Bottle Store</option><option>Mercearia</option></select></label><label>Nome do restaurante<input id="profile-name" required></label></div><div class="v20-form-two"><label>Email<input id="profile-email" type="email"></label><label>Telefone<input id="profile-phone" required></label></div><label>WhatsApp<input id="profile-whatsapp" type="tel"></label><label>Descrição<textarea id="profile-description" placeholder="Conte aos clientes o que torna o restaurante especial."></textarea></label></section>
+          <section><header><span>2</span><div><h3>Localização e imagens</h3><p>Morada, coordenadas e identidade visual</p></div></header><label>Endereço<input id="profile-address" placeholder="Morada de recolha"></label><div class="v20-form-two"><label>Latitude<input id="profile-lat" type="number" step="0.000001" placeholder="-25.965500"></label><label>Longitude<input id="profile-lng" type="number" step="0.000001" placeholder="32.583200"></label></div><div class="v20-form-two"><label>Logótipo<span class="v20-image-input"><input id="profile-logo" type="url" placeholder="URL ou carregue uma imagem"><button type="button" data-upload-restaurant-image="restaurant-logo">Carregar</button><input id="profile-logo-file" type="file" accept="image/jpeg,image/png,image/webp" hidden></span></label><label>Imagem de capa<span class="v20-image-input"><input id="profile-cover" type="url" placeholder="URL ou carregue uma imagem"><button type="button" data-upload-restaurant-image="restaurant-cover">Carregar</button><input id="profile-cover-file" type="file" accept="image/jpeg,image/png,image/webp" hidden></span></label></div></section>
+          <section><header><span>3</span><div><h3>Horário e entrega</h3><p>Disponibilidade, zonas e valores</p></div></header><div class="v20-opening-hours"><div><b>Segunda–Sexta</b><label><input type="time" value="08:00"> até <input type="time" value="22:00"></label><input type="checkbox" checked></div><div><b>Sábado</b><label><input type="time" value="09:00"> até <input type="time" value="23:00"></label><input type="checkbox" checked></div><div><b>Domingo</b><label><input type="time" value="10:00"> até <input type="time" value="20:00"></label><input type="checkbox" checked></div></div><label>Zonas de entrega<input id="profile-delivery-zones" placeholder="Maputo, Matola, Sommerschield"></label><div class="v20-form-three"><label>Raio (km)<input id="profile-radius" type="number" value="6"></label><label>Taxa base (MZN)<input id="profile-fee" type="number" value="120"></label><label>Pedido mínimo<input id="profile-min-order" type="number" value="300"></label></div><label class="v20-toggle-row"><span><strong>Restaurante aberto</strong><small>Aceitar novos pedidos</small></span><input id="profile-is-open" type="checkbox" checked></label></section>
+          <button class="v20-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Guardar perfil</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="portal-panel hidden" data-panel="communication">
+      <header class="v20-restaurant-section-head"><div><small>CONTACTO OPERACIONAL</small><h2>Comunicação</h2><p>Notas públicas e conversas privadas com o motorista.</p></div></header>
+      <section class="v20-communication-overview"><div><span><i class="fa-regular fa-message"></i></span><h3>Comunicação clara reduz cancelamentos</h3><p>Coordene atrasos, indisponibilidades e recolhas directamente com o motorista.</p></div><section><article><strong id="restaurant-communication-count">0</strong><small>Pedidos recentes</small></article><article><strong>Auditável</strong><small>Histórico</small></article><article><strong>Privado</strong><small>Motorista ↔ Loja</small></article></section></section>
+      <div class="v20-communication-grid"><form id="restaurant-note-form"><header><div><small>AVISO PÚBLICO</small><h3>Nota operacional</h3></div><i class="fa-solid fa-bullhorn"></i></header><label>Mensagem<textarea id="restaurant-operational-note" maxlength="180" placeholder="Ex.: hoje o tempo médio é de 40 minutos."></textarea><small><b id="restaurant-note-count">0</b>/180</small></label><label>Visibilidade<select disabled><option>Mostrar no perfil e checkout</option></select></label><button class="v20-primary" type="submit">Publicar nota</button></form><section class="v20-message-list"><header><div><small>CAIXA DE ENTRADA</small><h3>Conversas de pedidos</h3></div><button type="button" aria-label="Abrir todos os pedidos"><i class="fa-solid fa-filter"></i></button></header><div class="empty-state">A carregar conversas reais…</div></section></div>
+      <div class="trago-support-hub v20-restaurant-support" data-support-hub data-support-role="restaurant">
+        <div class="support-hub-top"><div><h2>Suporte interno TraGo</h2><p>Converse com o Admin sobre pedidos, pagamentos, menu ou conta.</p></div><button type="button" class="support-new" data-support-new><i class="fa-solid fa-plus"></i><span>Nova conversa</span></button></div>
+        <div class="support-notice" data-support-notice hidden></div>
+        <form class="support-create-card" data-support-create-form><div class="support-create-head"><h3>Novo pedido de suporte</h3><button type="button" data-support-close-create aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></div><div class="support-form-grid"><label class="support-field"><span>Assunto</span><input name="subject" maxlength="140" required placeholder="Ex.: Pedido não aparece na cozinha"></label><label class="support-field"><span>Categoria</span><select name="category"><option value="restaurant">Operação do restaurante</option><option value="order">Pedido ou entrega</option><option value="payment">Pagamento</option><option value="technical">Problema técnico</option><option value="account">Conta</option><option value="general">Geral</option></select></label><label class="support-field"><span>ID do pedido (opcional)</span><input name="order_id" maxlength="24" placeholder="ID completo do pedido"></label><label class="support-field"><span>Prioridade</span><select name="priority"><option value="normal">Normal</option><option value="high">Alta</option><option value="urgent">Urgente</option><option value="low">Baixa</option></select></label><label class="support-field full"><span>Mensagem</span><textarea name="message" maxlength="2000" required placeholder="Explique o problema à equipa TraGo."></textarea></label><div class="support-form-actions"><button type="submit"><i class="fa-solid fa-paper-plane"></i> Enviar para o Admin</button></div></div></form>
+        <div class="support-workspace"><aside class="support-sidebar"><div class="support-sidebar-head"><strong>Conversas <b data-support-count>0</b></strong><select data-support-filter aria-label="Filtrar"><option value="">Todas</option><option value="open">Abertas</option><option value="pending">Em atendimento</option><option value="resolved">Resolvidas</option><option value="closed">Fechadas</option></select><button type="button" class="support-refresh" data-support-refresh aria-label="Actualizar"><i class="fa-solid fa-rotate"></i></button></div><div class="support-thread-list" data-support-list></div></aside><div class="support-conversation-area"><div class="support-conversation-empty" data-support-conversation-empty><i class="fa-regular fa-comments"></i><h3>Seleccione uma conversa</h3><p>Veja as respostas da Administração.</p></div><div class="support-conversation" data-support-conversation hidden><header class="support-conversation-head"><div><h3 data-support-subject>Conversa</h3><p data-support-meta></p><p class="support-requester" data-support-requester></p></div><div class="support-toolbar"><label>Estado<select data-support-status><option value="open">Aberto</option><option value="closed">Fechado</option></select></label></div></header><div class="support-message-stream" data-support-messages></div><form class="support-reply" data-support-reply-form><textarea data-support-reply maxlength="2000" required placeholder="Escrever resposta…"></textarea><button type="submit" aria-label="Enviar"><i class="fa-solid fa-paper-plane"></i></button></form></div></div></div>
+        <nav class="support-portal-links" aria-label="Outros portais TraGo"><a href="cliente.html"><i class="fa-solid fa-user"></i> Cliente</a><a href="painel-de-entrega.html"><i class="fa-solid fa-motorcycle"></i> Motorista</a><a href="index.html"><i class="fa-solid fa-shield-halved"></i> Admin</a></nav>
+      </div>
+    </section>
+
+    <section class="portal-panel hidden" data-panel="reviews">
+      <header class="v20-restaurant-section-head"><div><small>REPUTAÇÃO</small><h2>Avaliações</h2><p>Dados agregados das avaliações públicas reais.</p></div></header>
+      <div class="v20-review-summary"><section><strong id="restaurant-rating-average">—</strong><div><span>★★★★★</span><p id="restaurant-rating-total">Sem avaliações verificadas</p></div></section><div class="empty-state">A distribuição por estrela será apresentada quando o endpoint fornecer o agregado detalhado.</div></div>
+      <div class="v20-review-warning"><i class="fa-solid fa-circle-info"></i><span><strong>As avaliações são públicas</strong><p>Responda com respeito. Não publique contactos, dados pessoais ou informação do pedido.</p></span></div>
+      <section class="v20-product-ratings"><header><div><small>DESEMPENHO DO MENU</small><h3>Avaliação por produto</h3></div></header><div id="restaurant-product-ratings"><div class="empty-state">A carregar avaliações do menu…</div></div></section>
+    </section>
+  </main>
+
+  <nav class="mobile-bottom-nav v20-restaurant-bottom-nav" aria-label="Navegação do restaurante"><button class="active" data-panel="overview"><i class="fa-solid fa-chart-pie"></i><span>Resumo</span></button><button data-panel="orders"><i class="fa-regular fa-clipboard"></i><span>Pedidos</span></button><button data-panel="menu"><i class="fa-solid fa-burger"></i><span>Produtos</span></button><button data-panel="profile"><i class="fa-regular fa-building"></i><span>Perfil</span></button></nav>
+
+  <section class="v20-sheet" id="restaurant-notifications-sheet" aria-hidden="true"><button class="v20-sheet-backdrop" data-close-sheet="restaurant-notifications-sheet"></button><article><header class="simple"><span><small>CENTRO</small><h2>Notificações</h2></span><button data-close-sheet="restaurant-notifications-sheet"><i class="fa-solid fa-xmark"></i></button></header><div class="v20-notification-list"><div class="empty-state">A carregar actualizações reais dos pedidos…</div></div></article></section>
+  <section class="v20-sheet" id="restaurant-public-preview" aria-hidden="true"><button class="v20-sheet-backdrop" data-close-sheet="restaurant-public-preview"></button><article><header class="simple"><span><small>COMO O CLIENTE VÊ</small><h2>Pré-visualização</h2></span><button data-close-sheet="restaurant-public-preview"><i class="fa-solid fa-xmark"></i></button></header><div class="v20-preview-client"><div><span id="preview-client-avatar">R</span></div><h3 id="preview-client-name">Restaurante</h3><p id="preview-client-description">Restaurante parceiro TraGo</p><div><span><i class="fa-solid fa-star"></i> <b data-restaurant-public-rating>—</b></span><span><i class="fa-regular fa-clock"></i> <b data-restaurant-public-prep>—</b></span><span data-restaurant-public-state>Estado real</span></div><button class="v20-primary" type="button">Ver menu</button></div></article></section>
+  <section class="v20-sheet" id="restaurant-order-chat-sheet" aria-hidden="true">
+    <button class="v20-sheet-backdrop" data-close-sheet="restaurant-order-chat-sheet"></button>
+    <article class="restaurant-order-chat">
+      <header class="simple"><span><small id="restaurant-chat-order-code">PEDIDO</small><h2>Conversa com o motorista</h2><p>Canal privado Motorista ↔ Loja. O Cliente não vê estas mensagens.</p></span><button type="button" data-close-sheet="restaurant-order-chat-sheet" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></header>
+      <div class="restaurant-order-chat-stream" id="restaurant-order-chat-stream" aria-live="polite"><div class="empty-state">A carregar mensagens…</div></div>
+      <form id="restaurant-order-chat-form"><label><span class="trago-sr-only">Mensagem</span><textarea name="message" maxlength="2000" required placeholder="Ex.: O pedido está pronto para levantamento."></textarea></label><button class="v20-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> Enviar</button></form>
+    </article>
+  </section>
+
+  <div id="portal-toast" class="portal-toast" role="status" aria-live="polite"></div>
+  <script src="js/common/supabaseConfig.js"></script>
+  <script src="js/common/api.js"></script>
+  <script src="js/common/http.js"></script>
+  <script src="js/common/sw-register.js"></script>
+  <script src="js/common/feedback.js?v=20260723-r360-1"></script>
+  <script src="js/trago-config.js"></script>
+  <script src="js/common/navigation-memory.js?v=20260723-r360-4"></script>
+  <script src="js/restaurant/restaurant.js?v=20260723-r360-6"></script>
+  <script src="js/restaurant/restaurant-v20.js?v=20260723-r360-4"></script>
+  <script src="js/common/support.js?v=r360-3"></script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-mz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Admin - Trago Delivery</title>
+    <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="login.css">
+    <link rel="stylesheet" href="trago-system.css">
+    <link rel="stylesheet" href="trago-final-fixes.css">
+    <link rel="stylesheet" href="css/feedback.css?v=20260723-r360-1">
+</head>
+<body class="login-body">
+    <!-- Animated Background -->
+    <div class="background"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <!-- Login Container -->
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="assets/logo.svg" alt="Logotipo Trago Delivery" class="login-logo">
+                <h1 class="login-title">Bem-vindo ao Trago Delivery</h1>
+                <p class="login-subtitle">Painel Administrativo</p>
+            </div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    <input type="email" id="email" class="form-input" placeholder="Introduza o seu email" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Senha</label>
+                    <input type="password" id="password" class="form-input" placeholder="Introduza a sua senha" required>
+                </div>
+
+                <div class="form-row">
+                    <label class="checkbox-label">
+                        <input type="checkbox" checked>
+                        <span>Manter sessão iniciada</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    <span>Entrar no Sistema</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+
+                <button type="button" class="login-secondary-action btn-open-password-reset" data-reset-role="admin">
+                    <i class="fas fa-unlock-keyhole"></i>
+                    <span>Restaurar password</span>
+                </button>
+            </form>
+
+            <div class="divider">
+                <span>Acesso restrito a administradores</span>
+            </div>
+
+            <p class="login-footer">
+                © 2026 Trago Delivery - Sistema de Gestão de Entregas
+            </p>
+        </div>
+    </div>
+
+
+    <!-- Password Reset Modal -->
+    <div id="password-reset-modal" class="modal-backdrop hidden">
+        <div class="modal-content modal-alert password-reset-modal-content">
+            <div class="modal-header">
+                <h3>Restaurar password do admin</h3>
+                <button type="button" class="modal-close-btn" onclick="closePasswordResetModal()">×</button>
+            </div>
+            <form id="password-reset-form" class="modal-body">
+                <input type="hidden" id="reset-role" value="admin">
+                <p id="reset-instructions" class="reset-password-hint">Introduza o email da conta. Enviaremos um código temporário para esse email.</p>
+                <div class="form-group">
+                    <label class="form-label" for="reset-email">Email</label>
+                    <input type="email" id="reset-email" class="form-input" placeholder="Email da conta" required>
+                </div>
+                <div class="modal-actions reset-request-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closePasswordResetModal()">Cancelar</button>
+                    <button type="button" id="reset-request-code-btn" class="btn btn-primary">Enviar código</button>
+                </div>
+                <div id="reset-confirm-section" class="reset-confirm-section hidden">
+                    <div class="form-group">
+                        <label class="form-label" for="reset-code">Código recebido por email</label>
+                        <input type="text" id="reset-code" class="form-input" placeholder="Ex.: 482913" inputmode="numeric" autocomplete="one-time-code" minlength="6" maxlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="reset-new-password">Nova password</label>
+                        <input type="password" id="reset-new-password" class="form-input" placeholder="Mínimo 8 caracteres" minlength="8">
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closePasswordResetModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Actualizar password</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="custom-alert-modal" class="modal-backdrop hidden">
+        <div class="modal-content modal-alert">
+            <div class="modal-header">
+                <h3 id="custom-alert-title"></h3>
+                <button class="modal-close-btn" onclick="closeCustomAlert()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="custom-alert-message"></p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" onclick="closeCustomAlert()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/common/supabaseConfig.js"></script>
+    <script src="js/common/api.js"></script>
+    <script src="js/common/http.js"></script>
+    <script src="js/common/sw-register.js"></script>
+    <script src="js/common/feedback.js?v=20260723-r360-1"></script>
+    <script src="js/common/auth.js?v=20260723-r360-5"></script>
+    <script src="js/common/ui.js?v=20260723-r360-3"></script>
+    <script src="templatemo-glass-admin-script.js"></script>
+    
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Login DOM ready');
+
+    const loginForm = document.getElementById('login-form');
+
+    if (!loginForm) {
+        console.error('Form login não encontrado');
+        return;
+    }
+
+    loginForm.addEventListener('submit', function (e) {
+        console.log('Submit capturado');
+        handleLogin(e, 'admin');
+    });
+});
+</script>
+</body>
+</html>

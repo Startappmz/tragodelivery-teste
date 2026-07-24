@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-MZ">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#071f35">
+  <title>Motorista · TraGo Delivery</title>
+  <link rel="icon" href="assets/v20/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="global.css">
+  <link rel="stylesheet" href="trago-system.css">
+  <link rel="stylesheet" href="driver.css">
+  <link rel="stylesheet" href="css/support-hub.css">
+  <link rel="stylesheet" href="css/driver-v20.css">
+  <link rel="stylesheet" href="css/experience-polish.css">
+  <link rel="stylesheet" href="css/driver-premium.css?v=20260722-layoutfix2">
+  <link rel="stylesheet" href="css/feedback.css?v=20260723-r360-1">
+  <link rel="stylesheet" href="css/experience-360.css?v=20260724-driver-choice-1">
+  <link rel="stylesheet" href="css/map-premium.css?v=20260724-map-2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="motorista-body v20-driver-app">
+  <header class="motorista-header driver-v20-header">
+    <button type="button" class="driver-brand-button" id="driver-brand-home" aria-label="Abrir entregas">
+      <span class="driver-logo-wrap"><img src="assets/v20/logo.svg" alt="TraGo Delivery" class="motorista-logo"></span>
+      <span class="driver-brand-copy"><strong>TraGo</strong><small>PAINEL DO MOTORISTA</small></span>
+    </button>
+
+    <div class="driver-header-centre">
+      <div class="driver-live-status status-waiting" id="driver-header-status" aria-live="polite">
+        <span class="driver-live-dot"></span><span id="driver-header-status-text">GPS a iniciar</span>
+      </div>
+    </div>
+
+    <div class="motorista-profile">
+      <button type="button" class="driver-top-action" id="driver-support" data-driver-nav="suporte-motorista" data-nav-root title="Suporte e comunicação">
+        <i class="fa-regular fa-comments"></i><span class="desktop-only">Suporte</span>
+      </button>
+      <button type="button" class="driver-top-action" id="driver-earnings" title="Meus ganhos">
+        <i class="fa-solid fa-wallet"></i><span class="desktop-only">Ganhos</span>
+      </button>
+      <button type="button" class="driver-top-action driver-profile-action" id="driver-settings" title="A minha conta">
+        <span class="driver-avatar" id="driver-avatar">M</span><span class="desktop-only" id="driver-name-header">Motorista</span>
+      </button>
+      <button type="button" class="driver-top-action driver-danger-action" id="driver-logout" title="Terminar sessão">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i><span class="desktop-only">Sair</span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="driver-bottom-nav" aria-label="Navegação principal">
+    <button type="button" class="driver-bottom-nav-item active" id="bottom-nav-entregas" data-driver-nav="lista-entregas" data-nav-root><i class="fa-solid fa-motorcycle"></i><span>Entregas</span></button>
+    <button type="button" class="driver-bottom-nav-item" id="bottom-nav-ganhos" data-driver-nav="meus-ganhos" data-nav-root><i class="fa-solid fa-chart-line"></i><span>Ganhos</span></button>
+    <button type="button" class="driver-bottom-nav-item driver-support-nav" id="bottom-nav-suporte" data-driver-nav="suporte-motorista" data-nav-root><i class="fa-solid fa-headset"></i><span>Suporte</span></button>
+    <button type="button" class="driver-bottom-nav-item" id="bottom-nav-conta" data-driver-nav="configuracoes-motorista" data-nav-root><i class="fa-regular fa-user"></i><span>Conta</span></button>
+    <button type="button" class="driver-bottom-nav-item danger" id="bottom-nav-sair" data-driver-action="logout"><i class="fa-solid fa-power-off"></i><span>Sair</span></button>
+  </nav>
+
+  <main class="motorista-main driver-v20-main">
+    <section id="lista-entregas" class="content-section driver-home-section">
+      <div class="driver-home-hero">
+        <div class="driver-hero-copy">
+          <span class="driver-eyebrow">OPERAÇÃO DE HOJE</span>
+          <h1>Olá, <span data-driver-first-name>motorista</span> 👋</h1>
+          <p id="driver-home-subtitle">Livre para receber novas entregas.</p>
+        </div>
+        <button type="button" class="driver-refresh-btn" id="driver-refresh-deliveries" aria-label="Actualizar entregas"><i class="fa-solid fa-rotate"></i><span>Actualizar</span></button>
+      </div>
+
+      <div class="driver-overview-grid">
+        <article class="driver-status-card" id="driver-status-card">
+          <div class="driver-status-main">
+            <span class="driver-status-icon"><i class="fa-solid fa-location-crosshairs"></i></span>
+            <div><small>LOCALIZAÇÃO EM TEMPO REAL</small><strong id="driver-gps-status-title">GPS a iniciar</strong><p id="driver-gps-status-text">A aguardar autorização e primeira posição.</p></div>
+          </div>
+          <div class="driver-status-meta"><span id="driver-last-location-time">Actualizado: —</span><button type="button" id="btn-reativar-localizacao"><i class="fa-solid fa-satellite-dish"></i> Reactivar</button></div>
+        </article>
+        <article class="driver-mini-stat"><span class="stat-icon green"><i class="fa-solid fa-shield-halved"></i></span><div><small>ESTADO DA CONTA</small><strong>Pronto para operar</strong><p>Documentos e perfil activos</p></div></article>
+        <article class="driver-mini-stat"><span class="stat-icon blue"><i class="fa-solid fa-comments"></i></span><div><small>CENTRAL TRAGO</small><strong>Suporte interno</strong><p>Admin disponível para a operação</p></div><button type="button" data-driver-nav="suporte-motorista" aria-label="Abrir suporte"><i class="fa-solid fa-arrow-right"></i></button></article>
+      </div>
+
+      <div class="driver-list-card driver-offers-card" id="driver-offers-card" hidden>
+        <div class="driver-section-header">
+          <div><span class="driver-eyebrow">NOVOS PEDIDOS</span><h2 class="section-title">Pedidos por aceitar <b id="driver-offers-count">0</b></h2><p>Veja o resumo e decida. O pedido só fica atribuído depois do seu aceite.</p></div>
+          <span class="driver-offer-live"><i></i> Resposta em 90 s</span>
+        </div>
+        <div id="driver-offers-container" class="driver-offers-list"></div>
+      </div>
+
+      <div class="driver-list-card">
+        <div class="driver-section-header">
+          <div><span class="driver-eyebrow">FILA OPERACIONAL</span><h2 class="section-title">As minhas entregas</h2><p>Pedidos atribuídos e operações em curso.</p></div>
+          <button type="button" class="driver-inline-refresh" id="driver-refresh-deliveries-inline"><i class="fa-solid fa-rotate"></i><span>Actualizar</span></button>
+        </div>
+        <div id="entregas-container" class="driver-deliveries-list"></div>
+      </div>
+
+      <section class="driver-safety-banner"><span><i class="fa-solid fa-helmet-safety"></i></span><div><strong>Segurança primeiro</strong><p>Não utilize o telefone enquanto conduz. Pare num local seguro antes de actualizar uma entrega.</p></div><button type="button" data-driver-nav="suporte-motorista">Pedir ajuda</button></section>
+    </section>
+
+    <section id="detalhe-entrega" class="content-section hidden">
+      <div class="driver-detail-topbar">
+        <button type="button" class="btn-voltar" id="btn-voltar-lista"><i class="fa-solid fa-arrow-left"></i><span>Entregas</span></button>
+        <div><p class="driver-eyebrow">OPERAÇÃO ACTIVA</p><h1 id="detalhe-entrega-title">Pedido #—</h1></div>
+        <span class="driver-order-status-pill" id="driver-detail-status">A carregar</span>
+        <span id="entrega-status" class="hidden" aria-hidden="true"></span>
+      </div>
+
+      <div class="driver-workspace">
+        <section class="driver-map-card" aria-label="Mapa e navegação da entrega">
+          <div class="driver-map-header">
+            <div><p class="driver-map-kicker">ROTA EM TEMPO REAL</p><h2>Mapa da entrega</h2><p id="driver-map-status">A aguardar rota…</p></div>
+            <span class="driver-map-badge" id="driver-location-state">GPS inactivo</span>
+          </div>
+          <div class="driver-map-stage">
+            <div id="driver-route-map" class="driver-route-map" aria-label="Mapa com recolha, entrega e motorista"></div>
+            <div class="driver-map-hud" aria-label="Resumo da navegação em tempo real">
+              <span><small>Recolha</small><strong id="driver-map-distance-pickup">—</strong></span>
+              <span><small>Entrega</small><strong id="driver-map-distance-delivery">—</strong></span>
+              <span><small>Precisão GPS</small><strong id="driver-map-accuracy">—</strong></span>
+            </div>
+          </div>
+          <div class="driver-map-guidance hidden" id="driver-map-guidance"><i class="fa-solid fa-diamond-turn-right"></i><span id="driver-map-guidance-text">Siga a rota indicada.</span></div>
+          <div class="driver-map-footer">
+            <div class="driver-map-legend"><span><i class="legend-dot legend-pickup"></i> Recolha</span><span><i class="legend-dot legend-delivery"></i> Entrega</span><span><i class="legend-dot legend-driver"></i> Você</span><span><i class="legend-dot legend-partner"></i> Parceiro TraGo</span></div>
+            <div class="driver-map-actions">
+              <button type="button" id="btn-centralizar-rota" title="Ver toda a rota"><i class="fa-solid fa-expand"></i><span>Rota</span></button>
+              <button type="button" id="btn-minha-posicao" title="Minha posição"><i class="fa-solid fa-location-crosshairs"></i><span>Posição</span></button>
+              <button type="button" id="btn-seguir-motorista" title="Seguir motorista"><i class="fa-solid fa-satellite-dish"></i><span>Seguir</span></button>
+              <button type="button" id="btn-limpar-trilho" title="Limpar trilho"><i class="fa-solid fa-eraser"></i><span>Trilho</span></button>
+              <button type="button" id="btn-mapa-compacto" title="Alternar mapa"><i class="fa-solid fa-minimize"></i><span>Compacto</span></button>
+            </div>
+          </div>
+        </section>
+
+        <aside class="driver-detail-sidebar">
+          <section class="driver-detail-panel driver-route-panel">
+            <div class="panel-heading"><span><i class="fa-solid fa-route"></i></span><div><small>PERCURSO</small><h3>Recolha e destino</h3></div></div>
+            <div id="detalhe-cliente-endereco" class="driver-route-summary"></div>
+            <p id="detalhe-cliente-coords" class="driver-coords hidden"><i class="fa-solid fa-location-dot"></i><span></span></p>
+          </section>
+
+          <section class="driver-detail-panel">
+            <div class="panel-heading"><span><i class="fa-regular fa-user"></i></span><div><small>DESTINATÁRIO</small><h3>Cliente</h3></div></div>
+            <p id="detalhe-cliente-nome"><strong>Nome:</strong> —</p><p id="detalhe-cliente-telefone"><strong>Tel.:</strong> —</p>
+          </section>
+
+          <section class="driver-detail-panel">
+            <div class="panel-heading"><span><i class="fa-solid fa-store"></i></span><div><small>PONTO DE RECOLHA</small><h3>Contacto</h3></div></div>
+            <p id="detalhe-pickup-contact"><strong>Responsável:</strong> —</p><p id="detalhe-pickup-phone"><strong>Contacto:</strong> —</p><p id="detalhe-pickup-notes"><strong>Notas:</strong> —</p>
+          </section>
+
+          <section class="driver-detail-panel payment-panel" id="detalhe-payment-method"><div class="panel-heading"><span><i class="fa-solid fa-credit-card"></i></span><div><small>PAGAMENTO</small><h3>Método acordado</h3></div></div><span>—</span></section>
+        </aside>
+      </div>
+
+      <section class="driver-order-chat-card" aria-label="Comunicação privada do pedido">
+        <header><div><span class="driver-eyebrow">COMUNICAÇÃO DO PEDIDO</span><h2>Duas vias privadas</h2><p>Escolha com quem vai falar. O Cliente nunca vê a conversa com o estabelecimento.</p></div><span class="driver-chat-live"><i></i> Ligado</span></header>
+        <nav class="driver-chat-channels" aria-label="Escolher canal da conversa">
+          <button type="button" class="active" data-driver-chat-channel="client_driver" aria-pressed="true"><i class="fa-regular fa-user"></i><span><strong>Cliente</strong><small>Cliente ↔ Motorista</small></span></button>
+          <button type="button" data-driver-chat-channel="driver_partner" aria-pressed="false"><i class="fa-solid fa-store"></i><span><strong id="driver-chat-restaurant-participant">Estabelecimento</strong><small>Motorista ↔ Loja</small></span></button>
+        </nav>
+        <p class="driver-chat-privacy"><i class="fa-solid fa-shield-halved"></i> O Admin pode auditar os dois canais, mas eles permanecem separados.</p>
+        <div class="driver-restaurant-ready" id="driver-restaurant-ready" hidden><i class="fa-solid fa-bell"></i><span><strong>Pedido pronto para levantamento</strong><small>O restaurante confirmou que pode efectuar a recolha.</small></span></div>
+        <div class="driver-order-chat-stream" id="driver-order-chat-stream" aria-live="polite"><div class="driver-chat-empty">Abra uma entrega para carregar a conversa.</div></div>
+        <form id="driver-order-chat-form" class="driver-order-chat-form"><label><span class="trago-sr-only">Mensagem</span><textarea name="message" maxlength="2000" required placeholder="Escrever ao Cliente"></textarea></label><button type="submit"><i class="fa-solid fa-paper-plane"></i><span>Enviar</span></button></form>
+      </section>
+
+      <section class="driver-operation-card">
+        <div><span class="driver-eyebrow">ACÇÕES RÁPIDAS</span><h2>Contactos e navegação</h2></div>
+        <div id="driver-quick-actions" class="driver-quick-actions"></div>
+        <button type="button" class="driver-support-order" id="driver-support-order"><i class="fa-regular fa-comments"></i><span><strong>Problema com esta entrega?</strong><small>Fale com a central sem perder o contexto do pedido.</small></span><b>Suporte <i class="fa-solid fa-arrow-right"></i></b></button>
+      </section>
+
+      <section class="driver-completion-grid">
+        <article class="driver-package-card"><div class="panel-heading"><span><i class="fa-regular fa-image"></i></span><div><small>REFERÊNCIA</small><h3>Imagem da encomenda</h3></div></div><div class="driver-package-image"><img id="encomenda-imagem" class="hidden" alt="Imagem da encomenda"><div id="no-image-placeholder"><i class="fa-regular fa-image"></i><span>Sem imagem anexada</span></div></div></article>
+        <article class="driver-action-card">
+          <div class="panel-heading"><span><i class="fa-solid fa-list-check"></i></span><div><small>FLUXO OPERACIONAL</small><h3>Actualizar pedido</h3></div></div>
+          <button type="button" id="btn-iniciar-entrega" class="driver-primary-action"><i class="fa-solid fa-play"></i> Iniciar recolha</button>
+          <form id="form-finalizacao" class="driver-final-form hidden">
+            <label for="codigo-finalizacao"><span>Código de finalização</span><input type="text" id="codigo-finalizacao" maxlength="5" autocomplete="off" required placeholder="Ex.: A7K2P"></label>
+            <label for="driver-delivery-notes"><span>Notas da entrega</span><textarea id="driver-delivery-notes" maxlength="1000" placeholder="Ocorrências, condição do pacote ou observações"></textarea></label>
+            <label for="driver-delivery-proof"><span>Comprovativo fotográfico</span><input type="file" id="driver-delivery-proof" accept="image/jpeg,image/png,image/webp"><small>Opcional · JPG, PNG ou WebP até 5 MB</small></label>
+            <button type="submit" class="driver-primary-action"><i class="fa-solid fa-circle-check"></i> Finalizar entrega</button>
+          </form>
+          <p class="driver-action-note"><i class="fa-solid fa-lock"></i> Todas as alterações são comunicadas ao Admin em tempo real.</p>
+        </article>
+      </section>
+    </section>
+
+    <section id="meus-ganhos" class="content-section hidden driver-earnings-page">
+      <div class="driver-detail-topbar driver-premium-topbar"><button type="button" class="btn-voltar" id="btn-voltar-lista-ganhos"><i class="fa-solid fa-arrow-left"></i><span>Entregas</span></button><div><p class="driver-eyebrow">CARTEIRA DO MOTORISTA</p><h1 id="driver-earnings-title">Ganhos</h1><p>Acompanhe rendimentos, entregas e desempenho.</p></div><button type="button" class="driver-export-earnings" id="driver-export-earnings"><i class="fa-solid fa-arrow-down"></i><span>Extrato</span></button></div>
+      <div class="driver-earnings-period"><span><small>PERÍODO</small><strong id="driver-period-label">Este mês</strong></span><div class="driver-period-chips" role="group" aria-label="Período dos ganhos"><button type="button" data-driver-period="day">Hoje</button><button type="button" data-driver-period="week">Semana</button><button type="button" class="active" data-driver-period="month">Mês</button></div><select id="driver-earnings-period-select" hidden aria-hidden="true"><option value="day">Hoje</option><option value="week">Esta semana</option><option value="month" selected>Este mês</option></select><select id="driver-completed-period-select" hidden aria-hidden="true"><option value="day">Hoje</option><option value="week">Esta semana</option><option value="month" selected>Este mês</option></select></div>
+      <div class="driver-earnings-dashboard">
+        <div class="driver-earnings-main">
+          <section class="driver-wallet-hero"><div><small>GANHO LÍQUIDO</small><strong id="driver-total-ganhos">0,00 MZN</strong><p id="driver-earnings-summary-caption">Resumo deste mês.</p><span class="driver-wallet-status"><i></i> Valores actualizados</span></div><span><i class="fa-solid fa-wallet"></i></span></section>
+          <div class="driver-earnings-stats"><article><i class="fa-solid fa-box"></i><span><small>ENTREGAS</small><strong id="driver-total-entregas">0</strong><em>concluídas</em></span></article><article><i class="fa-solid fa-coins"></i><span><small>MÉDIA POR ENTREGA</small><strong id="driver-average-earning">0,00 MZN</strong><em>rendimento médio</em></span></article><article><i class="fa-solid fa-percent"></i><span><small>COMISSÃO</small><strong id="driver-commission-rate">0 %</strong><em>taxa aplicada</em></span></article><article><i class="fa-regular fa-calendar-check"></i><span><small>PRÓXIMO FECHO</small><strong id="driver-next-close">Fim do período</strong><em>ciclo actual</em></span></article></div>
+          <section class="driver-performance-card"><header><div><small>DESEMPENHO</small><h2>Actividade no período</h2></div><span><i class="fa-solid fa-arrow-trend-up"></i> Entregas concluídas</span></header><div class="driver-performance-chart" id="driver-performance-chart" aria-label="Gráfico de ganhos"><i style="--value:42%"><b>Seg</b></i><i style="--value:68%"><b>Ter</b></i><i style="--value:54%"><b>Qua</b></i><i style="--value:82%"><b>Qui</b></i><i style="--value:72%"><b>Sex</b></i><i style="--value:91%"><b>Sáb</b></i><i style="--value:60%"><b>Dom</b></i></div></section>
+        </div>
+        <aside class="driver-payout-card"><span class="driver-payout-icon"><i class="fa-solid fa-building-columns"></i></span><small>PRÓXIMO PAGAMENTO</small><h2 id="driver-payout-date">No fim do período</h2><p>Os valores confirmados ficam disponíveis após o fecho operacional.</p><div><span><small>Conta</small><strong>Carteira TraGo</strong></span><i class="fa-solid fa-circle-check"></i></div><button type="button" data-driver-nav="suporte-motorista"><i class="fa-regular fa-circle-question"></i> Dúvidas sobre pagamentos</button></aside>
+      </div>
+      <section class="driver-earnings-table-card"><div class="driver-section-header"><div><span class="driver-eyebrow">MOVIMENTOS</span><h2 id="driver-earnings-table-title">Histórico de entregas</h2><p>Ganhos detalhados de cada serviço concluído.</p></div><button type="button" id="driver-refresh-earnings" class="driver-inline-refresh" aria-label="Actualizar ganhos"><i class="fa-solid fa-rotate"></i><span>Actualizar</span></button></div><div class="driver-table-wrap"><table><thead><tr><th>Data</th><th>Pedido</th><th>Valor do serviço</th><th>O seu ganho</th></tr></thead><tbody id="driver-earnings-table-body"><tr><td colspan="4">A carregar…</td></tr></tbody></table></div></section>
+    </section>
+
+    <section id="configuracoes-motorista" class="content-section hidden driver-profile-page">
+      <div class="driver-detail-topbar driver-premium-topbar"><button type="button" class="btn-voltar" id="btn-voltar-lista-config"><i class="fa-solid fa-arrow-left"></i><span>Entregas</span></button><div><p class="driver-eyebrow">CONTA DO MOTORISTA</p><h1>O meu perfil</h1><p>Identidade, viatura, documentos e segurança.</p></div><span class="driver-profile-completeness"><i class="fa-solid fa-circle-check"></i><b id="driver-profile-progress">75%</b><small>completo</small></span></div>
+      <section class="driver-profile-hero-premium">
+        <div class="driver-profile-cover"><span></span><i></i></div>
+        <div class="driver-profile-identity">
+          <button type="button" class="driver-photo-picker" data-driver-photo="avatar" aria-label="Adicionar fotografia de perfil"><img id="driver-profile-photo" alt="Fotografia do motorista" hidden><span class="driver-avatar large" id="driver-profile-fallback">M</span><i class="fa-solid fa-camera"></i></button>
+          <input type="file" id="driver-avatar-file" accept="image/jpeg,image/png,image/webp" hidden>
+          <div><span class="driver-verified-label"><i class="fa-solid fa-shield-halved"></i> MOTORISTA VERIFICADO</span><h2 data-driver-full-name>Motorista</h2><p><i class="fa-solid fa-star"></i> <b id="driver-profile-rating">4.9</b> · <span id="driver-profile-deliveries">0 entregas</span></p></div>
+          <span class="driver-availability-badge"><i></i> Disponível</span>
+        </div>
+      </section>
+
+      <div class="driver-profile-layout">
+        <form id="driver-profile-form" class="driver-profile-form">
+          <section class="driver-profile-section"><header><span><i class="fa-regular fa-user"></i></span><div><small>INFORMAÇÃO PESSOAL</small><h2>Os seus dados</h2><p>Usados pela central para contacto e verificação.</p></div></header><div class="driver-profile-fields"><label class="wide"><span>Nome completo</span><input name="name" required autocomplete="name" placeholder="Nome do motorista"></label><label><span>Contacto</span><input name="phone" type="tel" required autocomplete="tel" placeholder="84 000 0000"></label><label><span>Email</span><input name="email" type="email" autocomplete="email" placeholder="motorista@email.com"></label><label class="wide"><span>Sobre si</span><textarea name="bio" maxlength="180" placeholder="Uma breve apresentação para o cliente."></textarea></label></div></section>
+
+          <section class="driver-profile-section driver-vehicle-section"><header><span><i class="fa-solid fa-motorcycle"></i></span><div><small>A SUA VIATURA</small><h2>Dados do veículo</h2><p>Estas informações ficam visíveis para o cliente durante a entrega.</p></div><b class="driver-public-tag"><i class="fa-regular fa-eye"></i> Público</b></header><div class="driver-vehicle-photo"><button type="button" data-driver-photo="vehicle"><img id="driver-vehicle-photo" alt="Fotografia da viatura" hidden><span><i class="fa-solid fa-motorcycle"></i><strong>Adicionar foto da viatura</strong><small>Mostre o veículo que o cliente deve procurar</small></span><b><i class="fa-solid fa-camera"></i> Alterar</b></button><input type="file" id="driver-vehicle-file" accept="image/jpeg,image/png,image/webp" hidden></div><div class="driver-profile-fields"><label><span>Tipo de veículo</span><select name="vehicle_type"><option value="mota">Motorizada</option><option value="carro">Carro</option><option value="carrinha">Carrinha</option><option value="outro">Outro</option></select></label><label><span>Matrícula</span><input name="vehicle_plate" maxlength="20" required placeholder="MZ-01-AB"></label><label><span>Marca</span><input name="vehicle_brand" maxlength="40" placeholder="Ex.: Honda"></label><label><span>Modelo</span><input name="vehicle_model" maxlength="40" placeholder="Ex.: CB 125F"></label><label><span>Cor</span><input name="vehicle_color" maxlength="30" placeholder="Ex.: Preta"></label><label><span>Ano</span><input name="vehicle_year" type="number" min="1990" max="2035" placeholder="2024"></label></div></section>
+
+          <section class="driver-profile-section"><header><span><i class="fa-regular fa-id-card"></i></span><div><small>DOCUMENTOS</small><h2>Carta de condução</h2><p>Visível apenas para a equipa de verificação TraGo.</p></div><b class="driver-private-tag"><i class="fa-solid fa-lock"></i> Privado</b></header><div class="driver-document-layout"><div class="driver-license-upload"><button type="button" data-driver-photo="license"><img id="driver-license-photo" alt="Fotografia da carta de condução" hidden><span><i class="fa-regular fa-id-card"></i><strong>Carregar documento</strong><small>JPG, PNG ou WEBP</small></span></button><input type="file" id="driver-license-file" accept="image/jpeg,image/png,image/webp" hidden></div><div class="driver-profile-fields"><label class="wide"><span>Número da carta</span><input name="license_number" maxlength="40" placeholder="Número do documento"></label><label><span>Validade</span><input name="license_expiry" type="date"></label><label><span>Categoria</span><select name="license_category"><option value="A">A · Motorizada</option><option value="B">B · Ligeiro</option><option value="C">C · Pesado</option></select></label></div></div><div class="driver-document-status"><i class="fa-solid fa-circle-check"></i><span><strong>Estado da verificação</strong><small>Documento pronto para validação pela Administração.</small></span><b>Pendente</b></div></section>
+
+          <section class="driver-profile-section"><header><span><i class="fa-solid fa-shield-heart"></i></span><div><small>SEGURANÇA</small><h2>Contacto de emergência</h2><p>Usado apenas em incidentes durante uma operação.</p></div></header><div class="driver-profile-fields"><label><span>Nome do contacto</span><input name="emergency_name" maxlength="80" placeholder="Nome completo"></label><label><span>Telefone</span><input name="emergency_phone" type="tel" maxlength="30" placeholder="Contacto alternativo"></label></div></section>
+
+          <div class="driver-profile-savebar"><span><i class="fa-solid fa-shield-halved"></i><b><strong>Dados protegidos</strong><small>O cliente vê apenas o perfil público e a viatura.</small></b></span><button type="submit"><i class="fa-solid fa-floppy-disk"></i> Guardar perfil</button></div>
+        </form>
+
+        <aside class="driver-profile-sidebar-premium">
+          <section class="driver-profile-quick-card"><header><small>CONTA E OPERAÇÃO</small><h2>Acessos rápidos</h2></header><button type="button" data-driver-nav="suporte-motorista"><i class="fa-regular fa-comments"></i><span><strong>Suporte interno</strong><small>Falar com a central TraGo</small></span><b><i class="fa-solid fa-chevron-right"></i></b></button><span><i class="fa-solid fa-location-crosshairs"></i><span><strong>Localização</strong><small id="settings-location-copy">Obrigatória para entregas.</small></span><b class="online">Activa</b></span></section>
+          <section class="driver-password-card"><div class="panel-heading"><span><i class="fa-solid fa-key"></i></span><div><small>SEGURANÇA</small><h3>Alterar palavra-passe</h3></div></div><form id="form-change-password-driver"><label><span>Palavra-passe actual</span><input type="password" id="driver-pass-antiga" required autocomplete="current-password"></label><label><span>Nova palavra-passe</span><input type="password" id="driver-pass-nova" minlength="8" required autocomplete="new-password"></label><label><span>Confirmar nova palavra-passe</span><input type="password" id="driver-pass-confirmar" minlength="8" required autocomplete="new-password"></label><button type="submit">Actualizar palavra-passe</button></form></section>
+        </aside>
+      </div>
+    </section>
+
+    <section id="suporte-motorista" class="content-section hidden">
+      <div class="driver-detail-topbar"><button type="button" class="btn-voltar" data-driver-nav="lista-entregas"><i class="fa-solid fa-arrow-left"></i><span>Entregas</span></button><div><p class="driver-eyebrow">COMUNICAÇÃO INTERNA</p><h1>Central de suporte</h1></div><span class="driver-support-online"><i></i> Admin online</span></div>
+      <article class="driver-support-intro"><span><i class="fa-solid fa-headset"></i></span><div><small>CENTRAL TRAGO</small><h2>Estamos consigo durante toda a entrega.</h2><p>Registe problemas com pedidos, pagamentos, clientes ou localização. A conversa fica guardada e acessível ao Admin.</p></div></article>
+      <div class="trago-support-hub" data-support-hub data-support-role="driver">
+        <div class="support-hub-top"><div><h2>Conversas operacionais</h2><p>Histórico permanente entre motorista e Administração.</p></div><button type="button" class="support-new" data-support-new><i class="fa-solid fa-plus"></i><span>Nova conversa</span></button></div>
+        <div class="support-notice" data-support-notice hidden></div>
+        <form class="support-create-card" data-support-create-form><div class="support-create-head"><h3>Novo pedido de apoio</h3><button type="button" data-support-close-create aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></div><div class="support-form-grid"><label class="support-field"><span>Assunto</span><input name="subject" maxlength="140" required placeholder="Ex.: Não consigo finalizar a entrega"></label><label class="support-field"><span>Categoria</span><select name="category"><option value="order">Pedido</option><option value="payment">Pagamento</option><option value="driver">Operação do motorista</option><option value="technical">Problema técnico</option><option value="account">Conta</option><option value="general">Geral</option></select></label><label class="support-field"><span>ID do pedido (opcional)</span><input name="order_id" maxlength="24" placeholder="Cole o ID completo do pedido"></label><label class="support-field"><span>Prioridade</span><select name="priority"><option value="normal">Normal</option><option value="high">Alta</option><option value="urgent">Urgente</option><option value="low">Baixa</option></select></label><label class="support-field full"><span>Mensagem</span><textarea name="message" maxlength="2000" required placeholder="Explique o que aconteceu e o que precisa da central."></textarea></label><div class="support-form-actions"><button type="submit"><i class="fa-solid fa-paper-plane"></i> Enviar para o Admin</button></div></div></form>
+        <div class="support-workspace"><aside class="support-sidebar"><div class="support-sidebar-head"><strong>Caixa de entrada <b data-support-count>0</b></strong><select data-support-filter aria-label="Filtrar"><option value="">Todas</option><option value="open">Abertas</option><option value="pending">Em atendimento</option><option value="resolved">Resolvidas</option><option value="closed">Fechadas</option></select><button type="button" class="support-refresh" data-support-refresh aria-label="Actualizar"><i class="fa-solid fa-rotate"></i></button></div><div class="support-thread-list" data-support-list></div></aside><div class="support-conversation-area"><div class="support-conversation-empty" data-support-conversation-empty><i class="fa-regular fa-comments"></i><h3>Seleccione uma conversa</h3><p>Veja o histórico e responda à Administração.</p></div><div class="support-conversation" data-support-conversation hidden><header class="support-conversation-head"><div><h3 data-support-subject>Conversa</h3><p data-support-meta></p><p class="support-requester" data-support-requester></p></div><div class="support-toolbar"><label>Estado<select data-support-status><option value="open">Aberto</option><option value="closed">Fechado</option></select></label></div></header><div class="support-message-stream" data-support-messages></div><form class="support-reply" data-support-reply-form><textarea data-support-reply maxlength="2000" required placeholder="Escreva uma resposta…"></textarea><button type="submit" aria-label="Enviar"><i class="fa-solid fa-paper-plane"></i></button></form></div></div></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="location-permission-modal" class="modal-overlay driver-modal hidden"><div class="modal-content"><button type="button" class="modal-close" id="close-location-modal" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button><span class="modal-illustration location"><i class="fa-solid fa-location-crosshairs"></i></span><h2>Active a sua localização</h2><p id="location-permission-note">A TraGo precisa do GPS para atribuir entregas, calcular a rota e manter o Admin informado.</p><div class="modal-actions"><button type="button" class="btn btn-primary" id="allow-location-btn"><i class="fa-solid fa-location-arrow"></i> Permitir localização</button><button type="button" class="btn btn-secondary" id="deny-location-btn">Agora não</button></div></div></div>
+
+  <div id="custom-alert-modal" class="modal-overlay driver-modal hidden"><div class="modal-content compact"><button type="button" class="modal-close" id="btn-close-alert" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button><span class="modal-illustration"><i class="fa-solid fa-bell"></i></span><h2 id="custom-alert-title">Aviso</h2><p id="custom-alert-message"></p><div class="modal-actions"><button type="button" class="btn btn-primary" id="btn-ok-alert">Entendido</button></div></div></div>
+
+  <div id="payment-confirmation-modal" class="modal-overlay driver-modal hidden"><div class="modal-content payment-confirmation"><button type="button" class="modal-close" id="btn-close-payment-confirmation" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button><span class="modal-illustration payment"><i class="fa-solid fa-cash-register"></i></span><small>VALOR A CONFIRMAR</small><h2 id="payment-confirmation-total">0,00 MZN</h2><p id="payment-confirmation-message">Confirme o pagamento antes de finalizar.</p><div class="form-group" id="payment-confirmation-amount-group"><label for="payment-confirmed-amount">Digite manualmente o valor recebido</label><input type="text" id="payment-confirmed-amount" inputmode="decimal" placeholder="Valor exacto" autocomplete="off" data-user-typed="false"></div><small id="payment-confirmation-method">Método: —</small><div class="modal-actions"><button type="button" class="btn btn-primary" id="btn-confirm-payment-finalize"><i class="fa-solid fa-circle-check"></i> Confirmar e finalizar</button><button type="button" class="btn btn-secondary" id="btn-cancel-payment-confirmation">Cancelar</button></div></div></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="js/common/map-ui.js?v=20260724-map-2"></script>
+  <script src="js/common/supabaseConfig.js"></script>
+  <script src="js/common/api.js"></script>
+  <script src="js/common/http.js"></script>
+  <script src="js/common/sw-register.js"></script>
+  <script src="js/common/feedback.js?v=20260723-r360-1"></script>
+  <script src="js/common/auth.js?v=20260724-driver-choice-1"></script>
+  <script src="js/common/ui.js?v=20260723-r360-3"></script>
+  <script src="js/common/supabaseRealtime.js?v=20260723-r360-4"></script>
+  <script src="js/common/navigation-memory.js?v=20260723-r360-4"></script>
+  <script src="js/common/support.js?v=r360-3"></script>
+  <script src="js/driver/driverMap.js?v=20260724-map-2"></script>
+  <script src="js/driver/driverTracking.js?v=20260724-driver-choice-1"></script>
+  <script src="js/driver/driver.js?v=20260724-driver-choice-1"></script>
+  <script src="js/driver/driver-v20.js?v=20260722-layoutfix2"></script>
+  <script src="js/driver/driver-profile.js?v=20260723-r360-5"></script>
+</body>
+</html>

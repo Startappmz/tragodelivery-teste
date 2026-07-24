@@ -1,0 +1,77 @@
+/* =========================================================
+   TRAGO DELIVERY — DESIGN TOKENS
+   Rebrand operacional africano moderno
+   ========================================================= */
+:root {
+  /* Marca */
+  --brand-green: #2F7A3C;
+  --brand-green-mid: #3DAA50;
+  --brand-green-light: #8DC543;
+  --brand-green-tint: #EAF5DA;
+  --brand-amber: #C97813;
+  --brand-amber-mid: #F6A226;
+  --brand-amber-tint: #FFF0DA;
+
+  /* Neutros */
+  --charcoal: #272324;
+  --charcoal-2: #50494B;
+  --page-bg: #F7F8F3;
+  --surface: #FFFFFF;
+  --surface-subtle: #FAFBF7;
+  --surface-muted: #F0F2EC;
+  --border: #E0DCD4;
+  --border-strong: #CFC8BE;
+
+  /* Texto */
+  --text-primary: #272324;
+  --text-secondary: #50494B;
+  --text-muted: #7A7475;
+  --text-inverse: #FFFFFF;
+
+  /* Semânticos */
+  --success: #2F7A3C;
+  --success-mid: #3DAA50;
+  --success-tint: #EAF5DA;
+  --warning: #C97813;
+  --warning-mid: #F6A226;
+  --warning-tint: #FFF0DA;
+  --danger: #DC2626;
+  --danger-dark: #991B1B;
+  --danger-tint: #FEE2E2;
+  --info: #1D6FA8;
+  --info-tint: #DBEAFE;
+  --inactive: #6B7280;
+  --inactive-tint: #F3F4F6;
+
+  /* Layout */
+  --sidebar-width: 252px;
+  --header-height: 60px;
+  --content-max: none;
+
+  /* Radius */
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --radius-tight: 4px;
+  --radius-pill: 20px;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 3px rgba(39, 35, 36, .06);
+  --shadow-md: 0 4px 16px rgba(39, 35, 36, .08);
+  --shadow-lg: 0 16px 40px rgba(39, 35, 36, .14);
+  --shadow-focus: 0 0 0 3px rgba(47, 122, 60, .20);
+
+  /* Tipografia */
+  --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-ui: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --fs-xs: 11px;
+  --fs-sm: 13px;
+  --fs-base: 14px;
+  --fs-md: 16px;
+  --fs-lg: 22px;
+  --fs-xl: 32px;
+
+  /* Motion */
+  --transition: 180ms ease;
+  --transition-fast: 120ms ease;
+  --transition-page: 180ms ease-out;
+}

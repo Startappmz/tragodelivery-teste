@@ -1,0 +1,2893 @@
+/* =========================================================
+   Trago Delivery · Painel do Motorista
+   Intervenção de raiz: layout claro, compacto e mapa interno estável.
+   ========================================================= */
+
+:root {
+    --driver-bg: #f6f7f2;
+    --driver-card: #ffffff;
+    --driver-card-soft: #fbfcf8;
+    --driver-border: #ded9cf;
+    --driver-border-soft: #ebe6dc;
+    --driver-text: #272324;
+    --driver-muted: #6f686a;
+    --driver-green: #2f7a3c;
+    --driver-green-soft: #eaf5da;
+    --driver-lime: #8dc543;
+    --driver-orange: #f6a226;
+    --driver-blue: #2563eb;
+    --driver-danger: #dc2626;
+    --driver-shadow: 0 16px 44px rgba(39, 35, 36, 0.10);
+    --driver-shadow-soft: 0 8px 24px rgba(39, 35, 36, 0.07);
+}
+
+html,
+body.motorista-body {
+    min-height: 100%;
+    background: var(--driver-bg) !important;
+    color: var(--driver-text);
+    overflow-x: hidden;
+}
+
+.motorista-body {
+    display: flex;
+    flex-direction: column;
+    font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.motorista-body .background,
+.motorista-body .orb {
+    display: none !important;
+}
+
+/* ---------- Header ---------- */
+.motorista-header {
+    width: min(1440px, calc(100% - 32px));
+    min-height: 72px;
+    margin: 0 auto 14px;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid var(--driver-border);
+    border-top: 0;
+    border-radius: 0 0 12px 12px;
+    box-shadow: var(--driver-shadow-soft);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.motorista-logo {
+    width: 126px;
+    max-height: 58px;
+    height: auto;
+    display: block;
+}
+
+.motorista-profile {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.motorista-profile > span {
+    color: var(--driver-muted);
+    font-size: 0.92rem;
+    white-space: nowrap;
+}
+
+#driver-name-header {
+    color: var(--driver-text);
+    font-weight: 760;
+}
+
+.btn-logout,
+.btn-mobile-driver-menu {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 14px;
+    border: 1px solid var(--driver-border);
+    border-radius: 8px;
+    background: var(--driver-card-soft);
+    color: var(--driver-text);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 760;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.btn-logout:hover,
+.btn-mobile-driver-menu:hover {
+    background: #ffffff;
+    border-color: var(--driver-lime);
+    color: var(--driver-green);
+}
+
+#driver-logout.btn-logout:hover {
+    border-color: rgba(220, 38, 38, 0.35);
+    color: var(--driver-danger);
+}
+
+.btn-mobile-driver-menu {
+    display: none;
+    width: 44px;
+    padding: 0;
+}
+
+.driver-mobile-menu {
+    position: fixed;
+    top: 76px;
+    right: 16px;
+    width: min(260px, calc(100vw - 32px));
+    padding: 8px;
+    background: #ffffff;
+    border: 1px solid var(--driver-border);
+    border-radius: 12px;
+    box-shadow: var(--driver-shadow);
+    z-index: 1100;
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.driver-mobile-menu.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.driver-mobile-menu ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.driver-mobile-menu a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    border-radius: 8px;
+    color: var(--driver-text);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.driver-mobile-menu a:hover {
+    background: var(--driver-green-soft);
+    color: var(--driver-green);
+}
+
+/* ---------- Containers ---------- */
+.motorista-main {
+    width: min(1440px, calc(100% - 32px));
+    margin: 0 auto 32px;
+    padding: 0;
+}
+
+.content-section {
+    margin: 0 0 18px;
+}
+
+.content-section .glass-card,
+.glass-card {
+    background: var(--driver-card) !important;
+    border: 1px solid var(--driver-border) !important;
+    border-radius: 12px !important;
+    box-shadow: var(--driver-shadow-soft) !important;
+}
+
+.content-section > .glass-card {
+    padding: 18px;
+}
+
+.section-title {
+    margin: 0 0 14px;
+    color: var(--driver-text) !important;
+    font-size: clamp(1.12rem, 1.8vw, 1.42rem) !important;
+    font-weight: 820 !important;
+    line-height: 1.2;
+}
+
+.section-title i {
+    color: var(--driver-lime);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ---------- Lista de entregas ---------- */
+#entregas-container {
+    display: grid;
+    gap: 12px;
+}
+
+.entrega-card {
+    display: grid;
+    gap: 8px;
+    padding: 14px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid var(--driver-border-soft);
+    border-left: 4px solid var(--driver-lime);
+    cursor: pointer;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.entrega-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(141, 197, 67, 0.55);
+    box-shadow: var(--driver-shadow-soft);
+}
+
+.entrega-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--driver-text);
+    font-weight: 820;
+}
+
+.entrega-card-header span {
+    color: var(--driver-muted);
+    font-size: 0.84rem;
+    font-weight: 650;
+    text-align: right;
+}
+
+.entrega-card p {
+    margin: 0;
+    color: var(--driver-muted);
+    font-size: 0.92rem;
+    line-height: 1.4;
+}
+
+.entrega-card p strong {
+    color: var(--driver-text);
+}
+
+.ver-detalhes-btn {
+    justify-self: start;
+    margin-top: 4px;
+    color: var(--driver-green);
+    font-size: 0.84rem;
+    font-weight: 820;
+}
+
+.loading-state,
+.empty-state,
+.error-state {
+    padding: 18px;
+    border-radius: 10px;
+    background: var(--driver-card-soft);
+    border: 1px dashed var(--driver-border);
+    color: var(--driver-muted);
+    font-weight: 650;
+    text-align: center;
+}
+
+.error-state {
+    color: var(--driver-danger);
+}
+
+/* ---------- Detalhe premium ---------- */
+.driver-detail-card {
+    padding: 18px !important;
+}
+
+.driver-detail-topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.driver-detail-topbar > div {
+    flex: 1 1 auto;
+    text-align: right;
+}
+
+.driver-eyebrow {
+    margin: 0 0 3px;
+    color: var(--driver-muted);
+    font-size: 0.76rem;
+    font-weight: 820;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.btn-voltar {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1px solid var(--driver-border);
+    border-radius: 8px;
+    background: var(--driver-card-soft);
+    color: var(--driver-muted);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 760;
+    cursor: pointer;
+    transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.btn-voltar:hover {
+    background: #ffffff;
+    border-color: var(--driver-lime);
+    color: var(--driver-green);
+}
+
+.driver-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.58fr) minmax(330px, 0.72fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.driver-map-card {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid var(--driver-border);
+    box-shadow: var(--driver-shadow-soft);
+}
+
+.driver-map-header,
+.driver-map-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    background: linear-gradient(180deg, #ffffff, #fbfcf8);
+}
+
+.driver-map-header {
+    border-bottom: 1px solid var(--driver-border-soft);
+}
+
+.driver-map-footer {
+    border-top: 1px solid var(--driver-border-soft);
+}
+
+.driver-map-kicker {
+    margin: 0 0 3px;
+    color: var(--driver-muted);
+    font-size: 0.68rem;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.driver-map-header h3 {
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--driver-text);
+    font-size: 1.04rem;
+    line-height: 1.2;
+    font-weight: 850;
+}
+
+.driver-map-header h3 i {
+    color: var(--driver-lime);
+}
+
+.driver-map-header p:last-child,
+#driver-map-status {
+    margin: 0;
+    color: var(--driver-muted);
+    font-size: 0.84rem;
+    font-weight: 620;
+}
+
+.driver-map-badge {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.76rem;
+    font-weight: 850;
+}
+
+.driver-map-badge[data-state="active"] {
+    background: var(--driver-green-soft);
+    border-color: rgba(141, 197, 67, 0.50);
+    color: #166534;
+}
+
+.driver-map-stage {
+    position: relative;
+    height: clamp(480px, 64vh, 760px);
+    min-height: 480px;
+    background: #eef2f0;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.driver-route-map {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    background: #eef2f0 !important;
+    z-index: 1;
+    overflow: hidden !important;
+}
+
+.driver-map-legend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    color: var(--driver-muted);
+    font-size: 0.8rem;
+    font-weight: 760;
+}
+
+.driver-map-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-dot {
+    width: 9px;
+    height: 9px;
+    display: inline-block;
+    border-radius: 999px;
+}
+
+.legend-pickup { background: var(--driver-orange); }
+.legend-delivery { background: var(--driver-green); }
+.legend-driver { background: var(--driver-blue); }
+
+.route-actions-inline {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-mapa {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1px solid var(--driver-green);
+    border-radius: 8px;
+    background: var(--driver-green);
+    color: #ffffff;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 820;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.btn-mapa:hover {
+    background: #256932;
+    border-color: #256932;
+}
+
+.btn-mapa-secondary {
+    background: #ffffff;
+    color: var(--driver-text);
+    border-color: var(--driver-border);
+}
+
+.btn-mapa-secondary:hover {
+    background: var(--driver-card-soft);
+    color: var(--driver-green);
+    border-color: var(--driver-lime);
+}
+
+.driver-side-panel {
+    position: relative;
+    z-index: 0;
+    min-width: 0;
+    display: grid;
+    gap: 12px;
+}
+
+.detalhes-bloco {
+    min-width: 0;
+    margin: 0;
+    padding: 14px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid var(--driver-border);
+    box-shadow: 0 1px 3px rgba(39, 35, 36, 0.05);
+}
+
+.detalhes-bloco h3 {
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--driver-text);
+    font-size: 0.9rem;
+    font-weight: 850;
+    line-height: 1.2;
+}
+
+.detalhes-bloco h3 i {
+    color: var(--driver-lime);
+}
+
+.detalhes-bloco p {
+    margin: 0 0 7px;
+    color: var(--driver-muted);
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.detalhes-bloco p:last-child {
+    margin-bottom: 0;
+}
+
+.detalhes-bloco p strong {
+    color: var(--driver-text);
+    font-weight: 820;
+}
+
+.motorista-body .driver-route-summary-card {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    background: linear-gradient(180deg, #ffffff, #fbfcf8);
+    overflow: hidden;
+}
+
+.route-flow {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 0;
+}
+
+.route-point-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 11px;
+    align-items: start;
+    padding: 12px;
+    border: 1px solid var(--driver-border-soft);
+    border-radius: 12px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.route-marker-dot {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    color: #ffffff;
+    box-shadow: 0 7px 16px rgba(39, 35, 36, 0.16);
+}
+
+.route-point-pickup .route-marker-dot { background: var(--driver-orange); }
+.route-point-delivery .route-marker-dot { background: var(--driver-green); }
+
+.route-point-card small {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--driver-muted);
+    font-size: 0.7rem;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.route-point-card strong,
+.route-address-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    color: var(--driver-text);
+    font-size: 0.94rem;
+    line-height: 1.34;
+    font-weight: 820;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: auto;
+}
+
+.route-address-full {
+    display: none;
+}
+
+.route-connector-line {
+    width: 2px;
+    height: 18px;
+    margin-left: 27px;
+    background: repeating-linear-gradient(to bottom, #b7b0a7 0 4px, transparent 4px 8px);
+}
+
+.route-metric-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--driver-green-soft);
+    border: 1px solid rgba(141, 197, 67, 0.42);
+}
+
+.route-metric-pill span {
+    color: var(--driver-muted);
+    font-size: 0.78rem;
+    font-weight: 820;
+}
+
+.route-metric-pill strong {
+    color: var(--driver-green);
+    font-size: 0.96rem;
+    font-weight: 880;
+}
+
+.route-coords {
+    margin-top: 10px;
+    padding: 9px 10px;
+    border-radius: 9px;
+    background: var(--driver-card-soft);
+    border: 1px solid var(--driver-border-soft);
+    color: var(--driver-muted);
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.route-coords strong {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--driver-text);
+}
+
+.route-coords span {
+    display: grid;
+    gap: 4px;
+}
+
+.action-card .btn-primary,
+.btn-iniciar,
+#form-finalizacao .btn-primary {
+    width: 100%;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--driver-green) !important;
+    border-radius: 9px !important;
+    background: var(--driver-green) !important;
+    color: #ffffff !important;
+    font-weight: 850 !important;
+    cursor: pointer;
+    box-shadow: none !important;
+}
+
+.action-card .btn-primary:hover,
+.btn-iniciar:hover,
+#form-finalizacao .btn-primary:hover {
+    background: #256932 !important;
+    border-color: #256932 !important;
+    transform: none !important;
+}
+
+.status-info {
+    padding: 9px 10px;
+    border-radius: 9px;
+    background: var(--driver-green-soft);
+    border: 1px solid rgba(141, 197, 67, 0.42);
+    color: var(--driver-green);
+    text-align: center;
+    font-weight: 800;
+}
+
+#codigo-finalizacao {
+    width: 100%;
+    min-height: 46px;
+    text-align: center;
+    letter-spacing: 0.26rem;
+    text-transform: uppercase;
+    font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 1.35rem;
+    font-weight: 800;
+}
+
+.delivery-image-display img {
+    width: 100%;
+    max-height: 210px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--driver-border-soft);
+}
+
+#no-image-placeholder {
+    min-height: 98px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px dashed var(--driver-border);
+    background: var(--driver-card-soft);
+    color: var(--driver-muted);
+    text-align: center;
+}
+
+#no-image-placeholder.hidden {
+    display: none !important;
+}
+
+/* ---------- Configurações e ganhos ---------- */
+.config-form,
+.form-section,
+.table-section {
+    max-width: 760px;
+}
+
+.form-section {
+    padding: 14px;
+    border: 1px solid var(--driver-border-soft);
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.form-section h3,
+.table-section h3 {
+    margin: 0 0 8px;
+    color: var(--driver-text);
+    font-size: 1rem;
+    font-weight: 850;
+}
+
+.form-note {
+    margin: 0 0 12px;
+    color: var(--driver-muted);
+    font-size: 0.9rem;
+}
+
+.section-spaced {
+    margin-top: 14px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.stat-card {
+    padding: 14px !important;
+}
+
+.stat-info h3 {
+    margin: 0 0 6px;
+    color: var(--driver-muted);
+    font-size: 0.8rem;
+    font-weight: 820;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.stat-value {
+    color: var(--driver-text);
+    font-size: clamp(1.35rem, 2vw, 1.8rem);
+    font-weight: 900;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--driver-border-soft);
+    border-radius: 10px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+}
+
+.data-table th,
+.data-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--driver-border-soft);
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.data-table th {
+    color: var(--driver-muted);
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--driver-card-soft);
+}
+
+.value-success {
+    color: var(--driver-green) !important;
+    font-weight: 850;
+}
+
+/* ---------- Leaflet: isolamento total contra CSS global ---------- */
+.leaflet-container {
+    font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    background: #eef2f0 !important;
+    cursor: grab;
+}
+
+.leaflet-container * {
+    box-sizing: content-box;
+}
+
+.leaflet-container .leaflet-control-container,
+.leaflet-container .leaflet-control-container * {
+    box-sizing: border-box;
+}
+
+.leaflet-container img,
+.leaflet-container img.leaflet-tile,
+.leaflet-container .leaflet-marker-icon,
+.leaflet-container .leaflet-marker-shadow {
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: initial !important;
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.leaflet-container img.leaflet-tile {
+    position: absolute !important;
+    display: block !important;
+    width: 256px !important;
+    height: 256px !important;
+}
+
+.driver-route-map .leaflet-pane,
+.driver-route-map .leaflet-map-pane,
+.driver-route-map .leaflet-tile-pane,
+.driver-route-map .leaflet-overlay-pane,
+.driver-route-map .leaflet-marker-pane,
+.driver-route-map .leaflet-popup-pane {
+    max-width: none !important;
+}
+
+.leaflet-control-zoom a {
+    color: var(--driver-text) !important;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+    border-radius: 12px !important;
+}
+
+.trago-map-pin {
+    background: transparent !important;
+    border: none !important;
+    text-align: center;
+}
+
+.trago-map-pin span {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.24);
+}
+
+.trago-map-pin small {
+    display: block;
+    width: 78px;
+    margin-top: 3px;
+    transform: translateX(-20px);
+    padding: 4px 6px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    background: rgba(255,255,255,0.95);
+    color: #0f172a;
+    font-size: 0.68rem;
+    font-weight: 850;
+    line-height: 1;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.trago-map-pin-pickup span { background: var(--driver-orange); }
+.trago-map-pin-delivery span { background: var(--driver-green); }
+.trago-map-pin-driver span { background: var(--driver-blue); }
+
+/* ---------- Modais do painel ---------- */
+.location-modal {
+    max-width: 520px;
+}
+
+.location-modal-body {
+    text-align: center;
+}
+
+.location-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 12px;
+    display: grid;
+    place-items: center;
+    border-radius: 18px;
+    background: var(--driver-green-soft);
+    color: var(--driver-green);
+    font-size: 2rem;
+}
+
+.location-title {
+    margin: 0 0 8px;
+    color: var(--driver-text);
+    font-size: 1.2rem;
+}
+
+.location-copy,
+.privacy-line,
+.privacy-title,
+.location-warning p,
+.location-note {
+    color: var(--driver-muted);
+    line-height: 1.45;
+}
+
+.privacy-panel,
+.location-warning {
+    text-align: left;
+    margin: 12px 0;
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--driver-card-soft);
+    border: 1px solid var(--driver-border-soft);
+}
+
+.privacy-title {
+    margin: 0 0 8px;
+    font-weight: 850;
+    color: var(--driver-text);
+}
+
+.privacy-line {
+    margin: 6px 0;
+}
+
+.privacy-line i {
+    color: var(--driver-green);
+}
+
+.location-warning {
+    background: #fff7ed;
+    border-color: rgba(246, 162, 38, 0.35);
+}
+
+.location-warning p,
+.location-note {
+    margin: 0;
+}
+
+.location-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.location-note {
+    display: none;
+    margin-top: 12px;
+    font-weight: 750;
+}
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1180px) {
+    .driver-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .driver-side-panel {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .driver-route-summary-card {
+        grid-column: 1 / -1;
+    }
+
+    .action-card {
+        grid-column: span 1;
+    }
+}
+
+@media (max-width: 900px) {
+    .motorista-profile {
+        display: none;
+    }
+
+    .btn-mobile-driver-menu {
+        display: inline-flex;
+    }
+
+    .motorista-header,
+    .motorista-main {
+        width: min(100% - 20px, 1440px);
+    }
+
+    .driver-detail-topbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .driver-detail-topbar > div {
+        text-align: left;
+    }
+
+    .driver-map-header,
+    .driver-map-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .route-actions-inline {
+        justify-content: stretch;
+    }
+
+    .route-actions-inline .btn-mapa {
+        flex: 1 1 0;
+    }
+
+    .driver-map-stage {
+        height: 460px;
+        min-height: 460px;
+    }
+}
+
+@media (max-width: 680px) {
+    .content-section > .glass-card,
+    .driver-detail-card {
+        padding: 12px !important;
+    }
+
+    .driver-side-panel,
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .entrega-card-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .entrega-card-header span {
+        text-align: left;
+    }
+
+    .driver-map-stage {
+        height: 390px;
+        min-height: 390px;
+    }
+
+    .route-actions-inline {
+        flex-direction: column;
+    }
+
+    .route-actions-inline .btn-mapa,
+    .location-actions {
+        width: 100%;
+        grid-template-columns: 1fr;
+    }
+
+    .desktop-only {
+        display: none !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .motorista-logo {
+        width: 104px;
+    }
+
+    .driver-map-stage {
+        height: 340px;
+        min-height: 340px;
+    }
+}
+
+
+/* ---------- Ajuste final: moradas compactas e mapa estável ---------- */
+.motorista-body .driver-route-summary-card,
+.motorista-body .driver-route-summary-card * {
+    box-sizing: border-box;
+}
+
+.motorista-body .route-point-card {
+    flex: none !important;
+}
+
+.motorista-body .driver-route-map.leaflet-container {
+    height: 100% !important;
+    width: 100% !important;
+}
+
+.motorista-body .leaflet-container img.leaflet-tile {
+    width: 256px !important;
+    height: 256px !important;
+}
+
+@media (max-width: 680px) {
+    .route-point-card {
+        grid-template-columns: 38px minmax(0, 1fr);
+        padding: 11px;
+    }
+
+    .route-point-card strong,
+    .route-address-title {
+        -webkit-line-clamp: 2;
+        font-size: 0.9rem;
+        line-height: 1.3;
+    }
+
+    .route-coords {
+        font-size: 0.74rem;
+    }
+}
+
+/* ---------- Correção premium: posição real do motorista no mapa ---------- */
+.motorista-body .driver-map-card,
+.motorista-body .driver-map-stage {
+    isolation: isolate;
+}
+
+.motorista-body .driver-map-header,
+.motorista-body .driver-map-footer {
+    position: relative;
+    z-index: 5;
+}
+
+.motorista-body .driver-route-map,
+.motorista-body .driver-route-map.leaflet-container {
+    z-index: 1 !important;
+}
+
+.motorista-body .driver-route-map .leaflet-control-container {
+    position: relative;
+    z-index: 4 !important;
+}
+
+.motorista-body .driver-route-map .leaflet-marker-pane {
+    z-index: 720 !important;
+}
+
+.motorista-body .driver-route-map .leaflet-popup-pane {
+    z-index: 760 !important;
+}
+
+.trago-driver-position-icon {
+    position: relative !important;
+    width: 72px !important;
+    height: 72px !important;
+    background: transparent !important;
+    border: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    pointer-events: auto;
+}
+
+.trago-driver-position-icon .trago-driver-position-pulse,
+.trago-driver-position-icon .trago-driver-position-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: block;
+    border-radius: 999px;
+    transform: translate(-50%, -50%);
+}
+
+.trago-driver-position-icon .trago-driver-position-pulse {
+    width: 54px;
+    height: 54px;
+    background: rgba(37, 99, 235, 0.16);
+    border: 2px solid rgba(37, 99, 235, 0.35);
+    animation: tragoDriverPulse 1.45s ease-out infinite;
+}
+
+.trago-driver-position-icon .trago-driver-position-dot {
+    width: 20px;
+    height: 20px;
+    background: #2563eb;
+    border: 4px solid #ffffff;
+    box-shadow: 0 12px 26px rgba(37, 99, 235, 0.42), 0 0 0 2px rgba(15, 23, 42, 0.12);
+}
+
+.trago-driver-position-icon small {
+    position: absolute;
+    left: 50%;
+    bottom: -2px;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 46px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 1px solid rgba(37, 99, 235, 0.22);
+    color: #1d4ed8;
+    font-size: 0.68rem;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+}
+
+@keyframes tragoDriverPulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.62);
+        opacity: 0.95;
+    }
+    70% {
+        transform: translate(-50%, -50%) scale(1.18);
+        opacity: 0.12;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.30);
+        opacity: 0;
+    }
+}
+
+@media (max-width: 680px) {
+    .trago-driver-position-icon small {
+        bottom: -6px;
+    }
+}
+
+/* =========================================================
+   Trago Driver · Mobile App Shell 2026-06-18
+   Objectivo: parecer aplicativo móvel mantendo IDs/fluxos existentes.
+   ========================================================= */
+body.motorista-body {
+    --driver-app-max: 520px;
+    min-height: 100svh;
+    padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+}
+
+.app-shell-header.motorista-header {
+    width: min(100% - 20px, var(--driver-app-max));
+    min-height: 64px;
+    margin: 10px auto 12px;
+    padding: 8px 10px;
+    border: 1px solid rgba(222, 217, 207, 0.88);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 10px 28px rgba(39, 35, 36, 0.08);
+}
+
+.driver-brand-button {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--driver-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.app-shell-header .motorista-logo {
+    width: 86px;
+    max-height: 46px;
+    object-fit: contain;
+}
+
+.driver-brand-copy {
+    display: grid;
+    gap: 1px;
+    line-height: 1.1;
+}
+
+.driver-brand-copy strong {
+    color: var(--driver-text);
+    font-size: 0.96rem;
+    font-weight: 900;
+}
+
+.driver-brand-copy small {
+    max-width: 126px;
+    overflow: hidden;
+    color: var(--driver-muted);
+    font-size: 0.72rem;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.driver-live-status {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: var(--driver-card-soft);
+    border: 1px solid var(--driver-border-soft);
+    color: var(--driver-muted);
+    font-size: 0.74rem;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+.driver-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--driver-orange);
+    box-shadow: 0 0 0 4px rgba(246, 162, 38, 0.12);
+}
+
+.driver-live-status.status-active {
+    background: var(--driver-green-soft);
+    border-color: rgba(141, 197, 67, 0.42);
+    color: var(--driver-green);
+}
+
+.driver-live-status.status-active .driver-live-dot {
+    background: var(--driver-lime);
+    box-shadow: 0 0 0 4px rgba(141, 197, 67, 0.16);
+}
+
+.driver-live-status.status-error .driver-live-dot {
+    background: var(--driver-danger);
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
+}
+
+.driver-top-action {
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 12px;
+}
+
+.driver-danger-action:hover {
+    color: var(--driver-danger) !important;
+}
+
+.driver-bottom-nav {
+    position: fixed;
+    left: 50%;
+    bottom: max(10px, env(safe-area-inset-bottom, 0px));
+    z-index: 1300;
+    width: min(calc(100% - 22px), var(--driver-app-max));
+    min-height: 66px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    padding: 7px;
+    border: 1px solid rgba(222, 217, 207, 0.92);
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 18px 48px rgba(39, 35, 36, 0.16);
+    transform: translateX(-50%);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.driver-bottom-nav-item {
+    min-width: 0;
+    min-height: 52px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 4px;
+    border: 0;
+    border-radius: 16px;
+    background: transparent;
+    color: var(--driver-muted);
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 850;
+    cursor: pointer;
+}
+
+.driver-bottom-nav-item i {
+    font-size: 1.04rem;
+}
+
+.driver-bottom-nav-item.active {
+    background: var(--driver-green-soft);
+    color: var(--driver-green);
+}
+
+.driver-bottom-nav-item.danger {
+    color: #9f3a3a;
+}
+
+.driver-bottom-nav-item.danger.active,
+.driver-bottom-nav-item.danger:active {
+    background: #fee2e2;
+    color: var(--driver-danger);
+}
+
+.motorista-main {
+    width: min(100% - 20px, var(--driver-app-max));
+    margin-bottom: 22px;
+}
+
+.driver-home-section {
+    display: grid;
+    gap: 12px;
+}
+
+.driver-home-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 2px 4px 0;
+}
+
+.driver-hero-copy h1 {
+    margin: 0;
+    color: var(--driver-text);
+    font-size: clamp(1.72rem, 6vw, 2.2rem);
+    font-weight: 940;
+    letter-spacing: -0.045em;
+    line-height: 1;
+}
+
+.driver-hero-copy p {
+    margin: 5px 0 0;
+    color: var(--driver-muted);
+    font-size: 0.9rem;
+    font-weight: 650;
+}
+
+.driver-refresh-btn,
+.driver-inline-refresh,
+.driver-empty-refresh {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--driver-border);
+    border-radius: 13px;
+    background: #ffffff;
+    color: var(--driver-text);
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 850;
+    cursor: pointer;
+}
+
+.driver-refresh-btn {
+    width: 44px;
+    padding: 0;
+}
+
+.driver-refresh-btn.is-loading i,
+.driver-inline-refresh.is-loading i {
+    animation: driverSpin 0.75s linear infinite;
+}
+
+@keyframes driverSpin { to { transform: rotate(360deg); } }
+
+.driver-status-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid rgba(222, 217, 207, 0.88);
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 10px 28px rgba(39, 35, 36, 0.06);
+}
+
+.driver-status-main {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.driver-status-icon {
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 14px;
+    background: #fff7ed;
+    color: var(--driver-orange);
+}
+
+.driver-status-main strong,
+.settings-row-head strong,
+.driver-settings-accordion summary strong {
+    display: block;
+    color: var(--driver-text);
+    font-size: 0.95rem;
+    font-weight: 900;
+}
+
+.driver-status-main small,
+.settings-row-head small,
+.driver-settings-accordion summary small {
+    display: block;
+    margin-top: 2px;
+    color: var(--driver-muted);
+    font-size: 0.78rem;
+    font-weight: 650;
+    line-height: 1.25;
+}
+
+.driver-status-meta {
+    flex: 0 0 auto;
+    color: var(--driver-muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-align: right;
+}
+
+.driver-status-card.status-active {
+    border-color: rgba(141, 197, 67, 0.42);
+    background: linear-gradient(180deg, #ffffff, #f8fcf0);
+}
+
+.driver-status-card.status-active .driver-status-icon {
+    background: var(--driver-green-soft);
+    color: var(--driver-green);
+}
+
+.driver-list-card.content-section .glass-card,
+.driver-list-card,
+.content-section > .driver-list-card {
+    padding: 14px !important;
+    border-radius: 20px !important;
+    box-shadow: 0 12px 34px rgba(39, 35, 36, 0.07) !important;
+}
+
+.driver-section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.driver-section-header .section-title {
+    margin-bottom: 0;
+    font-size: 1.18rem !important;
+    letter-spacing: -0.025em;
+}
+
+.driver-deliveries-list {
+    display: grid;
+    gap: 10px;
+}
+
+.driver-delivery-card.entrega-card {
+    gap: 12px;
+    padding: 14px;
+    border-left: 0;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff, #fbfcf8);
+    box-shadow: 0 8px 20px rgba(39, 35, 36, 0.05);
+}
+
+.driver-delivery-top,
+.driver-delivery-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.driver-delivery-id {
+    color: var(--driver-text);
+    font-size: 1.02rem;
+    font-weight: 940;
+    letter-spacing: -0.02em;
+}
+
+.driver-delivery-status,
+.driver-order-status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 26px;
+    padding: 0 9px;
+    border-radius: 999px;
+    background: var(--driver-green-soft);
+    color: var(--driver-green);
+    font-size: 0.72rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.driver-delivery-status.status-entrega_em_progresso,
+.driver-order-status-pill.status-entrega_em_progresso,
+.driver-delivery-status.status-recolha_em_progresso,
+.driver-order-status-pill.status-recolha_em_progresso,
+.driver-delivery-status.status-em_progresso,
+.driver-order-status-pill.status-em_progresso {
+    background: #eff6ff;
+    color: var(--driver-blue);
+}
+
+.driver-delivery-status.status-cancelado,
+.driver-order-status-pill.status-cancelado {
+    background: #fee2e2;
+    color: var(--driver-danger);
+}
+
+.driver-delivery-route {
+    display: grid;
+    gap: 6px;
+    padding: 10px;
+    border-radius: 15px;
+    background: var(--driver-card-soft);
+    border: 1px solid var(--driver-border-soft);
+}
+
+.driver-delivery-route span {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--driver-text);
+    font-size: 0.9rem;
+    font-weight: 760;
+    line-height: 1.25;
+}
+
+.driver-delivery-route i:not(.route-arrow) {
+    width: 18px;
+    color: var(--driver-lime);
+    text-align: center;
+}
+
+.route-arrow {
+    margin-left: 5px;
+    color: var(--driver-muted);
+    font-size: 0.78rem;
+}
+
+.driver-delivery-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.driver-delivery-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 1px solid var(--driver-border-soft);
+    color: var(--driver-muted);
+    font-size: 0.73rem;
+    font-weight: 800;
+}
+
+.driver-delivery-price small {
+    display: block;
+    color: var(--driver-muted);
+    font-size: 0.68rem;
+    font-weight: 850;
+    text-transform: uppercase;
+}
+
+.driver-delivery-price strong {
+    color: var(--driver-text);
+    font-size: 1.04rem;
+    font-weight: 940;
+}
+
+.driver-empty-state,
+.driver-loading-card,
+.driver-error-state {
+    min-height: 224px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 9px;
+    padding: 22px 18px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff, #fbfcf8);
+    border-style: solid;
+}
+
+.driver-empty-icon {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border-radius: 20px;
+    background: var(--driver-green-soft);
+    color: var(--driver-green);
+    font-size: 1.65rem;
+}
+
+.driver-empty-state strong,
+.driver-error-state strong,
+.driver-loading-card strong {
+    color: var(--driver-text);
+    font-size: 1rem;
+    font-weight: 900;
+}
+
+.driver-empty-state p,
+.driver-error-state p,
+.driver-loading-card span {
+    max-width: 280px;
+    margin: 0;
+    color: var(--driver-muted);
+    font-size: 0.86rem;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.driver-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.driver-quick-action {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 10px;
+    border: 1px solid var(--driver-border-soft);
+    border-radius: 13px;
+    background: var(--driver-card-soft);
+    color: var(--driver-text);
+    font-size: 0.78rem;
+    font-weight: 850;
+    text-decoration: none;
+}
+
+.driver-quick-action:hover {
+    border-color: var(--driver-lime);
+    color: var(--driver-green);
+}
+
+.driver-quick-empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 10px;
+    border-radius: 12px;
+    background: var(--driver-card-soft);
+    color: var(--driver-muted);
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.driver-flow-title {
+    margin-top: 8px !important;
+}
+
+.driver-earnings-hero {
+    display: grid;
+    gap: 12px;
+    align-items: start;
+    padding-bottom: 4px;
+}
+
+.driver-earnings-caption {
+    margin: 4px 0 0;
+    color: var(--driver-muted);
+    font-size: 0.86rem;
+    font-weight: 650;
+}
+
+.driver-period-chips {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 5px;
+    border-radius: 16px;
+    background: var(--driver-card-soft);
+    border: 1px solid var(--driver-border-soft);
+}
+
+.driver-period-chip {
+    min-height: 38px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--driver-muted);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.driver-period-chip.active {
+    background: #ffffff;
+    color: var(--driver-green);
+    box-shadow: 0 7px 16px rgba(39, 35, 36, 0.07);
+}
+
+.driver-period-select-fallback {
+    display: none;
+}
+
+.stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stats-grid .stat-card {
+    border-radius: 18px !important;
+    box-shadow: 0 8px 22px rgba(39, 35, 36, 0.05) !important;
+}
+
+.table-section.driver-completed-section {
+    max-width: none;
+}
+
+.driver-settings-list {
+    display: grid;
+    gap: 12px;
+    max-width: 760px;
+}
+
+.driver-settings-panel {
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--driver-border-soft);
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(39, 35, 36, 0.05);
+    overflow: hidden;
+}
+
+.driver-settings-accordion summary,
+.settings-row-head {
+    min-height: 70px;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 20px;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.driver-settings-accordion summary::-webkit-details-marker {
+    display: none;
+}
+
+.settings-icon {
+    width: 42px;
+    height: 42px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 14px;
+    background: var(--driver-green-soft);
+    color: var(--driver-green);
+}
+
+.settings-chevron {
+    color: var(--driver-muted);
+    transition: transform 0.18s ease;
+}
+
+.driver-settings-accordion[open] .settings-chevron {
+    transform: rotate(180deg);
+}
+
+.settings-form-body.form-section {
+    margin: 0;
+    padding: 0 14px 14px;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.driver-location-panel {
+    display: grid;
+    gap: 0;
+}
+
+.settings-row-head {
+    grid-template-columns: 44px minmax(0, 1fr);
+}
+
+.settings-action-btn {
+    margin: 0 14px 14px;
+    min-height: 44px;
+    border-radius: 14px !important;
+}
+
+@media (min-width: 901px) {
+    body.motorista-body {
+        --driver-app-max: 1100px;
+        padding-bottom: 30px;
+    }
+
+    .driver-bottom-nav {
+        display: none;
+    }
+
+    .driver-earnings-hero {
+        grid-template-columns: minmax(0, 1fr) 330px;
+    }
+
+    .driver-period-select-fallback {
+        display: none;
+    }
+}
+
+@media (max-width: 900px) {
+    body.motorista-body {
+        background: #f8f9f4 !important;
+    }
+
+    .motorista-profile {
+        display: none !important;
+    }
+
+    .btn-mobile-driver-menu {
+        display: none !important;
+    }
+
+    .driver-mobile-menu {
+        display: none !important;
+    }
+
+    .driver-live-status {
+        max-width: 118px;
+        overflow: hidden;
+        padding: 0 9px;
+        text-overflow: ellipsis;
+    }
+
+    .driver-live-status span:last-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .content-section > .glass-card,
+    .driver-detail-card {
+        padding: 14px !important;
+        border-radius: 20px !important;
+    }
+
+    .btn-voltar {
+        min-height: 42px;
+        border-radius: 14px;
+    }
+
+    .driver-detail-topbar {
+        gap: 10px;
+    }
+
+    .driver-detail-topbar .section-title {
+        margin-bottom: 8px;
+        font-size: 1.36rem !important;
+    }
+
+    .driver-map-stage {
+        height: 300px !important;
+        min-height: 300px !important;
+    }
+
+    .driver-side-panel {
+        grid-template-columns: 1fr !important;
+    }
+
+    .detalhes-bloco {
+        border-radius: 18px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .stats-grid .stat-card:first-child {
+        grid-column: 1 / -1;
+        background: linear-gradient(180deg, #ffffff, #f8fcf0) !important;
+    }
+
+    .stats-grid .stat-card:first-child .stat-value {
+        font-size: 2rem;
+        letter-spacing: -0.045em;
+    }
+
+    .driver-completed-period-group {
+        display: none;
+    }
+
+    .table-section-header.driver-completed-header {
+        display: block;
+    }
+
+    .table-wrapper {
+        border: 0;
+        border-radius: 0;
+        overflow: visible;
+    }
+
+    .data-table,
+    .data-table tbody,
+    .data-table tr,
+    .data-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .data-table thead {
+        display: none;
+    }
+
+    .data-table tr {
+        margin-bottom: 10px;
+        padding: 12px;
+        border: 1px solid var(--driver-border-soft);
+        border-radius: 18px;
+        background: #ffffff;
+        box-shadow: 0 8px 20px rgba(39, 35, 36, 0.05);
+    }
+
+    .data-table td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--driver-border-soft);
+        text-align: right;
+        font-weight: 820;
+    }
+
+    .data-table td:last-child {
+        border-bottom: 0;
+    }
+
+    .data-table td::before {
+        content: attr(data-label);
+        color: var(--driver-muted);
+        font-size: 0.73rem;
+        font-weight: 900;
+        text-align: left;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+}
+
+@media (max-width: 420px) {
+    .app-shell-header .motorista-logo {
+        width: 78px;
+    }
+
+    .driver-brand-copy {
+        display: none;
+    }
+
+    .driver-live-status {
+        margin-left: auto;
+    }
+
+    .driver-home-hero {
+        align-items: center;
+    }
+
+    .driver-section-header {
+        align-items: stretch;
+    }
+
+    .driver-inline-refresh span {
+        display: none;
+    }
+
+    .driver-quick-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+.driver-status-card.status-warning .driver-status-icon {
+    background: #fff7ed;
+    color: var(--driver-orange);
+}
+
+.driver-status-card.status-error {
+    border-color: rgba(220, 38, 38, 0.20);
+}
+
+.driver-status-card.status-error .driver-status-icon {
+    background: #fee2e2;
+    color: var(--driver-danger);
+}
+
+.driver-live-status.status-warning {
+    background: #fff7ed;
+    border-color: rgba(246, 162, 38, 0.32);
+    color: #9a5a09;
+}
+
+.driver-live-status.status-error {
+    background: #fee2e2;
+    border-color: rgba(220, 38, 38, 0.22);
+    color: var(--driver-danger);
+}
+
+/* =========================================================
+   Trago Driver · Compact UI 2026-06-18
+   Intervenção visual: densidade mobile maior sem alterar endpoints/fluxos.
+   Activado por: <body class="driver-compact-ui">
+   ========================================================= */
+body.driver-compact-ui {
+    --driver-app-max: 500px;
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+}
+
+body.driver-compact-ui .app-shell-header.motorista-header {
+    width: min(100% - 16px, var(--driver-app-max));
+    min-height: 54px;
+    margin: 8px auto 8px;
+    padding: 6px 8px;
+    gap: 8px;
+    border-radius: 14px;
+    box-shadow: 0 8px 22px rgba(39, 35, 36, 0.07);
+}
+
+body.driver-compact-ui .driver-brand-button {
+    gap: 7px;
+}
+
+body.driver-compact-ui .app-shell-header .motorista-logo {
+    width: 72px;
+    max-height: 38px;
+}
+
+body.driver-compact-ui .driver-brand-copy strong {
+    font-size: 0.86rem;
+    letter-spacing: -0.02em;
+}
+
+body.driver-compact-ui .driver-brand-copy small {
+    max-width: 108px;
+    font-size: 0.64rem;
+}
+
+body.driver-compact-ui .driver-live-status {
+    min-height: 28px;
+    gap: 6px;
+    padding: 0 8px;
+    font-size: 0.66rem;
+}
+
+body.driver-compact-ui .driver-live-dot {
+    width: 7px;
+    height: 7px;
+    box-shadow: 0 0 0 3px rgba(246, 162, 38, 0.12);
+}
+
+body.driver-compact-ui .driver-top-action,
+body.driver-compact-ui .btn-logout,
+body.driver-compact-ui .btn-mobile-driver-menu {
+    min-height: 34px;
+    padding: 0 10px;
+    gap: 6px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+}
+
+body.driver-compact-ui .btn-mobile-driver-menu {
+    width: 36px;
+    padding: 0;
+}
+
+body.driver-compact-ui .motorista-main {
+    width: min(100% - 16px, var(--driver-app-max));
+    margin-bottom: 16px;
+}
+
+body.driver-compact-ui .content-section {
+    margin-bottom: 12px;
+}
+
+body.driver-compact-ui .driver-home-section,
+body.driver-compact-ui .driver-deliveries-list,
+body.driver-compact-ui .driver-side-panel,
+body.driver-compact-ui .driver-settings-list {
+    gap: 8px;
+}
+
+body.driver-compact-ui .driver-home-hero {
+    gap: 10px;
+    padding: 0 2px;
+}
+
+body.driver-compact-ui .driver-eyebrow,
+body.driver-compact-ui .driver-map-kicker {
+    margin-bottom: 2px;
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+}
+
+body.driver-compact-ui .driver-hero-copy h1 {
+    font-size: clamp(1.32rem, 5vw, 1.72rem);
+    letter-spacing: -0.04em;
+}
+
+body.driver-compact-ui .driver-hero-copy p,
+body.driver-compact-ui .driver-earnings-caption {
+    margin-top: 3px;
+    font-size: 0.76rem;
+}
+
+body.driver-compact-ui .driver-refresh-btn {
+    width: 38px;
+    min-height: 38px;
+    border-radius: 11px;
+}
+
+body.driver-compact-ui .driver-status-card {
+    padding: 9px;
+    gap: 8px;
+    border-radius: 14px;
+    box-shadow: 0 8px 22px rgba(39, 35, 36, 0.05);
+}
+
+body.driver-compact-ui .driver-status-main {
+    gap: 8px;
+}
+
+body.driver-compact-ui .driver-status-icon,
+body.driver-compact-ui .settings-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    font-size: 0.9rem;
+}
+
+body.driver-compact-ui .driver-status-main strong,
+body.driver-compact-ui .settings-row-head strong,
+body.driver-compact-ui .driver-settings-accordion summary strong {
+    font-size: 0.84rem;
+}
+
+body.driver-compact-ui .driver-status-main small,
+body.driver-compact-ui .settings-row-head small,
+body.driver-compact-ui .driver-settings-accordion summary small {
+    margin-top: 1px;
+    font-size: 0.69rem;
+    line-height: 1.2;
+}
+
+body.driver-compact-ui .driver-status-meta {
+    font-size: 0.62rem;
+    max-width: 96px;
+}
+
+body.driver-compact-ui .content-section > .glass-card,
+body.driver-compact-ui .driver-detail-card,
+body.driver-compact-ui .driver-list-card.content-section .glass-card,
+body.driver-compact-ui .driver-list-card,
+body.driver-compact-ui .content-section > .driver-list-card {
+    padding: 10px !important;
+    border-radius: 16px !important;
+    box-shadow: 0 9px 26px rgba(39, 35, 36, 0.06) !important;
+}
+
+body.driver-compact-ui .driver-section-header {
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+body.driver-compact-ui .section-title,
+body.driver-compact-ui .driver-section-header .section-title {
+    margin-bottom: 0;
+    font-size: clamp(0.98rem, 4vw, 1.16rem) !important;
+    letter-spacing: -0.025em;
+}
+
+body.driver-compact-ui .driver-inline-refresh,
+body.driver-compact-ui .driver-empty-refresh,
+body.driver-compact-ui .btn-voltar,
+body.driver-compact-ui .btn-mapa,
+body.driver-compact-ui .driver-period-chip,
+body.driver-compact-ui .settings-action-btn,
+body.driver-compact-ui .action-card .btn-primary,
+body.driver-compact-ui .btn-iniciar,
+body.driver-compact-ui #form-finalizacao .btn-primary,
+body.driver-compact-ui .btn.btn-primary,
+body.driver-compact-ui .btn.btn-secondary {
+    min-height: 36px;
+    padding: 0 10px;
+    gap: 6px;
+    border-radius: 11px !important;
+    font-size: 0.75rem;
+    line-height: 1.15;
+}
+
+body.driver-compact-ui .driver-bottom-nav {
+    width: min(calc(100% - 18px), var(--driver-app-max));
+    min-height: 56px;
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    gap: 3px;
+    padding: 5px;
+    border-radius: 18px;
+    box-shadow: 0 14px 38px rgba(39, 35, 36, 0.14);
+}
+
+body.driver-compact-ui .driver-bottom-nav-item {
+    min-height: 46px;
+    gap: 2px;
+    border-radius: 13px;
+    font-size: 0.6rem;
+}
+
+body.driver-compact-ui .driver-bottom-nav-item i {
+    font-size: 0.92rem;
+}
+
+body.driver-compact-ui .driver-delivery-card.entrega-card {
+    gap: 8px;
+    padding: 10px;
+    border-radius: 14px;
+    box-shadow: 0 7px 18px rgba(39, 35, 36, 0.045);
+}
+
+body.driver-compact-ui .driver-delivery-top,
+body.driver-compact-ui .driver-delivery-footer {
+    gap: 8px;
+}
+
+body.driver-compact-ui .driver-delivery-id {
+    font-size: 0.92rem;
+}
+
+body.driver-compact-ui .driver-delivery-status,
+body.driver-compact-ui .driver-order-status-pill {
+    min-height: 22px;
+    padding: 0 7px;
+    font-size: 0.62rem;
+}
+
+body.driver-compact-ui .driver-delivery-route {
+    gap: 4px;
+    padding: 8px;
+    border-radius: 12px;
+}
+
+body.driver-compact-ui .driver-delivery-route span {
+    gap: 6px;
+    font-size: 0.78rem;
+    line-height: 1.22;
+}
+
+body.driver-compact-ui .driver-delivery-route i:not(.route-arrow) {
+    width: 15px;
+    font-size: 0.75rem;
+}
+
+body.driver-compact-ui .route-arrow {
+    margin-left: 4px;
+    font-size: 0.68rem;
+}
+
+body.driver-compact-ui .driver-delivery-meta {
+    gap: 5px;
+}
+
+body.driver-compact-ui .driver-delivery-meta span {
+    gap: 4px;
+    padding: 4px 6px;
+    font-size: 0.64rem;
+}
+
+body.driver-compact-ui .driver-delivery-price small {
+    font-size: 0.58rem;
+}
+
+body.driver-compact-ui .driver-delivery-price strong {
+    font-size: 0.94rem;
+}
+
+body.driver-compact-ui .ver-detalhes-btn {
+    font-size: 0.72rem;
+}
+
+body.driver-compact-ui .driver-empty-state,
+body.driver-compact-ui .driver-loading-card,
+body.driver-compact-ui .driver-error-state,
+body.driver-compact-ui .loading-state,
+body.driver-compact-ui .empty-state,
+body.driver-compact-ui .error-state {
+    min-height: 156px;
+    gap: 7px;
+    padding: 16px 14px;
+    border-radius: 14px;
+}
+
+body.driver-compact-ui .driver-empty-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 15px;
+    font-size: 1.2rem;
+}
+
+body.driver-compact-ui .driver-empty-state strong,
+body.driver-compact-ui .driver-error-state strong,
+body.driver-compact-ui .driver-loading-card strong {
+    font-size: 0.88rem;
+}
+
+body.driver-compact-ui .driver-empty-state p,
+body.driver-compact-ui .driver-error-state p,
+body.driver-compact-ui .driver-loading-card span {
+    max-width: 220px;
+    font-size: 0.74rem;
+    line-height: 1.32;
+}
+
+body.driver-compact-ui .driver-detail-topbar {
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+body.driver-compact-ui .driver-detail-topbar .section-title {
+    font-size: 1.06rem !important;
+}
+
+body.driver-compact-ui .driver-workspace {
+    gap: 10px;
+}
+
+body.driver-compact-ui .driver-map-card,
+body.driver-compact-ui .detalhes-bloco,
+body.driver-compact-ui .driver-settings-panel,
+body.driver-compact-ui .data-table tr {
+    border-radius: 14px;
+}
+
+body.driver-compact-ui .driver-map-header,
+body.driver-compact-ui .driver-map-footer {
+    padding: 8px 10px;
+    gap: 8px;
+}
+
+body.driver-compact-ui .driver-map-header h3 {
+    gap: 6px;
+    margin-bottom: 2px;
+    font-size: 0.88rem;
+}
+
+body.driver-compact-ui #driver-map-status,
+body.driver-compact-ui .driver-map-header p:last-child {
+    font-size: 0.72rem;
+}
+
+body.driver-compact-ui .driver-map-badge {
+    padding: 5px 8px;
+    font-size: 0.64rem;
+}
+
+body.driver-compact-ui .driver-map-stage {
+    height: clamp(300px, 54vh, 620px);
+    min-height: 300px;
+}
+
+body.driver-compact-ui .driver-map-legend {
+    gap: 8px;
+    font-size: 0.68rem;
+}
+
+body.driver-compact-ui .legend-dot {
+    width: 7px;
+    height: 7px;
+}
+
+body.driver-compact-ui .detalhes-bloco {
+    padding: 10px;
+    box-shadow: 0 1px 2px rgba(39, 35, 36, 0.04);
+}
+
+body.driver-compact-ui .detalhes-bloco h3 {
+    margin-bottom: 7px;
+    gap: 6px;
+    font-size: 0.8rem;
+}
+
+body.driver-compact-ui .detalhes-bloco p {
+    margin-bottom: 5px;
+    font-size: 0.78rem;
+    line-height: 1.34;
+}
+
+body.driver-compact-ui .driver-quick-actions {
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+body.driver-compact-ui .driver-quick-action {
+    min-height: 34px;
+    gap: 5px;
+    padding: 0 8px;
+    border-radius: 10px;
+    font-size: 0.68rem;
+}
+
+body.driver-compact-ui .driver-quick-empty {
+    padding: 8px;
+    border-radius: 10px;
+    font-size: 0.68rem;
+}
+
+body.driver-compact-ui .route-point-card {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px;
+    border-radius: 12px;
+}
+
+body.driver-compact-ui .route-marker-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    font-size: 0.78rem;
+}
+
+body.driver-compact-ui .route-point-card small {
+    margin-bottom: 2px;
+    font-size: 0.6rem;
+}
+
+body.driver-compact-ui .route-point-card strong,
+body.driver-compact-ui .route-address-title {
+    font-size: 0.8rem;
+    line-height: 1.24;
+}
+
+body.driver-compact-ui .route-connector-line {
+    height: 12px;
+    margin-left: 21px;
+}
+
+body.driver-compact-ui .route-metric-pill {
+    margin-top: 7px;
+    padding: 7px 9px;
+    border-radius: 9px;
+}
+
+body.driver-compact-ui .route-metric-pill span {
+    font-size: 0.66rem;
+}
+
+body.driver-compact-ui .route-metric-pill strong {
+    font-size: 0.84rem;
+}
+
+body.driver-compact-ui .route-coords {
+    margin-top: 7px;
+    padding: 7px 8px;
+    font-size: 0.66rem;
+}
+
+body.driver-compact-ui .status-info {
+    padding: 7px 8px;
+    border-radius: 9px;
+    font-size: 0.76rem;
+}
+
+body.driver-compact-ui #codigo-finalizacao {
+    min-height: 40px;
+    font-size: 1.08rem;
+    letter-spacing: 0.2rem;
+}
+
+body.driver-compact-ui .delivery-image-display img {
+    max-height: 170px;
+    border-radius: 9px;
+}
+
+body.driver-compact-ui #no-image-placeholder {
+    min-height: 76px;
+    font-size: 0.76rem;
+}
+
+body.driver-compact-ui .driver-earnings-hero {
+    gap: 8px;
+}
+
+body.driver-compact-ui .driver-period-chips {
+    gap: 4px;
+    padding: 4px;
+    border-radius: 13px;
+}
+
+body.driver-compact-ui .driver-period-chip {
+    min-height: 32px;
+    border-radius: 10px !important;
+    font-size: 0.7rem;
+}
+
+body.driver-compact-ui .stats-grid {
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+body.driver-compact-ui .stats-grid .stat-card,
+body.driver-compact-ui .stat-card {
+    padding: 10px !important;
+    border-radius: 14px !important;
+}
+
+body.driver-compact-ui .stat-info h3 {
+    margin-bottom: 4px;
+    font-size: 0.66rem;
+    letter-spacing: 0.035em;
+}
+
+body.driver-compact-ui .stat-value {
+    font-size: clamp(1.04rem, 4.2vw, 1.42rem);
+}
+
+body.driver-compact-ui .form-section,
+body.driver-compact-ui .table-section {
+    padding: 10px;
+    border-radius: 14px;
+}
+
+body.driver-compact-ui .form-section h3,
+body.driver-compact-ui .table-section h3,
+body.driver-compact-ui .table-section-header h3 {
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+}
+
+body.driver-compact-ui .form-note {
+    margin-bottom: 8px;
+    font-size: 0.76rem;
+}
+
+body.driver-compact-ui .form-group {
+    margin-bottom: 8px;
+}
+
+body.driver-compact-ui .form-group label {
+    margin-bottom: 4px;
+    font-size: 0.72rem;
+}
+
+body.driver-compact-ui .form-input,
+body.driver-compact-ui select.form-input,
+body.driver-compact-ui textarea.form-input,
+body.driver-compact-ui input.form-input {
+    min-height: 38px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+}
+
+body.driver-compact-ui textarea.form-input {
+    min-height: 72px;
+}
+
+body.driver-compact-ui .section-spaced {
+    margin-top: 10px;
+}
+
+body.driver-compact-ui .driver-settings-panel {
+    box-shadow: 0 7px 18px rgba(39, 35, 36, 0.045);
+}
+
+body.driver-compact-ui .driver-settings-accordion summary,
+body.driver-compact-ui .settings-row-head {
+    min-height: 56px;
+    grid-template-columns: 36px minmax(0, 1fr) 16px;
+    gap: 8px;
+    padding: 9px 10px;
+}
+
+body.driver-compact-ui .settings-row-head {
+    grid-template-columns: 36px minmax(0, 1fr);
+}
+
+body.driver-compact-ui .settings-form-body.form-section {
+    padding: 0 10px 10px;
+}
+
+body.driver-compact-ui .settings-action-btn {
+    margin: 0 10px 10px;
+}
+
+body.driver-compact-ui .data-table th,
+body.driver-compact-ui .data-table td {
+    padding: 8px 10px;
+    font-size: 0.78rem;
+}
+
+body.driver-compact-ui .data-table th {
+    font-size: 0.64rem;
+}
+
+@media (min-width: 901px) {
+    body.driver-compact-ui {
+        --driver-app-max: 1040px;
+        padding-bottom: 24px;
+    }
+
+    body.driver-compact-ui .driver-earnings-hero {
+        grid-template-columns: minmax(0, 1fr) 280px;
+    }
+}
+
+@media (max-width: 900px) {
+    body.driver-compact-ui .content-section > .glass-card,
+    body.driver-compact-ui .driver-detail-card {
+        padding: 10px !important;
+        border-radius: 16px !important;
+    }
+
+    body.driver-compact-ui .btn-voltar {
+        min-height: 36px;
+        border-radius: 11px;
+    }
+
+    body.driver-compact-ui .driver-detail-topbar .section-title {
+        margin-bottom: 5px;
+        font-size: 1.02rem !important;
+    }
+
+    body.driver-compact-ui .driver-map-stage {
+        height: 250px !important;
+        min-height: 250px !important;
+    }
+
+    body.driver-compact-ui .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    body.driver-compact-ui .stats-grid .stat-card:first-child .stat-value {
+        font-size: 1.55rem;
+    }
+
+    body.driver-compact-ui .data-table tr {
+        margin-bottom: 8px;
+        padding: 9px 10px;
+        border-radius: 14px;
+        box-shadow: 0 7px 18px rgba(39, 35, 36, 0.045);
+    }
+
+    body.driver-compact-ui .data-table td {
+        gap: 12px;
+        padding: 7px 0;
+        font-size: 0.78rem;
+    }
+
+    body.driver-compact-ui .data-table td::before {
+        font-size: 0.64rem;
+    }
+}
+
+@media (max-width: 420px) {
+    body.driver-compact-ui .app-shell-header .motorista-logo {
+        width: 68px;
+    }
+
+    body.driver-compact-ui .driver-live-status {
+        max-width: 104px;
+        padding: 0 7px;
+    }
+
+    body.driver-compact-ui .driver-inline-refresh span,
+    body.driver-compact-ui .driver-live-status span:last-child {
+        max-width: 76px;
+    }
+
+    body.driver-compact-ui .driver-map-stage {
+        height: 220px !important;
+        min-height: 220px !important;
+    }
+
+    body.driver-compact-ui .driver-quick-actions {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+/* Comunicação operacional persistente do pedido */
+.driver-order-chat-card {
+    margin: 24px 0;
+    padding: clamp(18px, 2.5vw, 28px);
+    border: 1px solid #dfe6dc;
+    border-radius: 24px;
+    background: #fff;
+    box-shadow: 0 18px 44px rgba(21, 39, 18, .07);
+}
+.driver-order-chat-card > header { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 16px; }
+.driver-order-chat-card > header h2 { margin: 4px 0; font-size: clamp(1.2rem, 2vw, 1.65rem); }
+.driver-order-chat-card > header p { margin: 0; color: #6e786c; }
+.driver-chat-channels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
+.driver-chat-channels button { display: flex; align-items: center; gap: 11px; min-height: 62px; padding: 10px 13px; border: 1px solid #dfe5dc; border-radius: 14px; background: #fff; color: #3d463a; text-align: left; cursor: pointer; }
+.driver-chat-channels button > i { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: #edf2ea; }
+.driver-chat-channels button span { display: grid; gap: 2px; }
+.driver-chat-channels button small { color: #768071; font-size: .72rem; }
+.driver-chat-channels button.active { border-color: #82b85e; background: #f0f8ea; box-shadow: inset 0 0 0 1px #82b85e; }
+.driver-chat-channels button.active > i { background: #78b64b; color: #fff; }
+.driver-chat-privacy { display: flex; align-items: center; gap: 7px; margin: 0 0 12px; color: #667061; font-size: .76rem; }
+.driver-chat-live { display: inline-flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 999px; background: #eff9e8; color: #3f7f17; font-weight: 800; font-size: .78rem; white-space: nowrap; }
+.driver-chat-live i { width: 8px; height: 8px; border-radius: 50%; background: #71be2d; box-shadow: 0 0 0 4px rgba(113,190,45,.15); }
+.driver-chat-participants { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.driver-chat-participants span { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border-radius: 10px; background: #f4f7f2; color: #52604f; font-size: .78rem; font-weight: 800; }
+.driver-chat-participants i { color: #63a928; }
+.driver-restaurant-ready { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding: 13px 15px; border: 1px solid #a9d987; border-radius: 14px; background: #f0fae9; color: #315d17; }
+.driver-restaurant-ready[hidden] { display: none; }
+.driver-restaurant-ready > i { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: #73bf31; color: #fff; }
+.driver-restaurant-ready span { display: grid; gap: 2px; }
+.driver-restaurant-ready small { color: #617458; }
+.driver-order-chat-stream { min-height: 210px; max-height: 360px; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid #e3e8e1; border-radius: 17px; background: #f7f9f6; }
+.driver-order-chat-stream article { align-self: flex-start; width: min(78%, 560px); padding: 11px 13px; border: 1px solid #e1e5df; border-radius: 5px 15px 15px 15px; background: #fff; }
+.driver-order-chat-stream article.mine { align-self: flex-end; border-color: #b9dc9d; border-radius: 15px 5px 15px 15px; background: #edf8e6; }
+.driver-order-chat-stream article.system { align-self: center; width: auto; max-width: 88%; border: 0; border-radius: 999px; background: #e8eee5; text-align: center; }
+.driver-order-chat-stream article header { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 5px; color: #44503f; font-size: .72rem; }
+.driver-order-chat-stream article p { margin: 0; line-height: 1.45; overflow-wrap: anywhere; }
+.driver-chat-empty { min-height: 170px; display: grid; place-content: center; justify-items: center; gap: 7px; color: #758071; text-align: center; }
+.driver-chat-empty i { font-size: 1.55rem; color: #73b93a; }
+.driver-order-chat-form { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 12px; }
+.driver-order-chat-form textarea { width: 100%; min-height: 52px; max-height: 130px; resize: vertical; padding: 14px; border: 1px solid #dce3d9; border-radius: 14px; background: #fff; font: inherit; }
+.driver-order-chat-form button { align-self: stretch; min-width: 120px; border: 0; border-radius: 14px; padding: 0 20px; background: #101611; color: #fff; font-weight: 900; }
+.driver-order-chat-form button:disabled { opacity: .55; }
+@media (max-width: 640px) {
+    .driver-order-chat-card { margin: 14px 0; padding: 15px; border-radius: 19px; }
+    .driver-order-chat-card > header { display: grid; gap: 10px; }
+    .driver-chat-channels { grid-template-columns: 1fr; }
+    .driver-chat-live { justify-self: start; }
+    .driver-order-chat-stream { min-height: 260px; padding: 11px; }
+    .driver-order-chat-stream article { width: 88%; }
+    .driver-order-chat-form { grid-template-columns: 1fr; }
+    .driver-order-chat-form button { min-height: 48px; }
+}
