@@ -39,6 +39,153 @@ function getOrderStatusLabel(status) {
     return ORDER_STATUS_LABELS[status] || String(status || 'N/D').replace(/_/g, ' ');
 }
 
+let adminPartnerCache = [];
+
+const ADMIN_PARTNER_STATUS_LABELS = {
+    pending: 'Pendente',
+    active: 'Activo',
+    inactive: 'Inactivo',
+    rejected: 'Rejeitado'
+};
+
+function updateAdminPartnerBadge(count = 0) {
+    const badge = document.getElementById('admin-partner-nav-badge');
+    if (!badge) return;
+    const value = Math.max(0, Number(count || 0));
+    badge.textContent = String(value);
+    badge.hidden = value === 0;
+}
+
+async function loadAdminPartnerBadge() {
+    try {
+        const response = await fetch(`${API_URL}/api/admin/partners?status=pending`, { headers: getAuthHeaders('admin') });
+        const data = await readJsonResponse(response);
+        if (!response.ok) throw new Error(data.message || 'Falha ao carregar candidaturas.');
+        updateAdminPartnerBadge(Number(data.pendingCount ?? data.partners?.length ?? 0));
+    } catch (_error) {
+        updateAdminPartnerBadge(0);
+    }
+}
+
+function renderAdminPartners() {
+    const tbody = document.getElementById('admin-partners-table-body');
+    if (!tbody) return;
+    const filter = document.getElementById('admin-partner-status-filter')?.value || '';
+    const visible = filter ? adminPartnerCache.filter((partner) => partner.status === filter) : adminPartnerCache;
+    const pending = adminPartnerCache.filter((partner) => partner.status === 'pending').length;
+    const active = adminPartnerCache.filter((partner) => partner.status === 'active' && partner.is_available !== false).length;
+    const unavailable = adminPartnerCache.filter((partner) => partner.status !== 'active' || partner.is_available === false).length;
+    const metrics = {
+        'partner-metric-pending': pending,
+        'partner-metric-active': active,
+        'partner-metric-unavailable': unavailable,
+        'partner-metric-total': adminPartnerCache.length
+    };
+    Object.entries(metrics).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = String(value);
+    });
+    updateAdminPartnerBadge(pending);
+    if (!visible.length) {
+        tbody.innerHTML = '<tr><td class="admin-partners-empty" colspan="6"><i class="fas fa-store"></i>Nenhum parceiro encontrado neste estado.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = visible.map((partner) => {
+        const id = String(partner.id || partner._id || '');
+        const status = String(partner.status || 'pending');
+        const statusLabel = ADMIN_PARTNER_STATUS_LABELS[status] || status;
+        const createdAt = partner.createdAt || partner.created_at;
+        const date = createdAt ? new Date(createdAt).toLocaleString('pt-MZ') : '—';
+        const actions = status === 'pending'
+            ? `<button type="button" class="approve" data-partner-action="approve" data-partner-id="${escapeHtml(id)}"><i class="fas fa-check"></i> Aprovar</button>
+               <button type="button" class="reject" data-partner-action="reject" data-partner-id="${escapeHtml(id)}"><i class="fas fa-xmark"></i> Rejeitar</button>`
+            : status === 'active'
+                ? `<button type="button" class="pause" data-partner-action="pause" data-partner-id="${escapeHtml(id)}"><i class="fas fa-pause"></i> Inactivar</button>`
+                : `<button type="button" class="approve" data-partner-action="activate" data-partner-id="${escapeHtml(id)}"><i class="fas fa-rotate-left"></i> Activar</button>`;
+        return `<tr>
+            <td><div class="admin-partner-identity"><i class="fas fa-store"></i><span><strong>${escapeHtml(partner.name || 'Parceiro')}</strong><small>${escapeHtml(String(partner.partner_type || 'other').replace(/_/g, ' '))} · ${escapeHtml(partner.products_summary || 'Sem descrição')}</small></span></div></td>
+            <td><div class="admin-partner-contact"><strong>${escapeHtml(partner.phone || partner.whatsapp || 'Sem contacto')}</strong><small>${escapeHtml(partner.address_text || 'Localização não informada')}</small></div></td>
+            <td><span class="admin-partner-status ${escapeHtml(status)}"><i class="fas fa-circle"></i>${escapeHtml(statusLabel)}</span>${partner.status_reason ? `<small class="admin-partner-reason">${escapeHtml(partner.status_reason)}</small>` : ''}</td>
+            <td><label class="admin-partner-map-toggle"><input type="checkbox" data-partner-availability="${escapeHtml(id)}" ${status === 'active' && partner.is_available !== false ? 'checked' : ''} ${status !== 'active' ? 'disabled' : ''}><span>${status === 'active' && partner.is_available !== false ? 'Visível' : 'Oculto'}</span></label></td>
+            <td><small>${escapeHtml(date)}</small><br><small>${partner.source === 'application' ? 'Candidatura de cliente' : escapeHtml(partner.source || 'Admin')}</small></td>
+            <td><div class="admin-partner-actions">${actions}<button type="button" class="delete" data-partner-action="delete" data-partner-id="${escapeHtml(id)}" data-partner-name="${escapeHtml(partner.name || 'Parceiro')}"><i class="fas fa-trash"></i></button></div></td>
+        </tr>`;
+    }).join('');
+}
+
+async function loadAdminPartners() {
+    const tbody = document.getElementById('admin-partners-table-body');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6"><i class="fas fa-spinner fa-spin"></i> A carregar parceiros…</td></tr>';
+    try {
+        const response = await fetch(`${API_URL}/api/admin/partners`, { headers: getAuthHeaders('admin') });
+        const data = await readJsonResponse(response);
+        if (!response.ok) throw new Error(data.message || 'Falha ao carregar parceiros.');
+        adminPartnerCache = Array.isArray(data.partners) ? data.partners : [];
+        renderAdminPartners();
+    } catch (error) {
+        if (tbody) tbody.innerHTML = `<tr><td class="admin-partners-empty" colspan="6"><i class="fas fa-triangle-exclamation"></i>${escapeHtml(error.message || 'Erro ao carregar parceiros.')}</td></tr>`;
+    }
+}
+
+async function updateAdminPartner(partnerId, patch) {
+    const response = await fetch(`${API_URL}/api/admin/partners/${encodeURIComponent(partnerId)}`, {
+        method: 'PATCH',
+        headers: { ...getAuthHeaders('admin'), 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch)
+    });
+    const data = await readJsonResponse(response);
+    if (!response.ok) throw new Error(data.message || 'Falha ao actualizar parceiro.');
+    await loadAdminPartners();
+    return data;
+}
+
+async function handleAdminPartnerAction(partnerId, action, partnerName = 'Parceiro') {
+    if (!partnerId) return;
+    if (action === 'delete') {
+        const confirmed = window.TragoFeedback
+            ? await window.TragoFeedback.confirm({
+                type: 'warning',
+                title: 'Eliminar parceiro?',
+                message: `${partnerName} será removido definitivamente do directório e dos mapas.`,
+                confirmText: 'Eliminar',
+                cancelText: 'Manter'
+            })
+            : false;
+        if (!confirmed) return;
+        const response = await fetch(`${API_URL}/api/admin/partners/${encodeURIComponent(partnerId)}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders('admin')
+        });
+        const data = await readJsonResponse(response);
+        if (!response.ok) throw new Error(data.message || 'Falha ao eliminar parceiro.');
+        showCustomAlert('Parceiro eliminado', data.message || 'O parceiro foi eliminado.', 'success');
+        await loadAdminPartners();
+        return;
+    }
+    const patches = {
+        approve: { status: 'active', is_available: true, status_reason: '' },
+        activate: { status: 'active', is_available: true, status_reason: '' },
+        pause: { status: 'inactive', is_available: false, status_reason: 'Temporariamente inactivo pela Administração.' },
+        reject: { status: 'rejected', is_available: false, status_reason: 'A candidatura não cumpriu os critérios de validação da TraGo.' }
+    };
+    const patch = patches[action];
+    if (!patch) return;
+    if (action === 'reject') {
+        const confirmed = window.TragoFeedback
+            ? await window.TragoFeedback.confirm({
+                type: 'warning',
+                title: 'Rejeitar candidatura?',
+                message: 'O cliente será informado de que o estabelecimento não cumpriu os critérios de validação.',
+                confirmText: 'Rejeitar',
+                cancelText: 'Voltar'
+            })
+            : false;
+        if (!confirmed) return;
+    }
+    const data = await updateAdminPartner(partnerId, patch);
+    showCustomAlert('Parceiro actualizado', data.message || 'Alteração guardada.', 'success');
+}
+
 
 async function loadOverviewStats() {
     try {

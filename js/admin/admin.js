@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     installResponsiveTableObserver();
     initAdminMobileShell();
     initCollapsibleVehicleForms();
+    loadAdminPartnerBadge();
 
     loadAdminProfile(); // 👈 ESTA LINHA
     
@@ -61,6 +62,38 @@ function attachEventListeners() {
     document.getElementById('nav-clientes').addEventListener('click', (e) => {
         e.preventDefault();
         showPage('gestao-clientes', 'nav-clientes', 'Gestão de Clientes');
+    });
+    document.getElementById('nav-parceiros')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showPage('gestao-parceiros', 'nav-parceiros', 'Gestão de Parceiros');
+    });
+    document.getElementById('btn-refresh-admin-partners')?.addEventListener('click', () => loadAdminPartners());
+    document.getElementById('admin-partner-status-filter')?.addEventListener('change', renderAdminPartners);
+    document.getElementById('admin-partners-table-body')?.addEventListener('change', async (event) => {
+        const input = event.target.closest('[data-partner-availability]');
+        if (!input) return;
+        input.disabled = true;
+        try {
+            await updateAdminPartner(input.dataset.partnerAvailability, { is_available: input.checked });
+            showCustomAlert('Disponibilidade actualizada', input.checked ? 'O parceiro está visível nos mapas.' : 'O parceiro foi ocultado dos mapas.', 'success');
+        } catch (error) {
+            input.checked = !input.checked;
+            showCustomAlert('Erro', error.message || 'Não foi possível alterar a disponibilidade.', 'error');
+        } finally {
+            if (input.isConnected) input.disabled = false;
+        }
+    });
+    document.getElementById('admin-partners-table-body')?.addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-partner-action]');
+        if (!button) return;
+        button.disabled = true;
+        try {
+            await handleAdminPartnerAction(button.dataset.partnerId, button.dataset.partnerAction, button.dataset.partnerName || 'Parceiro');
+        } catch (error) {
+            showCustomAlert('Erro', error.message || 'Não foi possível actualizar o parceiro.', 'error');
+        } finally {
+            if (button.isConnected) button.disabled = false;
+        }
     });
 
     // NOVO: custos
@@ -336,6 +369,9 @@ function showPage(pageId, navId, title) {
         case 'gestao-clientes':
             loadClients();
             break;
+        case 'gestao-parceiros':
+            loadAdminPartners();
+            break;
         case 'mapa-tempo-real':
             initializeLiveMap();
             break;
@@ -460,6 +496,7 @@ function setAdminMobileActive(pageId) {
         'entregas-activas': 'nav-entregas',
         'gestao-motoristas': 'nav-motoristas',
         'gestao-clientes': 'more',
+        'gestao-parceiros': 'more',
         'custos': 'more',
         'cargos': 'more',
         'historico': 'more',
@@ -574,6 +611,24 @@ function connectSocket() {
 
             case 'driver_disconnected_broadcast':
                 if (typeof removeDriverMarker === 'function') removeDriverMarker(data);
+                break;
+
+            case 'partner_application_created':
+                addAdminNotification({
+                    id: `partner_application_${data.partnerId || Date.now()}`,
+                    type: 'partner',
+                    title: 'Nova candidatura de parceiro',
+                    message: `${data.partnerName || 'Um estabelecimento'} aguarda validação.`,
+                    createdAt: new Date().toISOString()
+                });
+                loadAdminPartnerBadge();
+                if (activePage() === 'gestao-parceiros') loadAdminPartners();
+                break;
+
+            case 'partner_application_updated':
+            case 'partner_application_deleted':
+                loadAdminPartnerBadge();
+                if (activePage() === 'gestao-parceiros') loadAdminPartners();
                 break;
 
             default:

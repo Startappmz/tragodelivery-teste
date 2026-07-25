@@ -348,6 +348,8 @@
     }
   }
 
+  window.TragoClientOpenAuth = () => openSheet('client-auth-sheet');
+
   function readActiveOrderEntry() {
     try {
       const history = JSON.parse(localStorage.getItem(storageKey(ORDER_HISTORY_KEY)) || '[]');
@@ -550,34 +552,46 @@
 
   async function trackingRoute(origin, destination) {
     if (!origin || !destination) return [];
-    const key = [...origin, ...destination].map((value) => Number(value).toFixed(5)).join(':');
+    const key = [...origin, ...destination].map((value) => Number(value).toFixed(4)).join(':');
     if (routeGeometryCache.has(key)) return routeGeometryCache.get(key);
     const pending = (async () => {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
       try {
-        const response = await fetch(`${API_URL}/api/public/geo/route`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            origin: { lat: origin[0], lng: origin[1] },
-            destination: { lat: destination[0], lng: destination[1] }
-          })
-        });
-        const data = await readJsonResponse(response);
-        const coordinates = data?.geometry?.coordinates;
-        if (!response.ok || !Array.isArray(coordinates) || coordinates.length < 2) throw new Error('Rota indisponível');
-        return coordinates.map((point) => [Number(point[1]), Number(point[0])])
-          .filter((point) => Number.isFinite(point[0]) && Number.isFinite(point[1]));
+        const route = await window.TragoMapUI?.fetchRoadRoute?.(
+          { lat: origin[0], lng: origin[1] },
+          { lat: destination[0], lng: destination[1] },
+          { apiUrl: API_URL, timeoutMs: 7000, attempts: 2 }
+        );
+        const points = window.TragoMapUI?.roadRouteLatLngs?.(route) || [];
+        if (points.length < 3) throw new Error('Rota indisponível');
+        return points;
       } catch (_error) {
-        return [origin, destination];
-      } finally {
-        clearTimeout(timeout);
+        return [];
       }
     })();
     routeGeometryCache.set(key, pending);
+    while (routeGeometryCache.size > 80) {
+      routeGeometryCache.delete(routeGeometryCache.keys().next().value);
+    }
+    pending.then((points) => {
+      if (!Array.isArray(points) || points.length < 3) routeGeometryCache.delete(key);
+    });
     return pending;
+  }
+
+  async function trackingRouteSequence(points = []) {
+    const valid = points.filter((point) => Array.isArray(point)
+      && Number.isFinite(Number(point[0])) && Number.isFinite(Number(point[1])));
+    if (valid.length < 2) return [];
+    try {
+      const route = await window.TragoMapUI?.fetchRoadRouteSequence?.(
+        valid.map((point) => ({ lat: point[0], lng: point[1] })),
+        { apiUrl: API_URL, timeoutMs: 7000, attempts: 2 }
+      );
+      const routePoints = window.TragoMapUI?.roadRouteLatLngs?.(route) || [];
+      return routePoints.length >= 3 ? routePoints : [];
+    } catch (_error) {
+      return [];
+    }
   }
 
   function drawTrackingRoute(layers, points, options = {}) {
@@ -623,9 +637,10 @@
     }
     if (window.TragoMapUI?.addBaseLayer) window.TragoMapUI.addBaseLayer(map);
     else {
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        subdomains: 'abcd',
+      L.tileLayer('https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 20,
+        keepBuffer: 2,
+        updateWhenZooming: false,
         attribution: '&copy; OpenStreetMap &copy; CARTO'
       }).addTo(map);
     }
@@ -712,25 +727,25 @@
     syncTrackingPartnerLayers(event.detail?.partners || []);
   });
 
-  function refreshTrackingRoutes(map, layers, { mainOrigin, delivery, driver, target, status }) {
-    const routeSignature = JSON.stringify({ mainOrigin, delivery, driver, target, status });
+  function refreshTrackingRoutes(map, layers, { mainOrigin, delivery, routeStops = [], driver, target, status }) {
+    const routeSignature = JSON.stringify({ mainOrigin, delivery, routeStops, driver, target, status });
     if (map._tragoRouteSignature === routeSignature) return;
     map._tragoRouteSignature = routeSignature;
     const generation = ++map._tragoRouteGeneration;
+    clearTimeout(map._tragoRouteRetryTimer);
     layers.clearLayers();
     const jobs = [];
     if (mainOrigin && delivery) {
-      drawTrackingRoute(layers, [mainOrigin, delivery], { color: '#35bd70', weight: 5, dashArray: '8 9' });
-      jobs.push(trackingRoute(mainOrigin, delivery).then((route) => ({ kind: 'main', route })));
+      jobs.push(trackingRouteSequence([mainOrigin, ...routeStops, delivery]).then((route) => ({ kind: 'main', route })));
     }
     if (driver && target && mainOrigin !== driver && (driver[0] !== target[0] || driver[1] !== target[1])) {
-      drawTrackingRoute(layers, [driver, target], { color: '#102c1c', weight: 4, dashArray: '7 8' });
       jobs.push(trackingRoute(driver, target).then((route) => ({ kind: 'driver', route })));
     }
     Promise.all(jobs).then((routes) => {
       if (generation !== map._tragoRouteGeneration) return;
       layers.clearLayers();
-      routes.forEach(({ kind, route }) => drawTrackingRoute(layers, route, kind === 'main'
+      const successful = routes.filter(({ route }) => Array.isArray(route) && route.length >= 3);
+      successful.forEach(({ kind, route }) => drawTrackingRoute(layers, route, kind === 'main'
         ? { color: '#35bd70', weight: 6 }
         : {
             color: '#102c1c',
@@ -738,6 +753,16 @@
             dashArray: status === 'entrega_em_progresso' ? null : '9 9'
           }));
       map.getContainer?.().classList.remove('is-route-loading');
+      const incomplete = successful.length !== routes.length;
+      map.getContainer?.().classList.toggle('is-route-unavailable', incomplete);
+      if (incomplete) {
+        map._tragoRouteSignature = '';
+        map._tragoRouteRetryTimer = setTimeout(() => {
+          if (map?._container) refreshTrackingRoutes(map, layers, {
+            mainOrigin, delivery, routeStops, driver, target, status
+          });
+        }, 4000);
+      }
     });
     map.getContainer?.().classList.toggle('is-route-loading', jobs.length > 0);
   }
@@ -757,6 +782,13 @@
     }
     const pickup = trackingPoint(order, 'pickup');
     const delivery = trackingPoint(order, 'delivery');
+    const routeStops = (Array.isArray(order.route_stops) ? order.route_stops : [])
+      .map((stop) => {
+        const lat = Number(stop?.lat);
+        const lng = Number(stop?.lng);
+        return Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : null;
+      })
+      .filter(Boolean);
     const rawDriverLat = context?.driver?.location?.lat;
     const rawDriverLng = context?.driver?.location?.lng;
     const driverLat = Number(rawDriverLat);
@@ -769,6 +801,7 @@
     const paintSignature = JSON.stringify({
       pickup,
       delivery,
+      routeStops,
       driver,
       status: order.status,
       locationUpdatedAt: context?.driver?.location?.updated_at || context?.driver?.location?.updatedAt || ''
@@ -778,13 +811,14 @@
       return;
     }
     map._tragoPaintSignature = paintSignature;
-    const points = [pickup, delivery, driver].filter(Boolean);
+    const points = [pickup, ...routeStops, delivery, driver].filter(Boolean);
 
     const mainOrigin = pickup || (['recolha_concluida', 'entrega_em_progresso'].includes(order.status) ? driver : null);
     const target = ['pendente', 'atribuido', 'recolha_em_progresso'].includes(order.status) ? pickup : delivery;
     refreshTrackingRoutes(map, layers, {
       mainOrigin,
       delivery,
+      routeStops,
       driver,
       target,
       status: order.status
@@ -793,6 +827,10 @@
     upsertTrackingMarker(map, 'pickup', pickup, trackingIcon('pickup', 'Recolha'));
     upsertTrackingMarker(map, 'delivery', delivery, trackingIcon('delivery', 'Destino'));
     upsertTrackingMarker(map, 'driver', driver, trackingIcon('driver', compactTrackingLabel(context?.driver?.name, 'Motorista')));
+    routeStops.forEach((stop, index) => upsertTrackingMarker(map, `stop-${index}`, stop, trackingIcon('delivery', `Paragem ${index + 1}`)));
+    Object.keys(map._tragoMarkers || {})
+      .filter((key) => key.startsWith('stop-') && Number(key.slice(5)) >= routeStops.length)
+      .forEach((key) => upsertTrackingMarker(map, key, null, null));
     const driverAccuracy = Math.max(0, Number(context?.driver?.location?.accuracy || 0));
     if (driver && driverAccuracy) {
       if (map._tragoDriverAccuracyCircle) map._tragoDriverAccuracyCircle.setLatLng(driver).setRadius(driverAccuracy);
@@ -1241,21 +1279,42 @@
       });
       renderStops();
       toast('Paragem adicionada à rota.');
+      window.TragoClientRefreshDeliveryQuote?.();
       return true;
     };
-    $('#btn-add-cargo-stop')?.addEventListener('click', () => {
+    $('#btn-add-cargo-stop')?.addEventListener('click', async () => {
       const input = $('#cargo-stop');
       const address = String(input?.value || '').trim();
       if (address.length < 5) return toast('Indique uma paragem válida.', 'error');
       if (cargoStops.length >= 5) return toast('Pode adicionar no máximo 5 paragens.', 'error');
-      window.TragoClientAddCargoStop?.({ address, source: 'text' });
-      input.value = '';
+      const button = $('#btn-add-cargo-stop');
+      if (button) button.disabled = true;
+      try {
+        const resolved = await window.TragoClientResolveAddress?.(address);
+        const lat = Number(resolved?.lat);
+        const lng = Number(resolved?.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+          throw new Error('Não foi possível confirmar esta paragem. Marque-a directamente no mapa.');
+        }
+        window.TragoClientAddCargoStop?.({
+          address: resolved.label || address,
+          lat,
+          lng,
+          source: 'map'
+        });
+        input.value = '';
+      } catch (error) {
+        toast(error.message || 'Marque a paragem directamente no mapa.', 'error');
+      } finally {
+        if (button) button.disabled = false;
+      }
     });
     $('#cargo-stops-list')?.addEventListener('click', (event) => {
       const button = event.target.closest('[data-remove-cargo-stop]');
       if (!button) return;
       cargoStops.splice(Number(button.dataset.removeCargoStop), 1);
       renderStops();
+      window.TragoClientRefreshDeliveryQuote?.();
     });
     $$('[data-cargo-schedule]').forEach((button) => button.addEventListener('click', () => {
       const later = button.dataset.cargoSchedule === 'later';

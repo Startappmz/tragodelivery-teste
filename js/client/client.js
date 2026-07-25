@@ -115,9 +115,10 @@
 
   function addClientBaseMap(map, options = {}) {
     if (window.TragoMapUI?.addBaseLayer) return window.TragoMapUI.addBaseLayer(map, options);
-    return L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
+    return L.tileLayer('https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 20,
+      keepBuffer: 2,
+      updateWhenZooming: false,
       attribution: '&copy; OpenStreetMap &copy; CARTO',
       ...options
     }).addTo(map);
@@ -496,10 +497,15 @@
         }
       } catch (_error) { /* mantém a cache local quando estiver offline */ }
     }
-    const refreshable = history.filter((item) => (item.access_token || state.session?.token) && /^[a-f0-9]{24}$/i.test(String(item.id || '')));
+    const refreshable = history.filter((item) =>
+      !['concluido', 'cancelado'].includes(String(item.status || ''))
+      && (item.access_token || state.session?.token)
+      && /^[a-f0-9]{24}$/i.test(String(item.id || ''))
+    );
     if (!refreshable.length) { renderHistory(); return; }
+    const refreshableIds = new Set(refreshable.map((item) => String(item.id)));
     const updated = await Promise.all(history.map(async (item) => {
-      if ((!item.access_token && !state.session?.token) || !/^[a-f0-9]{24}$/i.test(String(item.id || ''))) return item;
+      if (!refreshableIds.has(String(item.id || ''))) return item;
       try {
         const response = await fetch(`${API_URL}/api/public/orders/${encodeURIComponent(item.id)}/context`, {
           headers: {
@@ -696,7 +702,8 @@
     if (state.mapContext === 'food-delivery') return [state.mapDraft.points['food-delivery']].filter(isValidCoord);
     const target = singleMapTarget();
     if (target) return [state.mapDraft.points[target]].filter(isValidCoord);
-    return [state.mapDraft.points.pickup, state.mapDraft.points.delivery].filter(isValidCoord);
+    const routeStops = (window.TragoClientCargoStops?.() || []).filter(isValidCoord);
+    return [state.mapDraft.points.pickup, ...routeStops, state.mapDraft.points.delivery].filter(isValidCoord);
   }
 
   function draftPointLabel(kind, point) {
@@ -795,33 +802,46 @@
   async function fetchClientRouteGeometry(origin, destination) {
     const a = normaliseCoord(origin);
     const b = normaliseCoord(destination);
-    if (!a || !b) return [];
+    if (!a || !b) return { points: [], route: null };
     const key = [a.lat, a.lng, b.lat, b.lng].map((value) => value.toFixed(5)).join(':');
     if (state.routeGeometryCache.has(key)) return state.routeGeometryCache.get(key);
-    state.routeAbortController?.abort?.();
-    const controller = new AbortController();
-    state.routeAbortController = controller;
     const pending = (async () => {
       try {
-        const response = await fetch(`${API_URL}/api/public/geo/route`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({ origin: a, destination: b })
+        const route = await window.TragoMapUI?.fetchRoadRoute?.(a, b, {
+          apiUrl: API_URL,
+          timeoutMs: 7000,
+          attempts: 2
         });
-        const data = await readJsonResponse(response);
-        const coordinates = data?.geometry?.coordinates;
-        if (!response.ok || !Array.isArray(coordinates) || coordinates.length < 2) throw new Error('route');
-        return coordinates.map((point) => [Number(point[1]), Number(point[0])])
-          .filter((point) => Number.isFinite(point[0]) && Number.isFinite(point[1]));
-      } catch (error) {
-        if (error?.name === 'AbortError') return [];
-        return [[a.lat, a.lng], [b.lat, b.lng]];
+        const points = window.TragoMapUI?.roadRouteLatLngs?.(route) || [];
+        if (points.length < 3) throw new Error('route');
+        return { points, route };
+      } catch (_error) {
+        return { points: [], route: null };
       }
     })();
     state.routeGeometryCache.set(key, pending);
     if (state.routeGeometryCache.size > 50) state.routeGeometryCache.delete(state.routeGeometryCache.keys().next().value);
+    pending.then((result) => {
+      if (!result?.points || result.points.length < 3) state.routeGeometryCache.delete(key);
+    });
     return pending;
+  }
+
+  async function fetchClientRouteSequence(points = []) {
+    const valid = points.map(normaliseCoord).filter(Boolean);
+    if (valid.length < 2) return { points: [], route: null };
+    if (valid.length === 2) return fetchClientRouteGeometry(valid[0], valid[1]);
+    try {
+      const route = await window.TragoMapUI?.fetchRoadRouteSequence?.(valid, {
+        apiUrl: API_URL,
+        timeoutMs: 7000,
+        attempts: 2
+      });
+      const routePoints = window.TragoMapUI?.roadRouteLatLngs?.(route) || [];
+      return routePoints.length >= 3 ? { points: routePoints, route } : { points: [], route: null };
+    } catch (_error) {
+      return { points: [], route: null };
+    }
   }
 
   async function renderMapDraft({ fitInitial = false, reverse = false } = {}) {
@@ -844,6 +864,16 @@
         keyboard: true
       }).addTo(state.mapDraftLayer);
     });
+    const cargoRouteStops = state.mapContext === 'delivery-route'
+      ? (window.TragoClientCargoStops?.() || []).filter(isValidCoord)
+      : [];
+    cargoRouteStops.forEach((stop, index) => {
+      L.marker(stop, {
+        title: stop.address || `Paragem ${index + 1}`,
+        icon: clientMapIcon('stop', `Paragem ${index + 1}`),
+        keyboard: true
+      }).addTo(state.mapDraftLayer);
+    });
     if (reverse && isValidCoord(activeDraftPoint())) reverseGeocodeDraft(mapContextKind(), activeDraftPoint());
     if (fitInitial) {
       const points = mapDraftPoints();
@@ -855,18 +885,34 @@
     const origin = draft.points.pickup;
     const destination = draft.points.delivery;
     if (!singleMapTarget() && state.mapContext !== 'food-delivery' && isValidCoord(origin) && isValidCoord(destination)) {
-      if (window.TragoMapUI?.drawRoute) window.TragoMapUI.drawRoute(state.mapDraftRouteLayer, [origin, destination], {
-        color: '#69be35', weight: 5, dashArray: '8 9', className: 'is-estimated-route'
-      });
-      else L.polyline([origin, destination], { color: '#69be35', weight: 5, dashArray: '8 9' }).addTo(state.mapDraftRouteLayer);
-      const geometry = await fetchClientRouteGeometry(origin, destination);
-      if (renderId !== state.routeRenderId || state.mapDraft !== draft || !geometry.length) return;
+      clearTimeout(state.routeDraftRetryTimer);
+      $('#client-map-workspace')?.classList.add('is-route-loading');
+      updateMapDraftUI('A calcular o percurso pelas estradas…');
+      const roadResult = await fetchClientRouteSequence([origin, ...cargoRouteStops, destination]);
+      const geometry = roadResult.points;
+      if (renderId !== state.routeRenderId || state.mapDraft !== draft) return;
+      $('#client-map-workspace')?.classList.remove('is-route-loading');
       state.mapDraftRouteLayer.clearLayers();
+      if (geometry.length < 3) {
+        draft.quote = null;
+        renderActiveMapQuote();
+        updateMapDraftUI('Não foi possível calcular a rota rodoviária. Verifique a ligação e tente novamente.');
+        state.routeDraftRetryTimer = setTimeout(() => {
+          if (state.mapDraft === draft && state.routeRenderId === renderId) renderMapDraft({ reverse: false });
+        }, 4000);
+        return;
+      }
       if (window.TragoMapUI?.drawRoute) window.TragoMapUI.drawRoute(state.mapDraftRouteLayer, geometry, {
-        color: '#69be35', weight: 6, className: geometry.length === 2 ? 'is-estimated-route' : 'is-road-route'
+        color: '#69be35', weight: 6, className: 'is-road-route'
       });
       else L.polyline(geometry, { color: '#69be35', weight: 6 }).addTo(state.mapDraftRouteLayer);
-      const quote = await quotePublicRoute(origin, destination);
+      const roadDistance = Number(roadResult.route?.distance_km || 0);
+      const quote = roadDistance > 0 ? {
+        distance_km: Number(roadDistance.toFixed(2)),
+        duration_min: Number(roadResult.route?.duration_min || 0) || Math.max(1, Math.round((roadDistance / 35) * 60)),
+        delivery_fee: calculateDeliveryFee(roadDistance),
+        source: roadResult.route?.source || 'road_route'
+      } : await quotePublicRoute(origin, destination);
       if (renderId !== state.routeRenderId || state.mapDraft !== draft) return;
       draft.quote = quote;
       renderActiveMapQuote();
@@ -1160,8 +1206,9 @@
     }
     if (state.mapContext === 'food-delivery' || singleMapTarget()) return;
     if (isValidCoord(state.pickupCoords) && isValidCoord(state.deliveryCoords)) {
-      const points = await fetchClientRouteGeometry(state.pickupCoords, state.deliveryCoords);
-      if (!points.length) return;
+      const routeResult = await fetchClientRouteGeometry(state.pickupCoords, state.deliveryCoords);
+      const points = routeResult.points;
+      if (points.length < 3) return;
       if (window.TragoMapUI?.drawRoute) {
         const route = window.TragoMapUI.drawRoute(state.map, points, { color: '#69be35', weight: 6 });
         state.routeCasing = route.casing;
@@ -1352,6 +1399,7 @@
 
   async function quotePublicRoute(origin, destination) {
     if (!isValidCoord(origin) || !isValidCoord(destination)) throw new Error('Coordenadas de recolha e entrega são obrigatórias.');
+    let serverQuote = null;
     try {
       const response = await fetch(`${API_URL}/api/public/geo/quote`, {
         method: 'POST',
@@ -1360,16 +1408,32 @@
       });
       const data = await readJsonResponse(response);
       if (!response.ok) throw new Error(data.message || 'Falha ao calcular rota.');
-      return data;
-    } catch (error) {
-      const distanceKm = haversineKm(origin, destination);
-      return {
-        distance_km: Number(distanceKm.toFixed(2)),
-        duration_min: Math.max(1, Math.round((distanceKm / 35) * 60)),
-        delivery_fee: calculateDeliveryFee(distanceKm),
-        source: 'frontend_haversine'
-      };
-    }
+      serverQuote = data;
+      if (!String(data.source || '').includes('fallback')) return data;
+    } catch (_error) { /* tenta o motor rodoviário partilhado */ }
+    try {
+      const route = await window.TragoMapUI?.fetchRoadRoute?.(origin, destination, {
+        apiUrl: API_URL,
+        timeoutMs: 7000
+      });
+      const distanceKm = Number(route?.distance_km || 0);
+      if (distanceKm > 0 && Array.isArray(route?.geometry?.coordinates) && route.geometry.coordinates.length > 2) {
+        return {
+          distance_km: Number(distanceKm.toFixed(2)),
+          duration_min: Number(route.duration_min || 0) || Math.max(1, Math.round((distanceKm / 35) * 60)),
+          delivery_fee: calculateDeliveryFee(distanceKm),
+          source: route.source || 'road_route'
+        };
+      }
+    } catch (_error) { /* usa estimativa final abaixo */ }
+    if (serverQuote) return serverQuote;
+    const distanceKm = haversineKm(origin, destination);
+    return {
+      distance_km: Number(distanceKm.toFixed(2)),
+      duration_min: Math.max(1, Math.round((distanceKm / 35) * 60)),
+      delivery_fee: calculateDeliveryFee(distanceKm),
+      source: 'frontend_haversine'
+    };
   }
 
   function debounce(fn, wait = 320) {
@@ -1399,6 +1463,11 @@
     state.addressSearchCache.set(cacheKey, suggestions);
     return suggestions;
   }
+
+  window.TragoClientResolveAddress = async (query) => {
+    const suggestions = await searchAddresses(query, { limit: 1 });
+    return suggestions[0] || null;
+  };
 
   function hideAddressSuggestions(inputId) {
     const box = document.querySelector(`[data-suggestions-for="${inputId}"]`);
@@ -1614,7 +1683,20 @@
       return null;
     }
     try {
-      state.deliveryQuote = await quotePublicRoute(state.pickupCoords, state.deliveryCoords);
+      const routeStops = (window.TragoClientCargoStops?.() || []).filter(isValidCoord);
+      if (routeStops.length) {
+        const roadResult = await fetchClientRouteSequence([state.pickupCoords, ...routeStops, state.deliveryCoords]);
+        const distanceKm = Number(roadResult.route?.distance_km || 0);
+        if (!distanceKm || roadResult.points.length < 3) throw new Error('Rota completa indisponível.');
+        state.deliveryQuote = {
+          distance_km: Number(distanceKm.toFixed(2)),
+          duration_min: Number(roadResult.route?.duration_min || 0),
+          delivery_fee: calculateDeliveryFee(distanceKm),
+          source: roadResult.route?.source || 'road_route_sequence'
+        };
+      } else {
+        state.deliveryQuote = await quotePublicRoute(state.pickupCoords, state.deliveryCoords);
+      }
       updateDeliveryQuoteLabels(state.deliveryQuote);
       return state.deliveryQuote;
     } catch (_error) {
@@ -1623,6 +1705,8 @@
       return null;
     }
   }
+
+  window.TragoClientRefreshDeliveryQuote = refreshDeliveryQuote;
 
   async function createPublicOrder(payload) {
     const session = readSession();
@@ -2020,7 +2104,7 @@
     if (resultCount) resultCount.textContent = `${partners.length} parceiro(s) verificado(s) · ${partners.filter(partnerCoordinates).length} no mapa`;
     results.innerHTML = partners.length
       ? partners.map(renderPartnerCard).join('')
-      : '<div class="v20-empty"><i class="fa-solid fa-store-slash"></i><h2>Nenhum parceiro neste filtro</h2><p>Altere a pesquisa ou envie uma candidatura para validação.</p><button type="button" class="v20-primary" id="btn-open-partner-application-empty"><i class="fa-solid fa-plus"></i> Adicionar parceiro</button></div>';
+      : '<div class="v20-empty"><i class="fa-solid fa-store-slash"></i><h2>Nenhum parceiro neste filtro</h2><p>Altere a pesquisa ou envie uma candidatura para validação.</p><button type="button" class="v20-primary" id="btn-open-partner-application-empty"><i class="fa-solid fa-plus"></i> Ser parceiro</button></div>';
     renderPartnersMap(state.partners);
     populateCargoPartnerSelect();
   }
@@ -2094,6 +2178,11 @@
   }
 
   function openPartnerApplicationSheet() {
+    if (!readSession()?.token) {
+      toast('Entre na sua conta para enviar uma candidatura e receber a decisão do Admin.', 'error');
+      window.TragoClientOpenAuth?.();
+      return;
+    }
     const sheet = $('#partner-application-sheet');
     if (!sheet) return;
     sheet.classList.add('open');
@@ -2123,6 +2212,12 @@
 
   async function submitPartnerApplication(event) {
     event.preventDefault();
+    const session = readSession();
+    if (!session?.token) {
+      toast('A sua sessão terminou. Entre novamente para enviar a candidatura.', 'error');
+      window.TragoClientOpenAuth?.();
+      return;
+    }
     const form = event.currentTarget;
     const submit = form.querySelector('button[type="submit"]');
     const data = Object.fromEntries(new FormData(form).entries());
@@ -2135,7 +2230,10 @@
     try {
       const response = await fetch(`${API_URL}/api/public/partners/applications`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.token}`
+        },
         body: JSON.stringify({ ...data, lat: Number(data.lat), lng: Number(data.lng) })
       });
       const result = await readJsonResponse(response);
@@ -3688,5 +3786,8 @@
     refreshHistoryStatuses(true);
     loadRestaurants();
     loadPartners();
+    setInterval(() => {
+      if (document.visibilityState === 'visible') loadPartners(true);
+    }, 60000);
   });
 })();

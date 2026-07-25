@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="admin-mobile-shell.css">
     <link rel="stylesheet" href="css/support-hub.css">
     <link rel="stylesheet" href="css/admin-support-v20.css">
+    <link rel="stylesheet" href="css/admin-partners.css?v=20260725-1">
     
 
 
@@ -99,6 +100,14 @@
                         <a href="#">
                             <i class="fas fa-users"></i>
                             <span>Clientes</span>
+                        </a>
+                    </li>
+
+                    <li class="menu-item" id="nav-parceiros">
+                        <a href="#">
+                            <i class="fas fa-store"></i>
+                            <span>Parceiros</span>
+                            <b class="admin-partner-nav-badge" id="admin-partner-nav-badge" hidden>0</b>
                         </a>
                     </li>
 
@@ -606,6 +615,64 @@
                         </table>
                     </div>
                 </div>
+            </div>
+
+            <!-- GESTÃO DE PARCEIROS -->
+            <div id="gestao-parceiros" class="content-page hidden">
+                <section class="admin-partners-shell">
+                    <header class="admin-partners-header">
+                        <div>
+                            <span>REDE TRAGO</span>
+                            <h2>Parceiros e candidaturas</h2>
+                            <p>Aprove estabelecimentos, controle a presença nos mapas e consulte a origem de cada candidatura.</p>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="btn-refresh-admin-partners">
+                            <i class="fas fa-rotate"></i> Actualizar
+                        </button>
+                    </header>
+
+                    <div class="admin-partner-metrics" aria-label="Resumo de parceiros">
+                        <article><i class="fas fa-inbox"></i><span><small>PENDENTES</small><strong id="partner-metric-pending">0</strong></span></article>
+                        <article><i class="fas fa-circle-check"></i><span><small>ACTIVOS NO MAPA</small><strong id="partner-metric-active">0</strong></span></article>
+                        <article><i class="fas fa-eye-slash"></i><span><small>INDISPONÍVEIS</small><strong id="partner-metric-unavailable">0</strong></span></article>
+                        <article><i class="fas fa-store"></i><span><small>TOTAL</small><strong id="partner-metric-total">0</strong></span></article>
+                    </div>
+
+                    <section class="glass-card admin-partners-card">
+                        <div class="admin-partners-toolbar">
+                            <div>
+                                <h3>Fila de validação e directório</h3>
+                                <p>Somente parceiros activos e disponíveis são apresentados nos mapas.</p>
+                            </div>
+                            <label>Estado
+                                <select id="admin-partner-status-filter" class="form-input">
+                                    <option value="">Todos</option>
+                                    <option value="pending">Pendentes</option>
+                                    <option value="active">Activos</option>
+                                    <option value="inactive">Inactivos</option>
+                                    <option value="rejected">Rejeitados</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table admin-partners-table">
+                                <thead>
+                                    <tr>
+                                        <th>Estabelecimento</th>
+                                        <th>Contacto e localização</th>
+                                        <th>Estado</th>
+                                        <th>Disponibilidade no mapa</th>
+                                        <th>Submetido</th>
+                                        <th>Acções</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-partners-table-body">
+                                    <tr><td colspan="6">A carregar candidaturas…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </section>
             </div>
 
             <!-- CUSTOS -->
@@ -1489,6 +1556,7 @@
             </div>
             <div class="admin-sheet-grid">
                 <button type="button" data-mobile-nav="nav-clientes"><i class="fas fa-users"></i><span>Clientes</span></button>
+                <button type="button" data-mobile-nav="nav-parceiros"><i class="fas fa-store"></i><span>Parceiros</span></button>
                 <button type="button" data-mobile-nav="nav-custos"><i class="fas fa-money-bill-wave"></i><span>Custos</span></button>
                 <button type="button" data-mobile-nav="nav-cargos"><i class="fas fa-id-badge"></i><span>Cargos</span></button>
                 <button type="button" data-mobile-nav="nav-historico"><i class="fas fa-history"></i><span>Histórico</span></button>
@@ -1516,9 +1584,9 @@
     <script src="js/common/geoPricing.js"></script>
     <script src="js/admin/adminCharts.js?v=20260723-r360-4"></script>
     <script src="js/admin/adminMap.js?v=20260724-driver-choice-1"></script>
-    <script src="js/admin/adminApi.js?v=20260724-driver-choice-1"></script>
+    <script src="js/admin/adminApi.js?v=20260725-partners-1"></script>
     <script src="js/admin/adminModals.js?v=20260724-driver-choice-1"></script>
-    <script src="js/admin/admin.js?v=20260724-driver-choice-1"></script>
+    <script src="js/admin/admin.js?v=20260725-partners-1"></script>
     
 
     

@@ -11,6 +11,7 @@
     let tileLayer = null;
     let pickupMarker = null;
     let deliveryMarker = null;
+    let stopMarkers = [];
     let driverMarker = null;
     let driverAccuracyCircle = null;
     let routeCasingLayer = null;
@@ -27,6 +28,7 @@
     let mapStatusControl = null;
     let mapPartners = [];
     let mapPartnersPromise = null;
+    let routeRetryTimer = null;
 
     const DEFAULT_CENTER = [-25.9655, 32.5832];
     const DEFAULT_ZOOM = 13;
@@ -273,13 +275,12 @@
             loadMapPartners();
         } else {
             L.control.zoom({ position: 'bottomright' }).addTo(map);
-            tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                subdomains: 'abcd',
+            tileLayer = L.tileLayer('https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                 maxZoom: 20,
                 minZoom: 5,
                 updateWhenIdle: false,
                 updateWhenZooming: false,
-                keepBuffer: 4,
+                keepBuffer: 2,
                 attribution: '&copy; OpenStreetMap &copy; CARTO'
             }).addTo(map);
         }
@@ -302,11 +303,12 @@
 
     function clearRoute() {
         if (!map) return;
-        [pickupMarker, deliveryMarker, routeCasingLayer, routeLayer, driverTrailLayer].forEach((layer) => {
+        [pickupMarker, deliveryMarker, ...stopMarkers, routeCasingLayer, routeLayer, driverTrailLayer].forEach((layer) => {
             if (layer) map.removeLayer(layer);
         });
         pickupMarker = null;
         deliveryMarker = null;
+        stopMarkers = [];
         routeCasingLayer = null;
         routeLayer = null;
         driverTrailLayer = null;
@@ -348,39 +350,6 @@
         }, 60);
     }
 
-    function drawFallbackLine(origin, destination) {
-        if (!map || !isValidCoord(origin) || !isValidCoord(destination)) return;
-        const points = [toLatLng(origin), toLatLng(destination)];
-        if (window.TragoMapUI?.drawRoute) {
-            const route = window.TragoMapUI.drawRoute(map, points, {
-                color: '#69be35',
-                weight: 6,
-                opacity: 0.96,
-                dashArray: '8 9'
-            });
-            routeCasingLayer = route.casing;
-            routeLayer = route.line;
-        } else {
-            routeCasingLayer = L.polyline(points, {
-                color: '#fff',
-                weight: 11,
-                opacity: 0.94,
-                lineCap: 'round',
-                lineJoin: 'round'
-            }).addTo(map);
-            routeLayer = L.polyline(points, {
-                color: '#69be35',
-                weight: 6,
-                opacity: 0.96,
-                dashArray: '8 9',
-                lineCap: 'round',
-                lineJoin: 'round'
-            }).addTo(map);
-        }
-        applyRouteMotion(routeLayer);
-        fitRoute();
-    }
-
     function geoJsonToLatLngs(geometry) {
         if (!geometry || geometry.type !== 'LineString' || !Array.isArray(geometry.coordinates)) return [];
         return geometry.coordinates
@@ -389,7 +358,17 @@
             .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng));
     }
 
-    async function fetchRoute(origin, destination) {
+    async function fetchRoute(origin, destination, stops = []) {
+        const sequence = [origin, ...stops, destination];
+        if (window.TragoMapUI?.fetchRoadRouteSequence) {
+            const route = await window.TragoMapUI.fetchRoadRouteSequence(sequence, {
+                apiUrl: API_URL,
+                timeoutMs: 7000,
+                attempts: 2
+            });
+            if (route?.geometry?.coordinates?.length >= 3) return route;
+        }
+        if (stops.length) throw new Error('Não foi possível calcular todas as etapas da rota.');
         const response = await fetch(`${API_URL}/api/geo/route`, {
             method: 'POST',
             headers: { ...getAuthHeaders('driver'), 'Content-Type': 'application/json' },
@@ -397,6 +376,9 @@
         });
         const data = await readJsonResponse(response);
         if (!response.ok) throw new Error(data.message || 'Não foi possível carregar a rota.');
+        if (!Array.isArray(data?.geometry?.coordinates) || data.geometry.coordinates.length < 3) {
+            throw new Error('O serviço não devolveu um percurso rodoviário válido.');
+        }
         return data;
     }
 
@@ -418,6 +400,9 @@
 
         const pickup = order?.pickup_address_coords;
         const delivery = order?.address_coords;
+        const routeStops = (Array.isArray(order?.route_stops) ? order.route_stops : [])
+            .map((stop) => ({ lat: Number(stop?.lat), lng: Number(stop?.lng), address: stop?.address || '' }))
+            .filter(isValidCoord);
 
         if (!isValidCoord(pickup) || !isValidCoord(delivery)) {
             setMapStatus('Este pedido ainda não tem coordenadas completas de recolha e entrega.');
@@ -434,11 +419,16 @@
             icon: createDivIcon('delivery', 'Entrega', 'fa-flag-checkered'),
             keyboard: false
         }).addTo(activeMap).bindPopup(`<strong>Ponto de Entrega</strong><br>${escapeHtml(compactPlaceName(order.address_text, 'Morada não informada'))}`);
+        stopMarkers = routeStops.map((stop, index) => L.marker(toLatLng(stop), {
+            icon: createDivIcon('delivery', `Paragem ${index + 1}`, 'fa-location-dot'),
+            keyboard: false
+        }).addTo(activeMap).bindPopup(`<strong>Paragem ${index + 1}</strong><br>${escapeHtml(compactPlaceName(stop.address, 'Paragem intermédia'))}`));
 
         setMapStatus('A calcular rota interna...');
+        clearTimeout(routeRetryTimer);
 
         try {
-            const route = await fetchRoute(pickup, delivery);
+            const route = await fetchRoute(pickup, delivery, routeStops);
             if (sequence !== renderSequence) return;
             const latLngs = geoJsonToLatLngs(route.geometry);
             if (latLngs.length >= 2) {
@@ -472,13 +462,14 @@
                 setMapStatus(`Rota carregada: ${distance} km${duration}.`);
                 fitRoute();
             } else {
-                drawFallbackLine(pickup, delivery);
-                setMapStatus('Rota estimada carregada.');
+                throw new Error('Rota rodoviária incompleta.');
             }
         } catch (error) {
-            console.warn('[DriverMap] Falha ao carregar rota ORS:', error);
-            drawFallbackLine(pickup, delivery);
-            setMapStatus('Rota estimada carregada; serviço de rota indisponível.');
+            console.warn('[DriverMap] Falha ao carregar rota rodoviária:', error);
+            setMapStatus('Rota rodoviária temporariamente indisponível. Nova tentativa em instantes.');
+            routeRetryTimer = setTimeout(() => {
+                if (currentOrder && sequence === renderSequence) renderOrderRoute(currentOrder);
+            }, 4000);
         }
 
         updateDriverMarker(lastDriverPosition);
@@ -488,7 +479,7 @@
 
     function fitRoute() {
         if (!map) return;
-        const layers = [pickupMarker, deliveryMarker, routeCasingLayer, routeLayer, driverMarker, driverAccuracyCircle].filter(Boolean);
+        const layers = [pickupMarker, deliveryMarker, ...stopMarkers, routeCasingLayer, routeLayer, driverMarker, driverAccuracyCircle].filter(Boolean);
         if (!layers.length) return;
 
         invalidateMapLayout(3);
@@ -679,6 +670,9 @@
         document.getElementById('btn-mapa-compacto')?.addEventListener('click', toggleCompactMap);
         syncFollowButton();
         setDriverButtonPressed('btn-mapa-compacto', compactMapMode);
+        setInterval(() => {
+            if (document.visibilityState === 'visible' && map) loadMapPartners();
+        }, 60000);
     });
 
     window.TragoDriverMap = {
@@ -697,6 +691,7 @@
             tileLayer = null;
             pickupMarker = null;
             deliveryMarker = null;
+            stopMarkers = [];
             driverMarker = null;
             driverAccuracyCircle = null;
             routeCasingLayer = null;
