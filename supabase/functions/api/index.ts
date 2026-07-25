@@ -17,6 +17,7 @@ const SUPABASE_SECRET_KEY =
   '';
 const JWT_SECRET = Deno.env.get('JWT_SECRET') || '';
 const JWT_DAYS = Number(Deno.env.get('JWT_DAYS') || '30');
+const REALTIME_JWT_SECONDS = Math.min(Math.max(Number(Deno.env.get('REALTIME_JWT_SECONDS') || '3600'), 300), 7200);
 const STORAGE_BUCKET = Deno.env.get('STORAGE_BUCKET_ORDER_IMAGES') || 'order-images';
 const MEDIA_BUCKET = Deno.env.get('STORAGE_BUCKET_MEDIA') || 'trago-media';
 const PRIVATE_MEDIA_BUCKET = Deno.env.get('STORAGE_BUCKET_PRIVATE_MEDIA') || 'trago-private-media';
@@ -112,8 +113,7 @@ const ONLINE_DRIVER_STATUSES = [
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-order-access-token',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-  'Access-Control-Allow-Credentials': 'true'
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
 };
 
 class HttpError extends Error {
@@ -226,6 +226,24 @@ const generateToken = async (user: AnyRecord) => {
   );
 };
 
+const generateRealtimeToken = async (subject: string, topic: string, principal: AnyRecord = {}) => {
+  const key = await makeJwtKey();
+  return create(
+    { alg: 'HS256', typ: 'JWT' },
+    {
+      aud: 'authenticated',
+      role: 'authenticated',
+      sub: subject,
+      scope: 'trago_realtime',
+      realtime: { topic },
+      principal,
+      iat: getNumericDate(0),
+      exp: getNumericDate(REALTIME_JWT_SECONDS)
+    },
+    key
+  );
+};
+
 const readToken = (req: Request) => {
   const auth = req.headers.get('authorization') || '';
   if (auth.startsWith('Bearer ')) return auth.slice(7);
@@ -258,6 +276,39 @@ const readBody = async (req: Request) => {
 };
 
 const parseQuery = (req: Request) => Object.fromEntries(new URL(req.url).searchParams.entries());
+
+const requestClientFingerprint = async (req: Request, path: string) => {
+  const forwarded = String(req.headers.get('x-forwarded-for') || '').split(',')[0].trim();
+  const ip = forwarded || req.headers.get('cf-connecting-ip') || req.headers.get('x-real-ip') || 'unknown';
+  const userAgent = String(req.headers.get('user-agent') || '').slice(0, 160);
+  return hashOrderAccessToken(`${ip}|${userAgent}|${path}`);
+};
+
+const rateLimitRule = (path: string, method: string) => {
+  if (method === 'POST' && path === '/api/auth/login') return { name: 'login', limit: 10, windowSeconds: 600 };
+  if (method === 'POST' && path === '/api/auth/request-password-reset') return { name: 'password-reset', limit: 5, windowSeconds: 1800 };
+  if (method === 'POST' && path === '/api/client/auth/request-code') return { name: 'client-auth-code', limit: 6, windowSeconds: 1800 };
+  if (method === 'POST' && path === '/api/public/orders') return { name: 'public-order', limit: 20, windowSeconds: 3600 };
+  if (method === 'POST' && path === '/api/public/ratings') return { name: 'rating', limit: 10, windowSeconds: 3600 };
+  if (path.startsWith('/api/public/geo/') || path === '/api/public/delivery-quote') return { name: 'geo', limit: 90, windowSeconds: 60 };
+  return null;
+};
+
+const enforceRateLimit = async (req: Request, path: string, method: string) => {
+  const rule = rateLimitRule(path, method);
+  if (!rule) return;
+  const fingerprint = await requestClientFingerprint(req, rule.name);
+  const { data, error } = await supabase.rpc('trago_check_rate_limit', {
+    p_key: `${rule.name}:${fingerprint}`,
+    p_limit: rule.limit,
+    p_window_seconds: rule.windowSeconds
+  });
+  if (error) {
+    console.warn('[trago-edge] Rate limit indisponível:', error.message);
+    return;
+  }
+  if (data?.allowed === false) throw new HttpError(429, 'Muitas tentativas. Aguarde e tente novamente.');
+};
 
 const requirePublicOrderAccess = async (req: Request, order: AnyRecord) => {
   const authenticatedClient = await optionalClient(req);
@@ -429,7 +480,9 @@ const fromOrder = (row: AnyRecord) => row ? ({
   route_distance_km: row.route_distance_km != null ? Number(row.route_distance_km) : null,
   route_duration_min: row.route_duration_min != null ? Number(row.route_duration_min) : null,
   route_pricing_source: row.route_pricing_source,
-  image_url: row.image_url,
+  image_url: String(row.image_url || '').startsWith('private-order:') ? '' : (row.image_url || ''),
+  image_available: Boolean(row.image_url),
+  imageAvailable: Boolean(row.image_url),
   verification_code: row.verification_code,
   created_by_admin: row.created_by_admin,
   assigned_to_driver: row.assigned_to_driver,
@@ -472,6 +525,8 @@ const fromOrder = (row: AnyRecord) => row ? ({
   deliveryStartAt: row.delivery_start_at,
   deliveryCompletedAt: row.delivery_completed_at,
   cancelledAt: row.cancelled_at,
+  closedAt: row.closed_at || null,
+  closed_at: row.closed_at || null,
   cancelledBy: row.cancelled_by,
   cancelReason: row.cancel_reason,
   valor_motorista: Number(row.valor_motorista || 0),
@@ -719,6 +774,23 @@ const updateRow = async (table: string, id: string, payload: AnyRecord) => {
   return data;
 };
 
+const cancelOrderAtomically = async (
+  orderId: string,
+  reason: string,
+  cancelledBy: string | null = null,
+  restaurantStatus: string | null = null
+) => {
+  const { data, error } = await supabase.rpc('trago_cancel_order', {
+    p_order_id: orderId,
+    p_reason: String(reason || 'Cancelado').slice(0, 500),
+    p_cancelled_by: cancelledBy,
+    p_restaurant_status: restaurantStatus
+  });
+  if (error) throw new HttpError(500, `Falha ao cancelar pedido em segurança: ${error.message}`);
+  if (!data) throw new HttpError(500, 'Falha ao cancelar pedido em segurança.');
+  return data as AnyRecord;
+};
+
 const deleteRow = async (table: string, id: string) => {
   const { data, error } = await supabase.from(table).delete().eq('id', id).select('*').maybeSingle();
   if (error) throw new HttpError(400, error.message);
@@ -802,14 +874,8 @@ const requireRestaurant = async (req: Request) => {
   return restaurant;
 };
 
-const orderBelongsToRestaurant = (order: AnyRecord, restaurant: AnyRecord) => {
-  if (String(order.restaurant_id || '') === String(restaurant.id || '')) return true;
-  const restaurantPhone = String(restaurant.phone || '').replace(/\D/g, '');
-  const orderPhone = String(order.pickup_contact_phone || '').replace(/\D/g, '');
-  const samePhone = Boolean(restaurantPhone && orderPhone && restaurantPhone === orderPhone);
-  const sameName = String(order.pickup_contact_name || '').trim().toLowerCase() === String(restaurant.name || '').trim().toLowerCase();
-  return samePhone || sameName;
-};
+const orderBelongsToRestaurant = (order: AnyRecord, restaurant: AnyRecord) =>
+  Boolean(order?.restaurant_id && restaurant?.id && String(order.restaurant_id) === String(restaurant.id));
 
 const defaultMessageChannel = (role: string) => {
   if (role === 'client' || role === 'driver') return MESSAGE_CHANNEL.CLIENT_DRIVER;
@@ -972,19 +1038,42 @@ const enrichProfile = async (profileRow: AnyRecord, withUser = true) => {
   return profile;
 };
 
-const enrichOrder = async (row: AnyRecord) => {
-  const order = fromOrder(row);
-  if (!order) return null;
-
-  if (row.created_by_admin) order.created_by_admin = fromUser(await selectOne('users', 'id', row.created_by_admin));
-  if (row.client) order.client = fromClient(await selectOne('clients', 'id', row.client));
-  if (row.cancelled_by) order.cancelledBy = fromUser(await selectOne('users', 'id', row.cancelled_by));
-  if (row.assigned_to_driver) {
-    const profileRow = await selectOne('driver_profiles', 'id', row.assigned_to_driver);
-    order.assigned_to_driver = await enrichProfile(profileRow, true);
-  }
-  return order;
+const selectRowsByIds = async (table: string, ids: string[]) => {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (!unique.length) return [];
+  const { data, error } = await supabase.from(table).select('*').in('id', unique);
+  if (error) throw new HttpError(500, error.message);
+  return data || [];
 };
+
+const enrichOrders = async (rows: AnyRecord[]) => {
+  const source = Array.isArray(rows) ? rows : [];
+  const profileRows = await selectRowsByIds('driver_profiles', source.map((row) => row.assigned_to_driver));
+  const profileUserIds = profileRows.map((row: AnyRecord) => row.user_id);
+  const [userRows, clientRows] = await Promise.all([
+    selectRowsByIds('users', source.flatMap((row) => [row.created_by_admin, row.cancelled_by]).concat(profileUserIds)),
+    selectRowsByIds('clients', source.map((row) => row.client))
+  ]);
+  const users = new Map(userRows.map((row: AnyRecord) => [String(row.id), row]));
+  const clients = new Map(clientRows.map((row: AnyRecord) => [String(row.id), row]));
+  const profiles = new Map(profileRows.map((row: AnyRecord) => [String(row.id), row]));
+  return source.map((row) => {
+    const order = fromOrder(row);
+    if (!order) return null;
+    if (row.created_by_admin) order.created_by_admin = fromUser(users.get(String(row.created_by_admin)));
+    if (row.client) order.client = fromClient(clients.get(String(row.client)));
+    if (row.cancelled_by) order.cancelledBy = fromUser(users.get(String(row.cancelled_by)));
+    if (row.assigned_to_driver) {
+      const profileRow = profiles.get(String(row.assigned_to_driver));
+      const profile = fromProfile(profileRow);
+      if (profile && profileRow?.user_id) profile.user = fromUser(users.get(String(profileRow.user_id)));
+      order.assigned_to_driver = profile;
+    }
+    return order;
+  }).filter(Boolean);
+};
+
+const enrichOrder = async (row: AnyRecord) => (await enrichOrders(row ? [row] : []))[0] || null;
 
 const enrichCost = async (row: AnyRecord) => {
   const cost = fromCost(row);
@@ -997,7 +1086,7 @@ const enrichCost = async (row: AnyRecord) => {
 
 const broadcast = async (channelName: string, event: string, payload: AnyRecord) => {
   try {
-    const channel = supabase.channel(channelName, { config: { broadcast: { self: false } } });
+    const channel = supabase.channel(channelName, { config: { private: true, broadcast: { self: false } } });
     await new Promise<void>((resolve) => {
       const timer = setTimeout(resolve, 1200);
       channel.subscribe((status) => {
@@ -1081,7 +1170,14 @@ const createClientNotification = async (order: AnyRecord, type: string, title: s
   }
 };
 
+let operationalNotificationSyncPromise: Promise<void> | null = null;
+let operationalNotificationSyncedAt = 0;
+const OPERATIONAL_NOTIFICATION_SYNC_TTL_MS = 60_000;
+
 const syncOperationalNotifications = async () => {
+  if (operationalNotificationSyncPromise) return operationalNotificationSyncPromise;
+  if (Date.now() - operationalNotificationSyncedAt < OPERATIONAL_NOTIFICATION_SYNC_TTL_MS) return;
+  operationalNotificationSyncPromise = (async () => {
   try {
     const { data: pendingOrders } = await supabase
       .from('orders')
@@ -1122,7 +1218,12 @@ const syncOperationalNotifications = async () => {
     }
   } catch (error) {
     console.warn('[trago-edge] Falha ao sincronizar notificações operacionais:', error);
+  } finally {
+    operationalNotificationSyncedAt = Date.now();
+    operationalNotificationSyncPromise = null;
   }
+  })();
+  return operationalNotificationSyncPromise;
 };
 
 const buildLocationPayload = (profileRow: AnyRecord, userRow: AnyRecord) => {
@@ -1417,8 +1518,7 @@ const uploadOrderImage = async (file: File | null) => {
   });
   if (error) throw new HttpError(500, `Falha ao enviar imagem para Supabase Storage: ${error.message}`);
 
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return `private-order:${path}`;
 };
 
 const resolveMediaActor = async (req: Request) => {
@@ -1456,6 +1556,16 @@ const signPrivateMedia = async (value: unknown, expiresIn = 900) => {
   const objectPath = reference.slice('private:'.length);
   const { data, error } = await supabase.storage.from(PRIVATE_MEDIA_BUCKET).createSignedUrl(objectPath, expiresIn);
   if (error || !data?.signedUrl) throw new HttpError(500, 'Não foi possível autorizar o acesso ao ficheiro privado.');
+  return data.signedUrl;
+};
+
+const signOrderImage = async (value: unknown, expiresIn = 900) => {
+  const reference = String(value || '').trim();
+  if (!reference) return '';
+  if (!reference.startsWith('private-order:')) return reference;
+  const objectPath = reference.slice('private-order:'.length);
+  const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(objectPath, expiresIn);
+  if (error || !data?.signedUrl) throw new HttpError(500, 'Não foi possível autorizar a imagem privada do pedido.');
   return data.signedUrl;
 };
 
@@ -1541,6 +1651,18 @@ const routeMedia = async (req: Request, path: string, method: string) => {
     return json({ message: 'Imagem carregada com sucesso.', ...uploaded }, 201);
   }
 
+  const publicOrderImageMatch = path.match(/^\/api\/public\/orders\/([a-f0-9]{24})\/image$/i);
+  const protectedOrderImageMatch = path.match(/^\/api\/orders\/([a-f0-9]{24})\/image$/i);
+  if ((publicOrderImageMatch || protectedOrderImageMatch) && method === 'GET') {
+    const orderId = publicOrderImageMatch?.[1] || protectedOrderImageMatch?.[1] || '';
+    const order = await selectOne('orders', 'id', orderId);
+    if (!order) throw new HttpError(404, 'Pedido não encontrado.');
+    if (publicOrderImageMatch) await requirePublicOrderAccess(req, order);
+    else await requireOrderProofActor(req, order);
+    if (!order.image_url) throw new HttpError(404, 'Este pedido não tem imagem.');
+    return json({ url: await signOrderImage(order.image_url), expires_in: 900 });
+  }
+
   const publicProofMatch = path.match(/^\/api\/public\/orders\/([a-f0-9]{24})\/delivery-proof$/i);
   const protectedProofMatch = path.match(/^\/api\/orders\/([a-f0-9]{24})\/delivery-proof$/i);
   if ((publicProofMatch || protectedProofMatch) && method === 'GET') {
@@ -1580,8 +1702,6 @@ const routeAuth = async (req: Request, path: string, method: string) => {
       message: 'Login bem-sucedido.',
       token,
       user: { _id: row.id, nome: row.nome, role: row.role }
-    }, 200, {
-      'Set-Cookie': `token=${encodeURIComponent(token)}; HttpOnly; Path=/; Max-Age=${JWT_DAYS * 24 * 60 * 60}; SameSite=Strict; Secure`
     });
   }
 
@@ -1696,9 +1816,7 @@ const routeAuth = async (req: Request, path: string, method: string) => {
   if (path === '/api/auth/logout' && method === 'POST') {
     const user = await requireUser(req).catch(() => null);
     if (user?.role === 'driver') await setDriverOnlineState(user.id, DRIVER_STATUS.OFFLINE);
-    return json({ message: 'Sessão encerrada com sucesso.' }, 200, {
-      'Set-Cookie': 'token=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict; Secure'
-    });
+    return json({ message: 'Sessão encerrada com sucesso.' });
   }
 
   if (path === '/api/auth/change-password' && method === 'PUT') {
@@ -1826,6 +1944,18 @@ const setDriverOnlineState = async (userId: string, status: string) => {
 };
 
 const routeRealtime = async (req: Request, path: string, method: string) => {
+  if (path === '/api/realtime/token' && method === 'POST') {
+    const user = await requireUser(req);
+    const body = await readBody(req) as AnyRecord;
+    const participant = String(body.participant || '').trim();
+    let topic = '';
+    if (participant === 'admin' && user.role === 'admin') topic = ADMIN_ROOM;
+    if (participant === 'driver' && user.role === 'driver') topic = `driver:${user.id}`;
+    if (!topic) throw new HttpError(403, 'Canal Realtime não autorizado para esta sessão.');
+    const token = await generateRealtimeToken(`user:${user.id}`, topic, { type: 'user', id: user.id, role: user.role });
+    return json({ token, topic, expires_in: REALTIME_JWT_SECONDS });
+  }
+
   if (path === '/api/realtime/driver-online' && method === 'POST') {
     const user = await requireUser(req, 'driver');
     const profile = await getDriverProfileByUser(user.id);
@@ -2683,9 +2813,7 @@ const syncMenuExtras = async (itemId: string, body: AnyRecord) => {
   }
 
   if (Array.isArray(body.options)) {
-    const { error } = await supabase.from('product_options').delete().eq('menu_item_id', itemId);
-    if (error) throw new HttpError(400, error.message);
-    for (const raw of body.options.slice(0, 12)) {
+    const normalizedOptions = body.options.slice(0, 12).map((raw: AnyRecord) => {
       const name = String(raw?.name || '').trim().slice(0, 80);
       const values = Array.isArray(raw?.values)
         ? raw.values.slice(0, 30).map((value: AnyRecord) => ({
@@ -2694,16 +2822,20 @@ const syncMenuExtras = async (itemId: string, body: AnyRecord) => {
           price: Math.max(0, toNumber(value?.price, 0))
         })).filter((value: AnyRecord) => value.name)
         : [];
-      if (!name || !values.length) continue;
-      await insertRow('product_options', {
-        menu_item_id: itemId,
+      return {
+        id: String(raw?.id || generateId()),
         name,
-        required: raw.required === true,
-        min_select: Math.max(0, Math.floor(toNumber(raw.min_select, raw.required ? 1 : 0))),
-        max_select: Math.max(1, Math.floor(toNumber(raw.max_select, 1))),
+        required: raw?.required === true,
+        min_select: Math.max(0, Math.floor(toNumber(raw?.min_select, raw?.required ? 1 : 0))),
+        max_select: Math.max(1, Math.floor(toNumber(raw?.max_select, 1))),
         values
-      });
-    }
+      };
+    }).filter((group: AnyRecord) => group.name && group.values.length);
+    const { error } = await supabase.rpc('trago_replace_product_options', {
+      p_item_id: itemId,
+      p_options: normalizedOptions
+    });
+    if (error) throw new HttpError(400, error.message);
   }
 };
 
@@ -2800,7 +2932,7 @@ const validateFoodOrder = async (restaurantId: string | null, rawItems: unknown)
   const options = new Map<string, AnyRecord[]>();
   (optionRows || []).forEach((row: AnyRecord) => options.set(String(row.menu_item_id), [...(options.get(String(row.menu_item_id)) || []), row]));
   const normalized: AnyRecord[] = [];
-  const stockUpdates: AnyRecord[] = [];
+  const stockReservations: AnyRecord[] = [];
   let subtotal = 0;
   let preparationMinutes = 0;
 
@@ -2835,10 +2967,10 @@ const validateFoodOrder = async (restaurantId: string | null, rawItems: unknown)
     subtotal += unitPrice * quantity;
     preparationMinutes = Math.max(preparationMinutes, Number(menu.prep_time_min || 0));
     normalized.push({ id, name: menu.name, category: menu.category || 'Geral', qty: quantity, base_price: Number(menu.price || 0), price: unitPrice, options: acceptedOptions });
-    if (stock && stock.quantity !== null && stock.quantity !== undefined) stockUpdates.push({ id: stock.id, quantity: Number(stock.quantity) - quantity, auto_disable: stock.auto_disable === true });
+    if (stock && stock.quantity !== null && stock.quantity !== undefined) stockReservations.push({ menu_item_id: id, quantity });
   }
   if (subtotal < Number(restaurant.min_order_amount || 0)) throw new HttpError(400, `O pedido mínimo deste restaurante é ${Number(restaurant.min_order_amount || 0).toFixed(2)} MZN.`);
-  return { restaurant, items: normalized, subtotal, preparationMinutes: preparationMinutes || null, stockUpdates };
+  return { restaurant, items: normalized, subtotal, preparationMinutes: preparationMinutes || null, stockReservations };
 };
 
 const commitFoodStock = async (validated: AnyRecord | null) => {
@@ -3194,19 +3326,32 @@ const routePublicPortals = async (req: Request, path: string, method: string) =>
   }
 
   if (path === '/api/public/ratings' && method === 'POST') {
+    const client = await requireClient(req);
     const body = await readBody(req) as AnyRecord;
     const ratingValue = Math.max(1, Math.min(5, Math.round(toNumber(body.rating, 0))));
     if (!ratingValue) throw new HttpError(400, 'A avaliação deve estar entre 1 e 5 estrelas.');
 
-    let restaurantId = clean(body.restaurant_id) || '';
-    const menuItemId = clean(body.menu_item_id) || '';
-    const customerSessionId = clean(body.customer_session_id) || req.headers.get('x-forwarded-for') || 'anonymous';
-    if (!restaurantId && !menuItemId) throw new HttpError(400, 'Indique o restaurante ou o prato a avaliar.');
+    const orderId = String(clean(body.order_id) || '');
+    let restaurantId = String(clean(body.restaurant_id) || '');
+    const menuItemId = String(clean(body.menu_item_id) || '');
+    if (!isValidId(orderId)) throw new HttpError(400, 'Indique o pedido concluído a avaliar.');
+
+    const order = await selectOne('orders', 'id', orderId);
+    if (!order || String(order.client || '') !== String(client.id) || order.status !== ORDER_STATUS.COMPLETED) {
+      throw new HttpError(403, 'Só pode avaliar uma compra concluída na sua conta.');
+    }
+    if (!restaurantId) restaurantId = String(order.restaurant_id || '');
+    if (!restaurantId || String(order.restaurant_id || '') !== restaurantId) {
+      throw new HttpError(403, 'Este pedido não pertence ao restaurante indicado.');
+    }
 
     if (menuItemId) {
       const menuItem = await selectOne('restaurant_menu_items', 'id', menuItemId);
-      if (!menuItem) throw new HttpError(404, 'Prato não encontrado.');
-      restaurantId = restaurantId || String(menuItem.restaurant_id || '');
+      if (!menuItem || String(menuItem.restaurant_id || '') !== restaurantId) throw new HttpError(404, 'Prato não encontrado neste restaurante.');
+      const orderedItems = Array.isArray(order.food_items) ? order.food_items : [];
+      if (!orderedItems.some((item: AnyRecord) => String(item?.id || '') === menuItemId)) {
+        throw new HttpError(403, 'Só pode avaliar produtos incluídos neste pedido.');
+      }
     }
 
     const restaurant = await selectOne('restaurants', 'id', restaurantId);
@@ -3215,28 +3360,39 @@ const routePublicPortals = async (req: Request, path: string, method: string) =>
     const { data: existing, error: existingError } = await supabase
       .from('restaurant_ratings')
       .select('*')
-      .eq('restaurant_id', restaurantId)
+      .eq('order_id', orderId)
       .eq('menu_item_id', menuItemId)
-      .eq('customer_session_id', customerSessionId)
       .maybeSingle();
     if (existingError) throw new HttpError(500, existingError.message);
 
+    const ratingPayload = {
+      restaurant_id: restaurantId,
+      menu_item_id: menuItemId,
+      customer_session_id: client.id,
+      client_id: client.id,
+      order_id: orderId,
+      rating: ratingValue,
+      comment: String(clean(body.comment) || '').slice(0, 500)
+    };
     if (existing) {
-      const updated = await updateRow('restaurant_ratings', existing.id, {
-        rating: ratingValue,
-        comment: clean(body.comment) || ''
-      });
+      const updated = await updateRow('restaurant_ratings', existing.id, ratingPayload);
       return json({ message: 'Avaliação guardada com sucesso.', rating: updated });
     }
 
-    const rating = await insertRow('restaurant_ratings', {
-      restaurant_id: restaurantId,
-      menu_item_id: menuItemId,
-      customer_session_id: customerSessionId,
-      rating: ratingValue,
-      comment: clean(body.comment) || ''
-    });
+    const rating = await insertRow('restaurant_ratings', ratingPayload);
     return json({ message: 'Avaliação guardada com sucesso.', rating }, 201);
+  }
+
+  const publicRealtimeTokenMatch = path.match(/^\/api\/public\/orders\/([a-f0-9]{24})\/realtime-token$/i);
+  if (publicRealtimeTokenMatch && method === 'GET') {
+    const order = await selectOne('orders', 'id', publicRealtimeTokenMatch[1]);
+    if (!order) throw new HttpError(404, 'Pedido não encontrado.');
+    await requirePublicOrderAccess(req, order);
+    const accessHash = String(order.public_access_token_hash || '').trim();
+    if (!accessHash) throw new HttpError(409, 'Este pedido não possui acompanhamento seguro configurado.');
+    const topic = `order:${order.id}:${accessHash}`;
+    const token = await generateRealtimeToken(`order:${order.id}`, topic, { type: 'order', id: order.id });
+    return json({ token, topic, expires_in: REALTIME_JWT_SECONDS });
   }
 
   const publicContextMatch = path.match(/^\/api\/public\/orders\/([a-f0-9]{24})\/context$/i);
@@ -3314,14 +3470,7 @@ const routePublicPortals = async (req: Request, path: string, method: string) =>
     if (['preparing', 'ready'].includes(order.restaurant_status)) throw new HttpError(409, 'O restaurante já iniciou a preparação. Contacte o suporte para solicitar o cancelamento.');
     const body = await readBody(req) as AnyRecord;
     const reason = String(body.reason || 'Cancelado pelo cliente').slice(0, 500);
-    const updated = await updateRow('orders', order.id, {
-      status: ORDER_STATUS.CANCELED,
-      cancelled_at: nowIso(),
-      cancel_reason: reason,
-      offered_to_driver: null,
-      driver_offer_status: null,
-      driver_offer_expires_at: null
-    });
+    const updated = await cancelOrderAtomically(order.id, reason);
     await cancelPendingDriverOffers(order.id);
     const affectedDriverId = order.assigned_to_driver || order.offered_to_driver;
     if (affectedDriverId) {
@@ -3627,7 +3776,9 @@ const routePublicPortals = async (req: Request, path: string, method: string) =>
       : [];
 
     const publicAccessToken = generateOrderAccessToken();
-    const orderRow = await insertRow('orders', {
+    const orderId = generateId();
+    const orderPayload = {
+      id: orderId,
       service_type: clean(body.service_type),
       price: toNumber(totalOrderPrice, 0),
       service_price: baseServicePrice,
@@ -3673,17 +3824,24 @@ const routePublicPortals = async (req: Request, path: string, method: string) =>
       estimated_preparation_minutes: validatedFood?.preparationMinutes || (body.estimated_preparation_minutes
         ? Math.max(1, Math.min(360, toNumber(body.estimated_preparation_minutes, 30)))
         : null)
+    };
+    const categoryIds = [...new Set((validatedFood?.items || []).flatMap((item: AnyRecord) => [String(item.id || ''), String(item.category || '')]).filter(Boolean))];
+    const { data: finalization, error: finalizationError } = await supabase.rpc('trago_create_public_order', {
+      p_order: orderPayload,
+      p_stock_items: validatedFood?.stockReservations || [],
+      p_coupon_source: coupon?.source || '',
+      p_coupon_code: coupon?.code || '',
+      p_client_id: authenticatedClient?.id || null,
+      p_restaurant_id: restaurantId,
+      p_subtotal_cents: Math.round(Math.max(0, baseServicePrice) * 100),
+      p_delivery_fee_cents: Math.round(Math.max(0, toNumber(routeQuote.delivery_fee, 0)) * 100),
+      p_category_ids: categoryIds,
+      p_zone: String(body.zone || body.address_text || '').slice(0, 120)
     });
-    try {
-      await commitFoodStock(validatedFood);
-    } catch (stockError) {
-      console.error('[trago-edge] Pedido criado, mas falhou a actualização do stock.', stockError);
-    }
-    try {
-      await commitCouponUse(coupon, orderRow, authenticatedClient);
-    } catch (couponError) {
-      console.error('[trago-edge] Pedido criado, mas falhou o registo de utilização do cupão.', couponError);
-    }
+    if (finalizationError) throw new HttpError(409, finalizationError.message);
+    let orderRow = finalization?.order || await selectOne('orders', 'id', orderId);
+
+    if (!orderRow) throw new HttpError(500, 'Pedido finalizado, mas não pôde ser recarregado.');
 
     await createAdminNotification({
       dedupeKey: `new_order:${orderRow.id}`,
@@ -3861,18 +4019,11 @@ const routePublicPortals = async (req: Request, path: string, method: string) =>
     const { data, error } = await supabase
       .from('orders')
       .select('*')
-      .eq('service_type', 'restaurante_comida')
+      .eq('restaurant_id', restaurant.id)
       .order('created_at', { ascending: false })
       .limit(100);
     if (error) throw new HttpError(500, error.message);
-    const restaurantPhone = String(restaurant.phone || '').replace(/\D/g, '');
-    const orders = (data || []).filter((order: AnyRecord) => {
-      const orderPhone = String(order.pickup_contact_phone || '').replace(/\D/g, '');
-      const samePhone = restaurantPhone && orderPhone && restaurantPhone === orderPhone;
-      const sameName = String(order.pickup_contact_name || '').trim().toLowerCase() === String(restaurant.name || '').trim().toLowerCase();
-      return String(order.restaurant_id || '') === String(restaurant.id) || samePhone || sameName;
-    }).map(fromOrder);
-    return json({ orders });
+    return json({ orders: (data || []).map(fromOrder) });
   }
 
   const restaurantMessagesMatch = path.match(/^\/api\/restaurant\/orders\/([a-f0-9]{24})\/messages$/i);
@@ -4010,15 +4161,9 @@ const routePublicPortals = async (req: Request, path: string, method: string) =>
       restaurant_status: status,
       restaurant_prep_time_min: body.prep_time_min ? Math.max(1, Math.min(180, toNumber(body.prep_time_min, 25))) : order.restaurant_prep_time_min
     };
-    if (status === 'rejected') Object.assign(orderPatch, {
-      status: ORDER_STATUS.CANCELED,
-      cancelled_at: nowIso(),
-      cancel_reason: reason,
-      offered_to_driver: null,
-      driver_offer_status: null,
-      driver_offer_expires_at: null
-    });
-    const updated = await updateRow('orders', order.id, orderPatch);
+    const updated = status === 'rejected'
+      ? await cancelOrderAtomically(order.id, reason, null, 'rejected')
+      : await updateRow('orders', order.id, orderPatch);
     if (status === 'rejected') await cancelPendingDriverOffers(order.id);
     const affectedDriverId = order.assigned_to_driver || order.offered_to_driver;
     if (status === 'rejected' && affectedDriverId) {
@@ -4083,14 +4228,6 @@ const routeOrders = async (req: Request, path: string, method: string) => {
 
     if (linkedClient?.billing_type === CLIENT_BILLING_TYPES.POSTPAID) {
       paymentMethod = 'postpaid_credit';
-      const availableCredit = toNumber(linkedClient.credit_balance, 0);
-      if (availableCredit < totalOrderPrice) {
-        throw new HttpError(400, `Crédito insuficiente para cliente pós-pago. Disponível: ${availableCredit.toFixed(2)} MZN.`);
-      }
-      await updateRow('clients', linkedClient.id, {
-        credit_balance: availableCredit - totalOrderPrice,
-        credit_used: toNumber(linkedClient.credit_used, 0) + totalOrderPrice
-      });
     } else if (paymentMethod === 'postpaid_credit') {
       paymentMethod = 'cash';
     }
@@ -4388,35 +4525,29 @@ const routeOrders = async (req: Request, path: string, method: string) => {
     const activeStatuses = [ORDER_STATUS.PENDING, ORDER_STATUS.ASSIGNED, ORDER_STATUS.IN_PROGRESS, ORDER_STATUS.PICKUP_IN_PROGRESS, ORDER_STATUS.PICKUP_DONE, ORDER_STATUS.DELIVERY_IN_PROGRESS];
     const { data, error } = await supabase.from('orders').select('*').in('status', activeStatuses).order('created_at', { ascending: false });
     if (error) throw new HttpError(500, error.message);
-    const orders = [];
-    for (const row of data || []) orders.push(await enrichOrder(row));
-    return json({ orders });
+    return json({ orders: await enrichOrders(data || []) });
   }
 
   if (path === '/api/orders/history' && method === 'GET') {
     await requireUser(req, 'admin');
     const query = parseQuery(req);
     const range = getPeriodRange(query.period || 'month');
-    let q = supabase
+    const { data, error } = await supabase
       .from('orders')
       .select('*')
       .in('status', [ORDER_STATUS.COMPLETED, ORDER_STATUS.CANCELED])
-      .gte('timestamp_completed', range.start.toISOString())
-      .lte('timestamp_completed', range.end.toISOString());
-    const { data, error } = await q.order('timestamp_completed', { ascending: false, nullsFirst: false });
+      .gte('closed_at', range.start.toISOString())
+      .lte('closed_at', range.end.toISOString())
+      .order('closed_at', { ascending: false, nullsFirst: false });
     if (error) throw new HttpError(500, error.message);
-    const orders = [];
-    for (const row of data || []) orders.push(await enrichOrder(row));
-    return json({ orders, period: { key: range.key, label: range.label, start: range.start.toISOString(), end: range.end.toISOString() } });
+    return json({ orders: await enrichOrders(data || []), period: { key: range.key, label: range.label, start: range.start.toISOString(), end: range.end.toISOString() } });
   }
 
   if (path === '/api/orders' && method === 'GET') {
     await requireUser(req, 'admin');
     const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
     if (error) throw new HttpError(500, error.message);
-    const orders = [];
-    for (const row of data || []) orders.push(await enrichOrder(row));
-    return json({ orders });
+    return json({ orders: await enrichOrders(data || []) });
   }
 
   const assignMatch = path.match(/^\/api\/orders\/([a-f0-9]{24})\/assign$/i);
@@ -4521,15 +4652,11 @@ const handleOrderAction = async (req: Request, orderId: string, action: string, 
     const order = await selectOne('orders', 'id', orderId);
     if (!order) throw new HttpError(404, 'Encomenda não encontrada.');
     if ([ORDER_STATUS.COMPLETED, ORDER_STATUS.CANCELED].includes(order.status)) throw new HttpError(400, 'Esta encomenda já foi concluída ou cancelada.');
-    const updated = await updateRow('orders', order.id, {
-      status: ORDER_STATUS.CANCELED,
-      cancelled_at: nowIso(),
-      cancelled_by: user.id,
-      cancel_reason: String(body.reason || 'Cancelado pelo administrador').slice(0, 500),
-      offered_to_driver: null,
-      driver_offer_status: null,
-      driver_offer_expires_at: null
-    });
+    const updated = await cancelOrderAtomically(
+      order.id,
+      String(body.reason || 'Cancelado pelo administrador').slice(0, 500),
+      user.id
+    );
     await cancelPendingDriverOffers(order.id);
     const affectedDriverId = order.assigned_to_driver || order.offered_to_driver;
     if (affectedDriverId) {
@@ -5130,7 +5257,7 @@ const routeAdmin = async (req: Request, path: string, method: string) => {
       .from('orders')
       .delete()
       .in('status', [ORDER_STATUS.COMPLETED, ORDER_STATUS.CANCELED])
-      .lt('timestamp_completed', cutoff.toISOString())
+      .lt('closed_at', cutoff.toISOString())
       .select('id');
     if (error) throw new HttpError(500, error.message);
     await broadcastAdmin('orders_changed', { action: 'history_deleted' });
@@ -5183,6 +5310,8 @@ Deno.serve(async (req) => {
         google_client_login: Boolean(TRAGO_GOOGLE_CLIENT_ID)
       }
     });
+
+    await enforceRateLimit(req, path, method);
 
     const handlers = [routeAuth, routeRealtime, routeGeo, routeMedia, routeClientPortal, routePublicPortals, routeDrivers, routeClients, routeVehicles, routeOrders, routeNotifications, routeSupport, routeStats, routeSimpleFinancials, routeAdmin, routeTrips];
     for (const handler of handlers) {

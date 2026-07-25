@@ -313,6 +313,10 @@
     localStorage.setItem(clientStorageKey(LOCAL_RATINGS_KEY), JSON.stringify(state.selectedRatings));
   }
 
+  let clientNotificationsRequest = null;
+  let clientNotificationsFetchedAt = 0;
+  const CLIENT_NOTIFICATIONS_MIN_REFRESH_MS = 15000;
+
   function writeHistory(order) {
     let history = [];
     try { history = JSON.parse(localStorage.getItem(clientStorageKey(ORDER_HISTORY_KEY)) || '[]'); } catch { history = []; }
@@ -335,6 +339,8 @@
       pickup_address_text: order?.pickup_address_text || previous.pickup_address_text || '',
       address_text: order?.address_text || previous.address_text || '',
       restaurant_status: order?.restaurant_status || order?.restaurantStatus || previous.restaurant_status || null,
+      restaurant_id: order?.restaurant_id || order?.restaurantId || previous.restaurant_id || null,
+      food_items: Array.isArray(order?.food_items) ? order.food_items : (previous.food_items || []),
       last_update: new Date().toISOString()
     };
     history = history.filter((item) => String(item.id) !== String(id));
@@ -360,7 +366,7 @@
     });
   }
 
-  function renderClientNotifications() {
+  function renderClientNotifications(options = {}) {
     const list = $('#client-notification-list');
     if (!list) return;
     let history = [];
@@ -392,18 +398,26 @@
     const unreadCount = rows.filter((item) => item.eventTime > readAt).length;
     setNotificationUnreadCount(unreadCount);
     const session = readSession();
-    if (session?.token) {
-      fetch(`${API_URL}/api/client/notifications`, { headers: { Authorization: `Bearer ${session.token}` } })
+    const now = Date.now();
+    const shouldRefresh = options.force === true || now - clientNotificationsFetchedAt >= CLIENT_NOTIFICATIONS_MIN_REFRESH_MS;
+    if (session?.token && shouldRefresh && !clientNotificationsRequest && document.visibilityState !== 'hidden') {
+      clientNotificationsRequest = fetch(`${API_URL}/api/client/notifications`, {
+        headers: { Authorization: `Bearer ${session.token}` }
+      })
         .then(async (response) => ({ response, data: await readJsonResponse(response) }))
         .then(({ response, data }) => {
           if (!response.ok) throw new Error(data.message || 'Não foi possível carregar as notificações.');
+          clientNotificationsFetchedAt = Date.now();
           const notifications = Array.isArray(data.notifications) ? data.notifications : [];
+          if (!list.isConnected) return;
           list.innerHTML = notifications.length
             ? notifications.map((item) => `<article class="${item.read_at ? '' : 'unread'}" ${item.order_id ? `data-open-client-order="${escapeHtml(item.order_id)}" role="button" tabindex="0"` : ''}><i class="fa-solid ${item.type === 'success' ? 'fa-circle-check' : item.type === 'warning' ? 'fa-triangle-exclamation' : item.type === 'restaurant' ? 'fa-store' : 'fa-motorcycle'}"></i><span><strong>${escapeHtml(item.title || 'Actualização')}</strong><p>${escapeHtml(item.message || '')}</p><small>${new Date(item.created_at || Date.now()).toLocaleString('pt-MZ')}</small></span></article>`).join('')
             : '<div class="empty-state">Ainda não existem notificações na sua conta.</div>';
           const realUnread = notifications.filter((item) => !item.read_at).length;
           setNotificationUnreadCount(realUnread);
-        }).catch(() => {});
+        })
+        .catch(() => {})
+        .finally(() => { clientNotificationsRequest = null; });
     }
   }
 
@@ -418,7 +432,8 @@
         });
       } catch (_error) { /* mantém o estado local quando offline */ }
     }
-    renderClientNotifications();
+    clientNotificationsFetchedAt = 0;
+    renderClientNotifications({ force: true });
     toast('Notificações marcadas como lidas.');
   }
 
@@ -3477,27 +3492,47 @@
   async function submitRating({ type, id, restaurantId, rating }) {
     const parsedRating = Math.max(1, Math.min(5, Number(rating) || 0));
     if (!parsedRating) return;
-    const key = type === 'food' ? `food:${id}` : `restaurant:${id}`;
-    saveLocalRating(key, parsedRating);
-    renderAllFoodViews();
+    const session = readSession();
+    if (!session?.token) {
+      toast('Entre na sua conta para avaliar uma compra concluída.', 'error');
+      return;
+    }
+    let history = [];
+    try { history = JSON.parse(localStorage.getItem(clientStorageKey(ORDER_HISTORY_KEY)) || '[]'); } catch { history = []; }
+    const targetRestaurantId = String(restaurantId || id || '');
+    const eligibleOrder = history.find((order) => {
+      if (order.status !== 'concluido' || String(order.restaurant_id || '') !== targetRestaurantId) return false;
+      if (type !== 'food') return true;
+      return (Array.isArray(order.food_items) ? order.food_items : []).some((item) => String(item?.id || '') === String(id));
+    });
+    if (!eligibleOrder?.id) {
+      toast('Só pode avaliar depois de concluir uma compra deste estabelecimento.', 'error');
+      return;
+    }
     try {
       const payload = {
-        restaurant_id: restaurantId || id,
+        order_id: eligibleOrder.id,
+        restaurant_id: targetRestaurantId,
         menu_item_id: type === 'food' ? id : '',
-        rating: parsedRating,
-        customer_session_id: state.session?.id || state.session?.phone || 'anonymous'
+        rating: parsedRating
       };
       const response = await fetch(`${API_URL}/api/public/ratings`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.token}`
+        },
         body: JSON.stringify(payload)
       });
       const data = await readJsonResponse(response);
       if (!response.ok) throw new Error(data.message || 'Não foi possível guardar a avaliação.');
+      const key = type === 'food' ? `food:${id}` : `restaurant:${id}`;
+      saveLocalRating(key, parsedRating);
+      renderAllFoodViews();
       toast('Avaliação guardada.');
       await loadRestaurants(true);
     } catch (error) {
-      toast(`${error.message} A avaliação ficou guardada neste dispositivo.`, 'error');
+      toast(error.message, 'error');
     }
   }
 

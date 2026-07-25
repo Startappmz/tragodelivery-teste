@@ -517,7 +517,7 @@ function setAdminMobileActive(pageId) {
 }
 
 /* --- Lógica de Supabase Realtime --- */
-function connectSocket() {
+async function connectSocket() {
     const token = getAuthToken('admin');
     if (!token) return;
 
@@ -635,9 +635,15 @@ function connectSocket() {
         }
     }
 
-    const subscription = window.TragoRealtime?.connectAdminRealtime({
-        onEvent: handleRealtimeEvent
-    });
+    let subscription = null;
+    try {
+        subscription = await window.TragoRealtime?.connectAdminRealtime({
+            token,
+            onEvent: handleRealtimeEvent
+        });
+    } catch (error) {
+        console.warn('Realtime administrativo indisponível:', error);
+    }
 
     // Mantém uma interface mínima compatível com código antigo que ainda chama socket.emit().
     socket = {

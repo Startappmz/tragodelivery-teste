@@ -249,7 +249,7 @@ function handleLocationError(error, isRequired = false) {
     }
 }
 
-function connectDriverSocket() {
+async function connectDriverSocket() {
     const token = getDriverTokenSafe();
     if (!token) {
         console.error('Token do motorista não encontrado. Realtime não iniciado.');
@@ -307,15 +307,20 @@ function connectDriverSocket() {
         }
     }
 
-    driverRealtimeSubscription = window.TragoRealtime?.connectDriverRealtime({
-        token,
-        onEvent: handleDriverRealtimeEvent,
-        onReady: () => {
-            showLocationPermissionModal();
-            document.body.addEventListener('click', unlockAudio, { once: true });
-            document.body.addEventListener('touchstart', unlockAudio, { once: true });
-        }
-    });
+    try {
+        driverRealtimeSubscription = await window.TragoRealtime?.connectDriverRealtime({
+            token,
+            onEvent: handleDriverRealtimeEvent,
+            onReady: () => {
+                showLocationPermissionModal();
+                document.body.addEventListener('click', unlockAudio, { once: true });
+                document.body.addEventListener('touchstart', unlockAudio, { once: true });
+            }
+        });
+    } catch (error) {
+        console.warn('Realtime do motorista indisponível:', error);
+        driverRealtimeSubscription = null;
+    }
 
     socket = {
         connected: Boolean(driverRealtimeSubscription),

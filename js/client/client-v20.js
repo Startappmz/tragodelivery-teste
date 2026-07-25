@@ -555,17 +555,27 @@
     const key = [...origin, ...destination].map((value) => Number(value).toFixed(4)).join(':');
     if (routeGeometryCache.has(key)) return routeGeometryCache.get(key);
     const pending = (async () => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 7000);
       try {
-        const route = await window.TragoMapUI?.fetchRoadRoute?.(
-          { lat: origin[0], lng: origin[1] },
-          { lat: destination[0], lng: destination[1] },
-          { apiUrl: API_URL, timeoutMs: 7000, attempts: 2 }
-        );
+        const response = await fetch(`${API_URL}/api/public/geo/route`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            origin: { lat: origin[0], lng: origin[1] },
+            destination: { lat: destination[0], lng: destination[1] }
+          }),
+          signal: controller.signal
+        });
+        const route = await readJsonResponse(response);
+        if (!response.ok) throw new Error(route.message || 'Rota indisponível');
         const points = window.TragoMapUI?.roadRouteLatLngs?.(route) || [];
         if (points.length < 3) throw new Error('Rota indisponível');
         return points;
       } catch (_error) {
         return [];
+      } finally {
+        clearTimeout(timeout);
       }
     })();
     routeGeometryCache.set(key, pending);
@@ -734,6 +744,17 @@
     const generation = ++map._tragoRouteGeneration;
     clearTimeout(map._tragoRouteRetryTimer);
     layers.clearLayers();
+    const mainRouteStyle = { color: '#35bd70', weight: 6 };
+    const driverRouteStyle = {
+      color: '#102c1c',
+      weight: 4,
+      dashArray: status === 'entrega_em_progresso' ? null : '9 9'
+    };
+    // Mostra uma rota provisória imediatamente; a geometria rodoviária substitui-a depois.
+    if (mainOrigin && delivery) drawTrackingRoute(layers, [mainOrigin, delivery], mainRouteStyle);
+    if (driver && target && mainOrigin !== driver && (driver[0] !== target[0] || driver[1] !== target[1])) {
+      drawTrackingRoute(layers, [driver, target], driverRouteStyle);
+    }
     const jobs = [];
     if (mainOrigin && delivery) {
       jobs.push(trackingRouteSequence([mainOrigin, ...routeStops, delivery]).then((route) => ({ kind: 'main', route })));
@@ -745,13 +766,12 @@
       if (generation !== map._tragoRouteGeneration) return;
       layers.clearLayers();
       const successful = routes.filter(({ route }) => Array.isArray(route) && route.length >= 3);
-      successful.forEach(({ kind, route }) => drawTrackingRoute(layers, route, kind === 'main'
-        ? { color: '#35bd70', weight: 6 }
-        : {
-            color: '#102c1c',
-            weight: 4,
-            dashArray: status === 'entrega_em_progresso' ? null : '9 9'
-          }));
+      const mainRoadRoute = successful.find(({ kind }) => kind === 'main')?.route;
+      const driverRoadRoute = successful.find(({ kind }) => kind === 'driver')?.route;
+      if (mainOrigin && delivery) drawTrackingRoute(layers, mainRoadRoute || [mainOrigin, delivery], mainRouteStyle);
+      if (driver && target && mainOrigin !== driver && (driver[0] !== target[0] || driver[1] !== target[1])) {
+        drawTrackingRoute(layers, driverRoadRoute || [driver, target], driverRouteStyle);
+      }
       map.getContainer?.().classList.remove('is-route-loading');
       const incomplete = successful.length !== routes.length;
       map.getContainer?.().classList.toggle('is-route-unavailable', incomplete);

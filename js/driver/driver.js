@@ -875,6 +875,41 @@ async function sendDriverOrderMessage(event) {
     finally { button.disabled = false; }
 }
 
+async function loadDriverOrderImage(order, img, noImg) {
+    const orderId = String(order?._id || order?.id || '');
+    const directUrl = String(order?.image_url || '');
+    if (directUrl) {
+        img.src = /^https?:\/\//i.test(directUrl) ? directUrl : `${API_URL}${directUrl}`;
+        img.classList.remove('hidden');
+        noImg.classList.add('hidden');
+        return;
+    }
+    if (!orderId || !(order?.image_available || order?.imageAvailable)) {
+        img.removeAttribute('src');
+        img.classList.add('hidden');
+        noImg.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/api/orders/${encodeURIComponent(orderId)}/image`, {
+            headers: getAuthHeaders('driver'),
+            cache: 'no-store'
+        });
+        const data = await readJsonResponse(response);
+        if (!response.ok || !data?.url) throw new Error(data?.message || 'Imagem indisponível.');
+        if (String(driverActiveOrderId) !== orderId) return;
+        img.src = data.url;
+        img.classList.remove('hidden');
+        noImg.classList.add('hidden');
+    } catch (_error) {
+        if (String(driverActiveOrderId) !== orderId) return;
+        img.removeAttribute('src');
+        img.classList.add('hidden');
+        noImg.classList.remove('hidden');
+    }
+}
+
 function fillDetalheEntrega(order) {
     const detalheSection = document.getElementById('detalhe-entrega');
     if (!detalheSection) return;
@@ -903,14 +938,7 @@ function fillDetalheEntrega(order) {
     
     const img = detalheSection.querySelector('#encomenda-imagem');
     const noImg = detalheSection.querySelector('#no-image-placeholder');
-    if (order.image_url) {
-        img.src = /^https?:\/\//i.test(order.image_url) ? order.image_url : `${API_URL}${order.image_url}`;
-        img.classList.remove('hidden');
-        noImg.classList.add('hidden');
-    } else {
-        img.classList.add('hidden');
-        noImg.classList.remove('hidden');
-    }
+    loadDriverOrderImage(order, img, noImg);
 
     document.getElementById('detalhe-cliente-nome').innerHTML = `<strong>Nome:</strong> ${escapeHtml(order.client_name || '—')}`;
     document.getElementById('detalhe-cliente-telefone').innerHTML = `<strong>Tel.:</strong> ${escapeHtml(order.client_phone1 || '—')}`;
