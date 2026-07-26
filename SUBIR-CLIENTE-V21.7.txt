@@ -1,0 +1,31 @@
+TRAGO DELIVERY - CLIENTE V21.7
+CORRECCAO DE ELEGIBILIDADE DOS CUPOES
+
+PROBLEMA CORRIGIDO
+- Pedido minimo de cupao era devolvido como HTTP 400.
+- Condicao comercial aparecia como erro tecnico no navegador.
+
+ORDEM SEGURA DE PUBLICACAO
+1. Subir primeiro os ficheiros frontend:
+   cliente.html
+   css/client-ui-v21.css
+   js/client/client.js
+   js/client/client-v20.js
+   js/common/sw-register.js
+   sw.js
+
+2. Testar o cesto abaixo do minimo.
+   Deve mostrar informacao dentro do checkout.
+   Nao deve efectuar POST de validacao quando a condicao ja e conhecida.
+
+3. Executar DEPLOY-API-V21.7.bat.
+   Isto publica o contrato estruturado de elegibilidade.
+
+4. Fazer Ctrl + F5.
+
+COMPORTAMENTO ESPERADO
+- Cupao reconhecido, mas abaixo do minimo: informacao; sem toast vermelho.
+- Cupao elegivel: sucesso e desconto aplicado.
+- Cupao expirado/esgotado/restaurante errado: aviso comercial.
+- Cupao inexistente: cupao invalido.
+- Rede/HTTP 500/resposta corrompida: erro tecnico real.

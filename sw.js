@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trago-final-v7-partners';
+const CACHE_NAME = 'trago-client-v21-7';
 const CACHE_PREFIX = 'trago-';
 
 function isRuntimeRequest(url) {

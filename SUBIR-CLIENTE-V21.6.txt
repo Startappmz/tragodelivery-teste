@@ -1,0 +1,30 @@
+TRAGO DELIVERY — CLIENTE V21.6
+
+BASE DE DADOS
+- Migração e RPC segura já aplicadas em produção.
+- Não executar SQL novamente para activar os cupões.
+
+FICHEIROS FRONTEND OBRIGATÓRIOS
+1. cliente.html
+2. css/client-ui-v21.css
+3. js/client/client.js
+4. js/client/client-v20.js
+5. js/common/sw-register.js
+6. sw.js
+
+Depois da subida:
+- abrir Cliente numa janela privada;
+- aceitar localização;
+- confirmar distância nos cards e perfil;
+- abrir Benefícios;
+- confirmar cupão TRAGO007;
+- testar aplicação do cupão num pedido mínimo de 500.00 MZN.
+
+API PRINCIPAL
+- supabase/functions/api/index.ts contém integração unificada V21.6.
+- publicação recomendada, mas não obrigatória para cupões/distância.
+- executar DEPLOY-API-V21.6.bat quando quiser alinhar a Edge Function.
+
+CACHE
+- Service Worker mudou para trago-client-v21-6.
+- utilizadores recebem assets novos após reload/fechar e reabrir.

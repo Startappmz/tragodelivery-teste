@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "npm run test:frontend && npm run test:portals && npm run test:polish && npm run test:driver-premium && npm run test:communication && npm run test:privacy && npm run test:bugs && npm run test:integration",
+    "test": "npm run test:frontend && npm run test:portals && npm run test:polish && npm run test:driver-premium && npm run test:communication && npm run test:privacy && npm run test:bugs && npm run test:integration && npm run test:v214 && npm run test:v215 && npm run test:v216 && npm run test:v217",
     "test:frontend": "node tests/frontend-core.test.mjs",
     "test:portals": "node tests/portal-structure.test.mjs",
     "test:polish": "node tests/portal-polish.test.mjs",
@@ -12,6 +12,10 @@
     "test:communication": "node tests/order-communication.test.mjs",
     "test:privacy": "node tests/tracking-privacy.test.mjs",
     "test:bugs": "node tests/bug-regression.test.mjs",
-    "test:integration": "node tests/final-integration.test.mjs"
+    "test:integration": "node tests/final-integration.test.mjs",
+    "test:v214": "node tests/client-v214.test.mjs",
+    "test:v215": "node tests/client-v215-history.test.mjs",
+    "test:v216": "node tests/client-v216-coupons-distance.test.mjs",
+    "test:v217": "node tests/client-v217-coupon-eligibility.test.mjs"
   }
 }
