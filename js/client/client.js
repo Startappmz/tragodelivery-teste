@@ -7,6 +7,7 @@
   const CART_KEY = 'tragoClientFoodCart';
   const currency = new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' });
   const PRICING_POLICY = Object.freeze({ baseDistanceKm: 11.6, baseFeeMzn: 200, extraKmFeeMzn: 15 });
+  const CURRENT_LOCATION_KEY = 'tragoClientCurrentLocationV1';
 
   const state = {
     session: null,
@@ -49,6 +50,8 @@
     foodDeliveryCoords: null,
     deliveryQuote: null,
     foodQuote: null,
+    catalogLocation: null,
+    catalogCoupons: [],
     mapContext: 'delivery-route',
     restaurants: [],
     restaurantsLoaded: false,
@@ -76,6 +79,7 @@
     bottleCategory: 'all'
   };
   let panelNavigation = null;
+  let sessionOwnerScope = '';
 
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -315,44 +319,258 @@
 
   let clientNotificationsRequest = null;
   let clientNotificationsFetchedAt = 0;
+  let clientNotificationsHydrated = false;
+  let notificationOwnerScope = '';
+  let notificationOwnerVersion = 0;
+  let notificationRequestController = null;
+  let notificationRequestFilter = '';
+  let notificationQueuedFetch = null;
+  let notificationSwipe = null;
+  let notificationClickBlockedUntil = 0;
+  let notificationPaintDeferred = false;
+  let notificationQueueProcessing = false;
+  let notificationQueueTimer = 0;
+  let notificationPollTimer = 0;
+  let notificationUndo = null;
+  let notificationFilter = 'all';
+  let notificationLastError = '';
+  const notificationStore = new Map();
+  const notificationViews = { all: [], unread: [] };
+  const notificationMeta = {
+    all: { total: 0, totalUnread: 0, hasMore: false, nextCursor: '' },
+    unread: { total: 0, totalUnread: 0, hasMore: false, nextCursor: '' }
+  };
   const CLIENT_NOTIFICATIONS_MIN_REFRESH_MS = 15000;
+  const CLIENT_NOTIFICATIONS_POLL_MS = 60000;
+  const CLIENT_NOTIFICATIONS_PAGE_SIZE = 30;
+  const CLIENT_NOTIFICATIONS_CACHE_KEY = 'tragoClientNotificationsCacheV2';
+  const CLIENT_NOTIFICATIONS_PENDING_KEY = 'tragoClientNotificationPendingOpsV2';
+  const CLIENT_NOTIFICATIONS_MAX_CACHE = 240;
+  const CLIENT_NOTIFICATION_UNDO_MS = 5000;
 
-  function writeHistory(order) {
-    let history = [];
-    try { history = JSON.parse(localStorage.getItem(clientStorageKey(ORDER_HISTORY_KEY)) || '[]'); } catch { history = []; }
-    const id = order?._id || order?.id || `local_${Date.now()}`;
-    const previous = history.find((item) => String(item.id) === String(id)) || {};
-    const next = {
-      id,
-      code: order?.verification_code || '',
-      service_type: order?.service_type || '',
-      price: Number(order?.price || 0),
-      delivery_fee: Number(order?.delivery_fee || 0),
-      createdAt: order?.createdAt || new Date().toISOString(),
-      status: order?.status || 'pendente',
-      assigned_to_driver: order?.assigned_to_driver || null,
-      driver_offer_status: order?.driver_offer_status || null,
-      driver_offer_expires_at: order?.driver_offer_expires_at || null,
-      access_token: order?.public_access_token || order?.access_token || previous.access_token || '',
-      pickup_address_coords: order?.pickup_address_coords || previous.pickup_address_coords || null,
-      address_coords: order?.address_coords || previous.address_coords || null,
-      pickup_address_text: order?.pickup_address_text || previous.pickup_address_text || '',
-      address_text: order?.address_text || previous.address_text || '',
-      restaurant_status: order?.restaurant_status || order?.restaurantStatus || previous.restaurant_status || null,
-      restaurant_id: order?.restaurant_id || order?.restaurantId || previous.restaurant_id || null,
-      food_items: Array.isArray(order?.food_items) ? order.food_items : (previous.food_items || []),
-      last_update: new Date().toISOString()
-    };
-    history = history.filter((item) => String(item.id) !== String(id));
-    history.unshift(next);
-    localStorage.setItem(clientStorageKey(ORDER_HISTORY_KEY), JSON.stringify(history.slice(0, 30)));
-    renderHistory();
+  function notificationCacheKey() {
+    return clientStorageKey(CLIENT_NOTIFICATIONS_CACHE_KEY);
   }
 
-  window.TragoClientFilterOrders = (filter) => {
-    state.orderHistoryFilter = ['active', 'previous', 'cancelled'].includes(filter) ? filter : 'active';
-    renderHistory();
-  };
+  function notificationPendingKey() {
+    return clientStorageKey(CLIENT_NOTIFICATIONS_PENDING_KEY);
+  }
+
+  function currentNotificationOwnerScope() {
+    const session = state.session || readSession();
+    return String(session?.id || session?._id || 'guest');
+  }
+
+  function ensureNotificationOwner() {
+    const owner = currentNotificationOwnerScope();
+    if (notificationOwnerScope === owner) return owner;
+    notificationOwnerScope = owner;
+    notificationOwnerVersion += 1;
+    notificationRequestController?.abort?.();
+    notificationRequestController = null;
+    clientNotificationsRequest = null;
+    notificationRequestFilter = '';
+    notificationQueuedFetch = null;
+    clientNotificationsFetchedAt = 0;
+    clientNotificationsHydrated = false;
+    notificationLastError = '';
+    notificationStore.clear();
+    notificationViews.all = [];
+    notificationViews.unread = [];
+    Object.assign(notificationMeta.all, { total: 0, totalUnread: 0, hasMore: false, nextCursor: '' });
+    Object.assign(notificationMeta.unread, { total: 0, totalUnread: 0, hasMore: false, nextCursor: '' });
+    if (notificationUndo) {
+      clearTimeout(notificationUndo.timer);
+      notificationUndo = null;
+      document.getElementById('client-notification-undo')?.classList.remove('show');
+    }
+    return owner;
+  }
+
+  function normaliseClientNotification(item) {
+    if (!item || typeof item !== 'object') return null;
+    const id = String(item.id || item._id || '').trim();
+    if (!id) return null;
+    return {
+      id,
+      order_id: item.order_id ? String(item.order_id) : '',
+      type: String(item.type || 'info'),
+      title: String(item.title || 'Actualização'),
+      message: String(item.message || ''),
+      payload: item.payload && typeof item.payload === 'object' ? item.payload : {},
+      read_at: item.read_at || null,
+      created_at: item.created_at || new Date().toISOString(),
+      updated_at: item.updated_at || item.created_at || new Date().toISOString()
+    };
+  }
+
+  function normaliseNotificationMeta(value = {}) {
+    return {
+      total: Math.max(0, Number(value.total || 0)),
+      totalUnread: Math.max(0, Number(value.totalUnread || value.total_unread || 0)),
+      hasMore: Boolean(value.hasMore ?? value.has_more),
+      nextCursor: String(value.nextCursor || value.next_cursor || '')
+    };
+  }
+
+  function readNotificationPendingOps() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(notificationPendingKey()) || '[]');
+      return (Array.isArray(parsed) ? parsed : []).filter((operation) => (
+        operation && ['read', 'read_all', 'delete'].includes(operation.type) && String(operation.id || '').trim()
+      )).slice(-500);
+    } catch {
+      return [];
+    }
+  }
+
+  function writeNotificationPendingOps(operations) {
+    try { localStorage.setItem(notificationPendingKey(), JSON.stringify(operations.slice(-500))); } catch { /* fila opcional */ }
+  }
+
+  function upsertNotificationOperation(operation) {
+    const operations = readNotificationPendingOps();
+    const key = `${operation.type}:${operation.id}`;
+    let filtered = operations.filter((entry) => `${entry.type}:${entry.id}` !== key);
+    if (operation.type === 'read_all') filtered = filtered.filter((entry) => entry.type !== 'read');
+    if (operation.type === 'read' && filtered.some((entry) => entry.type === 'read_all')) return;
+    filtered.push({
+      attempts: 0,
+      createdAt: Date.now(),
+      executeAt: Date.now(),
+      ...operation,
+      id: String(operation.id)
+    });
+    writeNotificationPendingOps(filtered);
+    scheduleNotificationQueue();
+    updateNotificationSyncStatus();
+  }
+
+  function removeNotificationOperation(type, id) {
+    const operations = readNotificationPendingOps();
+    const next = operations.filter((entry) => !(entry.type === type && String(entry.id) === String(id)));
+    if (next.length !== operations.length) writeNotificationPendingOps(next);
+    updateNotificationSyncStatus();
+  }
+
+  function pendingNotificationOperation(type, id) {
+    return readNotificationPendingOps().find((entry) => entry.type === type && String(entry.id) === String(id)) || null;
+  }
+
+  function applyNotificationPendingState(items) {
+    const operations = readNotificationPendingOps();
+    const readAll = operations.some((entry) => entry.type === 'read_all');
+    const readIds = new Set(operations.filter((entry) => entry.type === 'read').map((entry) => String(entry.id)));
+    const deletedIds = new Set(operations.filter((entry) => entry.type === 'delete').map((entry) => String(entry.id)));
+    return items
+      .filter((item) => !deletedIds.has(String(item.id)))
+      .map((item) => (readAll || readIds.has(String(item.id))) && !item.read_at
+        ? { ...item, read_at: item.updated_at || new Date().toISOString() }
+        : item);
+  }
+
+  function currentNotificationIds() {
+    return notificationViews[notificationFilter] || [];
+  }
+
+  function currentNotificationItems() {
+    return currentNotificationIds().map((id) => notificationStore.get(String(id))).filter(Boolean);
+  }
+
+  function persistClientNotifications() {
+    try {
+      const items = [...notificationStore.values()]
+        .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+        .slice(0, CLIENT_NOTIFICATIONS_MAX_CACHE);
+      const allowedIds = new Set(items.map((item) => String(item.id)));
+      const views = {
+        all: notificationViews.all.filter((id) => allowedIds.has(String(id))),
+        unread: notificationViews.unread.filter((id) => allowedIds.has(String(id)))
+      };
+      localStorage.setItem(notificationCacheKey(), JSON.stringify({
+        version: 2,
+        fetchedAt: clientNotificationsFetchedAt,
+        items,
+        views,
+        meta: notificationMeta
+      }));
+    } catch { /* cache opcional */ }
+  }
+
+  function hydrateClientNotifications() {
+    ensureNotificationOwner();
+    if (clientNotificationsHydrated) return;
+    clientNotificationsHydrated = true;
+    try {
+      const parsed = JSON.parse(localStorage.getItem(notificationCacheKey()) || 'null');
+      if (!parsed || parsed.version !== 2 || !Array.isArray(parsed.items)) return;
+      applyNotificationPendingState(parsed.items.map(normaliseClientNotification).filter(Boolean)).forEach((item) => notificationStore.set(item.id, item));
+      ['all', 'unread'].forEach((filter) => {
+        const ids = Array.isArray(parsed.views?.[filter]) ? parsed.views[filter].map(String) : [];
+        notificationViews[filter] = ids.filter((id) => notificationStore.has(id));
+        Object.assign(notificationMeta[filter], normaliseNotificationMeta(parsed.meta?.[filter]));
+      });
+      clientNotificationsFetchedAt = Number(parsed.fetchedAt || 0);
+    } catch { /* cache antigo ou inválido */ }
+  }
+
+  function notificationIconClass(item) {
+    if (item.type === 'success') return 'fa-circle-check';
+    if (item.type === 'warning') return 'fa-triangle-exclamation';
+    if (item.type === 'restaurant') return 'fa-store';
+    if (item.type === 'payment') return 'fa-wallet';
+    if (item.type === 'order') return 'fa-bag-shopping';
+    return 'fa-motorcycle';
+  }
+
+  function notificationDateGroup(value) {
+    const date = new Date(value || Date.now());
+    const now = new Date();
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const itemStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const difference = Math.round((dayStart.getTime() - itemStart.getTime()) / 86400000);
+    if (difference === 0) return 'Hoje';
+    if (difference === 1) return 'Ontem';
+    return 'Anteriores';
+  }
+
+  function notificationRowMarkup(item) {
+    const readLabel = item.read_at ? 'Já lida' : 'Marcar como lida';
+    const canOpen = Boolean(item.order_id);
+    return `<div class="v20-notification-row ${item.read_at ? '' : 'unread'}" data-notification-id="${escapeHtml(item.id)}">
+      <div class="v20-notification-underlay" aria-hidden="true"><span class="read"><i class="fa-solid fa-check"></i>${escapeHtml(readLabel)}</span><span class="delete"><i class="fa-solid fa-trash-can"></i>Eliminar</span></div>
+      <div class="v20-notification-card">
+        <button class="v20-notification-content" ${canOpen ? `data-open-client-order="${escapeHtml(item.order_id)}"` : ''} type="button" ${canOpen ? '' : 'disabled'}>
+          <i class="fa-solid ${notificationIconClass(item)}" aria-hidden="true"></i>
+          <span><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.message)}</p><small>${new Date(item.created_at || Date.now()).toLocaleString('pt-MZ')}</small></span>
+        </button>
+        <div class="v20-notification-quick-actions" aria-label="Acções da notificação">
+          <button aria-label="${escapeHtml(readLabel)}" data-notification-read="${escapeHtml(item.id)}" ${item.read_at ? 'disabled' : ''} type="button"><i class="fa-solid fa-check"></i></button>
+          <button aria-label="Eliminar notificação" data-notification-delete="${escapeHtml(item.id)}" type="button"><i class="fa-regular fa-trash-can"></i></button>
+        </div>
+        <button aria-expanded="false" aria-label="Mais acções" class="v20-notification-menu-toggle" data-notification-menu="${escapeHtml(item.id)}" type="button"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+      </div>
+      <div class="v20-notification-mobile-actions" hidden>
+        <button data-notification-read="${escapeHtml(item.id)}" ${item.read_at ? 'disabled' : ''} type="button"><i class="fa-solid fa-check"></i>${escapeHtml(readLabel)}</button>
+        <button data-notification-delete="${escapeHtml(item.id)}" type="button"><i class="fa-regular fa-trash-can"></i>Eliminar</button>
+      </div>
+    </div>`;
+  }
+
+  function notificationListMarkup(items) {
+    if (!items.length) {
+      return notificationFilter === 'unread'
+        ? '<div class="empty-state">Não existem notificações por ler.</div>'
+        : '<div class="empty-state">Ainda não existem notificações na sua conta.</div>';
+    }
+    const groups = new Map();
+    items.forEach((item) => {
+      const label = notificationDateGroup(item.created_at);
+      if (!groups.has(label)) groups.set(label, []);
+      groups.get(label).push(item);
+    });
+    return [...groups.entries()].map(([label, values]) => `<section class="v20-notification-group"><h2>${label}</h2>${values.map(notificationRowMarkup).join('')}</section>`).join('');
+  }
 
   function setNotificationUnreadCount(value) {
     const count = Math.max(0, Number(value || 0));
@@ -366,195 +584,973 @@
     });
   }
 
-  function renderClientNotifications(options = {}) {
+  function effectiveNotificationCounts(total, totalUnread) {
+    const operations = readNotificationPendingOps();
+    const deleted = operations.filter((entry) => entry.type === 'delete');
+    const read = operations.filter((entry) => entry.type === 'read');
+    const readAll = operations.some((entry) => entry.type === 'read_all');
+    const deletedUnread = deleted.filter((entry) => !entry.snapshot?.read_at).length;
+    return {
+      total: Math.max(0, Number(total || 0) - deleted.length),
+      totalUnread: readAll ? 0 : Math.max(0, Number(totalUnread || 0) - deletedUnread - read.length)
+    };
+  }
+
+  function updateNotificationSummary() {
+    const allMeta = notificationMeta.all;
+    const summary = $('#client-notification-summary');
+    if (summary) summary.textContent = `${allMeta.total} ${allMeta.total === 1 ? 'notificação' : 'notificações'} · ${allMeta.totalUnread} ${allMeta.totalUnread === 1 ? 'não lida' : 'não lidas'}`;
+    setNotificationUnreadCount(allMeta.totalUnread);
+    $$('[data-notification-filter]').forEach((button) => {
+      const active = button.dataset.notificationFilter === notificationFilter;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
+  function updateNotificationSyncStatus() {
+    const status = $('#client-notification-sync-status');
+    const retry = $('[data-notifications-retry]');
+    if (!status) return;
+    const pending = readNotificationPendingOps().length;
+    status.className = 'v20-notification-sync-status';
+    retry?.toggleAttribute('hidden', true);
+    if (clientNotificationsRequest) {
+      status.textContent = 'A sincronizar…';
+      status.classList.add('is-syncing');
+      return;
+    }
+    if (navigator.onLine === false) {
+      status.textContent = pending ? `Sem ligação · ${pending} alteração(ões) por sincronizar` : 'A mostrar dados guardados';
+      status.classList.add('is-offline');
+      return;
+    }
+    if (pending) {
+      status.textContent = `${pending} alteração(ões) por sincronizar`;
+      status.classList.add('is-pending');
+      return;
+    }
+    if (notificationLastError) {
+      status.textContent = 'Falha de ligação';
+      status.classList.add('is-error');
+      retry?.toggleAttribute('hidden', false);
+      return;
+    }
+    status.textContent = clientNotificationsFetchedAt ? 'Sincronizado' : 'Pronto para sincronizar';
+    status.classList.add('is-synced');
+  }
+
+  function paintClientNotifications() {
+    if (notificationSwipe) {
+      notificationPaintDeferred = true;
+      return;
+    }
+    notificationPaintDeferred = false;
     const list = $('#client-notification-list');
     if (!list) return;
-    let history = [];
-    try { history = JSON.parse(localStorage.getItem(clientStorageKey(ORDER_HISTORY_KEY)) || '[]'); } catch { history = []; }
-    const readAt = Number(localStorage.getItem('tragoClientNotificationsReadAt') || 0);
-    const statusLabels = {
-      pendente: ['Pedido recebido', 'A operação procura um motorista disponível.'],
-      atribuido: ['Motorista atribuído', 'Já pode abrir o acompanhamento e conversar com a operação.'],
-      recolha_em_progresso: ['Motorista a caminho da recolha', 'A recolha do pedido foi iniciada.'],
-      recolha_concluida: ['Pedido recolhido', 'O pedido saiu do ponto de recolha.'],
-      entrega_em_progresso: ['Pedido a caminho', 'O motorista segue para o destino de entrega.'],
-      concluido: ['Pedido entregue', 'A entrega foi concluída.'],
-      cancelado: ['Pedido cancelado', 'A operação deste pedido foi encerrada.']
-    };
-    const restaurantLabels = { accepted: 'Restaurante confirmou o pedido.', preparing: 'O restaurante está a preparar o pedido.', ready: 'Pedido pronto para levantamento.', rejected: 'O restaurante não aceitou o pedido.' };
-    const rows = history
-      .map((item) => ({ ...item, eventTime: new Date(item.last_update || item.createdAt || 0).getTime() || 0 }))
-      .sort((a, b) => b.eventTime - a.eventTime);
-    if (!rows.length) {
-      list.innerHTML = '<div class="empty-state">As actualizações reais dos seus pedidos aparecerão aqui.</div>';
-    } else {
-      list.innerHTML = rows.map((item) => {
-        const label = statusLabels[item.status] || ['Actualização do pedido', `Estado: ${item.status || 'pendente'}.`];
-        const restaurant = restaurantLabels[item.restaurant_status];
-        const unread = item.eventTime > readAt;
-        return `<article class="${unread ? 'unread' : ''}" data-open-client-order="${escapeHtml(item.id)}" role="button" tabindex="0"><i class="fa-solid ${item.status === 'concluido' ? 'fa-circle-check' : item.status === 'cancelado' ? 'fa-circle-xmark' : 'fa-motorcycle'}"></i><span><strong>${escapeHtml(label[0])}</strong><p>Pedido #${escapeHtml(String(item.id).slice(-6).toUpperCase())}. ${escapeHtml(restaurant || label[1])}</p><small>${item.eventTime ? new Date(item.eventTime).toLocaleString('pt-MZ') : 'Agora'}</small></span></article>`;
-      }).join('');
+    const items = currentNotificationItems();
+    const awaitingFirstSync = !items.length && Boolean(readSession()?.token) && clientNotificationsFetchedAt === 0 && navigator.onLine !== false;
+    list.innerHTML = awaitingFirstSync
+      ? '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> A carregar notificações…</div>'
+      : notificationListMarkup(items);
+    list.setAttribute('aria-busy', clientNotificationsRequest ? 'true' : 'false');
+    const loadMore = $('[data-notification-load-more]');
+    if (loadMore) {
+      loadMore.hidden = !notificationMeta[notificationFilter].hasMore;
+      loadMore.disabled = Boolean(clientNotificationsRequest);
     }
-    const unreadCount = rows.filter((item) => item.eventTime > readAt).length;
-    setNotificationUnreadCount(unreadCount);
-    const session = readSession();
-    const now = Date.now();
-    const shouldRefresh = options.force === true || now - clientNotificationsFetchedAt >= CLIENT_NOTIFICATIONS_MIN_REFRESH_MS;
-    if (session?.token && shouldRefresh && !clientNotificationsRequest && document.visibilityState !== 'hidden') {
-      clientNotificationsRequest = fetch(`${API_URL}/api/client/notifications`, {
-        headers: { Authorization: `Bearer ${session.token}` }
-      })
-        .then(async (response) => ({ response, data: await readJsonResponse(response) }))
-        .then(({ response, data }) => {
-          if (!response.ok) throw new Error(data.message || 'Não foi possível carregar as notificações.');
-          clientNotificationsFetchedAt = Date.now();
-          const notifications = Array.isArray(data.notifications) ? data.notifications : [];
-          if (!list.isConnected) return;
-          list.innerHTML = notifications.length
-            ? notifications.map((item) => `<article class="${item.read_at ? '' : 'unread'}" ${item.order_id ? `data-open-client-order="${escapeHtml(item.order_id)}" role="button" tabindex="0"` : ''}><i class="fa-solid ${item.type === 'success' ? 'fa-circle-check' : item.type === 'warning' ? 'fa-triangle-exclamation' : item.type === 'restaurant' ? 'fa-store' : 'fa-motorcycle'}"></i><span><strong>${escapeHtml(item.title || 'Actualização')}</strong><p>${escapeHtml(item.message || '')}</p><small>${new Date(item.created_at || Date.now()).toLocaleString('pt-MZ')}</small></span></article>`).join('')
-            : '<div class="empty-state">Ainda não existem notificações na sua conta.</div>';
-          const realUnread = notifications.filter((item) => !item.read_at).length;
-          setNotificationUnreadCount(realUnread);
-        })
-        .catch(() => {})
-        .finally(() => { clientNotificationsRequest = null; });
+    updateNotificationSummary();
+    updateNotificationSyncStatus();
+  }
+
+  function mergeNotificationPage(filter, items, append) {
+    const clean = applyNotificationPendingState(items.map(normaliseClientNotification).filter(Boolean));
+    clean.forEach((item) => notificationStore.set(item.id, item));
+    const incoming = clean.map((item) => String(item.id));
+    const existing = append ? notificationViews[filter] : [];
+    notificationViews[filter] = [...new Set([...existing, ...incoming])];
+    if (filter === 'all') {
+      notificationViews.unread = notificationViews.unread.filter((id) => notificationStore.get(id) && !notificationStore.get(id).read_at);
     }
   }
 
-  async function markClientNotificationsRead() {
-    localStorage.setItem('tragoClientNotificationsReadAt', String(Date.now()));
+  async function fetchClientNotificationSummary() {
+    const owner = ensureNotificationOwner();
+    const ownerVersion = notificationOwnerVersion;
     const session = readSession();
-    if (session?.token) {
-      try {
-        await fetch(`${API_URL}/api/client/notifications/read-all`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${session.token}` }
-        });
-      } catch (_error) { /* mantém o estado local quando offline */ }
+    if (!session?.token || document.visibilityState === 'hidden' || navigator.onLine === false) return;
+    try {
+      const response = await fetch(`${API_URL}/api/client/notifications?summary_only=true`, {
+        headers: { Authorization: `Bearer ${session.token}` }
+      });
+      const data = await readJsonResponse(response);
+      if (!response.ok) throw new Error(data.message || 'Não foi possível actualizar o resumo das notificações.');
+      if (owner !== currentNotificationOwnerScope() || ownerVersion !== notificationOwnerVersion) return;
+      const counts = effectiveNotificationCounts(data.total, data.totalUnread || data.total_unread);
+      notificationMeta.all.total = counts.total;
+      notificationMeta.all.totalUnread = counts.totalUnread;
+      notificationMeta.unread.total = counts.totalUnread;
+      notificationMeta.unread.totalUnread = notificationMeta.all.totalUnread;
+      notificationLastError = '';
+      updateNotificationSummary();
+      updateNotificationSyncStatus();
+      persistClientNotifications();
+    } catch (error) {
+      notificationLastError = error.message || 'Falha de ligação';
+      updateNotificationSyncStatus();
     }
-    clientNotificationsFetchedAt = 0;
-    renderClientNotifications({ force: true });
-    toast('Notificações marcadas como lidas.');
+  }
+
+  async function fetchClientNotifications(options = {}) {
+    const owner = ensureNotificationOwner();
+    hydrateClientNotifications();
+    const session = readSession();
+    if (!session?.token || document.visibilityState === 'hidden') return currentNotificationItems();
+    if (navigator.onLine === false) {
+      updateNotificationSyncStatus();
+      return currentNotificationItems();
+    }
+    const append = options.append === true;
+    const filter = options.filter === 'unread' ? 'unread' : 'all';
+    const now = Date.now();
+    const shouldRefresh = append || options.force === true || now - clientNotificationsFetchedAt >= CLIENT_NOTIFICATIONS_MIN_REFRESH_MS;
+    if (!shouldRefresh) return currentNotificationItems();
+    if (clientNotificationsRequest) {
+      if (filter !== notificationRequestFilter || append) notificationQueuedFetch = { force: true, filter, append: filter === notificationRequestFilter && append };
+      return clientNotificationsRequest;
+    }
+    const ownerVersion = notificationOwnerVersion;
+    const params = new URLSearchParams({ limit: String(CLIENT_NOTIFICATIONS_PAGE_SIZE), filter });
+    if (append && notificationMeta[filter].nextCursor) params.set('before', notificationMeta[filter].nextCursor);
+    notificationRequestFilter = filter;
+    notificationRequestController = new AbortController();
+    clientNotificationsRequest = fetch(`${API_URL}/api/client/notifications?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${session.token}` },
+      signal: notificationRequestController.signal
+    })
+      .then(async (response) => ({ response, data: await readJsonResponse(response) }))
+      .then(({ response, data }) => {
+        if (!response.ok) throw new Error(data.message || 'Não foi possível carregar as notificações.');
+        if (owner !== currentNotificationOwnerScope() || ownerVersion !== notificationOwnerVersion) return currentNotificationItems();
+        clientNotificationsFetchedAt = Date.now();
+        notificationLastError = '';
+        mergeNotificationPage(filter, Array.isArray(data.notifications) ? data.notifications : [], append);
+        Object.assign(notificationMeta[filter], normaliseNotificationMeta(data));
+        const counts = effectiveNotificationCounts(data.totalAll ?? (filter === 'all' ? data.total : notificationMeta.all.total), data.totalUnread || data.total_unread);
+        notificationMeta.all.total = counts.total;
+        notificationMeta.all.totalUnread = counts.totalUnread;
+        notificationMeta.unread.total = counts.totalUnread;
+        notificationMeta.unread.totalUnread = notificationMeta.all.totalUnread;
+        persistClientNotifications();
+        paintClientNotifications();
+        return currentNotificationItems();
+      })
+      .catch((error) => {
+        if (error?.name === 'AbortError') return currentNotificationItems();
+        notificationLastError = error.message || 'Falha de ligação';
+        paintClientNotifications();
+        return currentNotificationItems();
+      })
+      .finally(() => {
+        if (ownerVersion !== notificationOwnerVersion) return;
+        clientNotificationsRequest = null;
+        notificationRequestController = null;
+        notificationRequestFilter = '';
+        $('#client-notification-list')?.setAttribute('aria-busy', 'false');
+        updateNotificationSyncStatus();
+        const queued = notificationQueuedFetch;
+        notificationQueuedFetch = null;
+        if (queued) queueMicrotask(() => fetchClientNotifications(queued));
+      });
+    updateNotificationSyncStatus();
+    return clientNotificationsRequest;
+  }
+
+  function renderClientNotifications(options = {}) {
+    hydrateClientNotifications();
+    paintClientNotifications();
+    fetchClientNotifications(options);
+    processNotificationQueue();
+  }
+
+  function findClientNotification(id) {
+    return notificationStore.get(String(id)) || null;
+  }
+
+  function updateNotificationRowState(id) {
+    const item = findClientNotification(id);
+    const row = document.querySelector(`.v20-notification-row[data-notification-id="${CSS.escape(String(id))}"]`);
+    if (!row || !item) return;
+    row.classList.toggle('unread', !item.read_at);
+    row.classList.remove('is-swiping', 'is-read-direction', 'is-delete-direction', 'is-committing');
+    row.querySelector('.v20-notification-card')?.style.removeProperty('transform');
+    row.querySelectorAll('[data-notification-read]').forEach((button) => {
+      button.disabled = Boolean(item.read_at);
+      const label = item.read_at ? 'Já lida' : 'Marcar como lida';
+      button.setAttribute('aria-label', label);
+      if (button.closest('.v20-notification-mobile-actions')) button.innerHTML = `<i class="fa-solid fa-check"></i>${escapeHtml(label)}`;
+    });
+    const underlay = row.querySelector('.v20-notification-underlay .read');
+    if (underlay) underlay.innerHTML = `<i class="fa-solid fa-check"></i>${item.read_at ? 'Já lida' : 'Marcar como lida'}`;
+  }
+
+  function removeNotificationFromViews(id) {
+    ['all', 'unread'].forEach((filter) => {
+      notificationViews[filter] = notificationViews[filter].filter((entry) => String(entry) !== String(id));
+    });
+  }
+
+  function announceNotification(message) {
+    const announcer = $('#client-notification-announcer');
+    if (!announcer) return;
+    announcer.textContent = '';
+    requestAnimationFrame(() => { announcer.textContent = message; });
+  }
+
+  async function markClientNotificationRead(id, options = {}) {
+    const item = findClientNotification(id);
+    if (!item) return false;
+    if (item.read_at) {
+      updateNotificationRowState(id);
+      return false;
+    }
+    const timestamp = new Date().toISOString();
+    notificationStore.set(String(id), { ...item, read_at: timestamp, updated_at: timestamp });
+    notificationViews.unread = notificationViews.unread.filter((entry) => String(entry) !== String(id));
+    notificationMeta.all.totalUnread = Math.max(0, notificationMeta.all.totalUnread - 1);
+    notificationMeta.unread.total = notificationMeta.all.totalUnread;
+    notificationMeta.unread.totalUnread = notificationMeta.all.totalUnread;
+    if (notificationFilter === 'unread') paintClientNotifications();
+    else updateNotificationRowState(id);
+    upsertNotificationOperation({ type: 'read', id, executeAt: Date.now() });
+    persistClientNotifications();
+    updateNotificationSummary();
+    processNotificationQueue();
+    if (!options.silent) toast('Notificação marcada como lida.');
+    return true;
+  }
+
+  function ensureNotificationUndo() {
+    let node = $('#client-notification-undo');
+    if (node) return node;
+    node = document.createElement('div');
+    node.id = 'client-notification-undo';
+    node.className = 'v20-notification-undo';
+    node.setAttribute('role', 'status');
+    node.setAttribute('aria-live', 'polite');
+    node.innerHTML = '<span>Notificação eliminada.</span><button type="button">Desfazer</button>';
+    document.body.append(node);
+    return node;
+  }
+
+  function closeNotificationUndo(commit = true) {
+    if (!notificationUndo) return;
+    const current = notificationUndo;
+    notificationUndo = null;
+    clearTimeout(current.timer);
+    ensureNotificationUndo().classList.remove('show');
+    if (commit) {
+      const operations = readNotificationPendingOps().map((entry) => (
+        entry.type === 'delete' && String(entry.id) === String(current.id)
+          ? { ...entry, executeAt: Date.now() }
+          : entry
+      ));
+      writeNotificationPendingOps(operations);
+      processNotificationQueue();
+    }
+  }
+
+  function restoreDeletedNotification(id) {
+    const operation = pendingNotificationOperation('delete', id);
+    if (!operation?.snapshot) return false;
+    const item = normaliseClientNotification(operation.snapshot);
+    if (!item) return false;
+    notificationStore.set(item.id, item);
+    notificationViews.all = [...new Set([item.id, ...notificationViews.all])];
+    if (!item.read_at) notificationViews.unread = [...new Set([item.id, ...notificationViews.unread])];
+    notificationMeta.all.total += 1;
+    if (!item.read_at) notificationMeta.all.totalUnread += 1;
+    notificationMeta.unread.total = notificationMeta.all.totalUnread;
+    notificationMeta.unread.totalUnread = notificationMeta.all.totalUnread;
+    removeNotificationOperation('delete', id);
+    persistClientNotifications();
+    paintClientNotifications();
+    announceNotification('Eliminação desfeita.');
+    return true;
+  }
+
+  function showNotificationUndo(id) {
+    if (notificationUndo) closeNotificationUndo(true);
+    const node = ensureNotificationUndo();
+    const button = node.querySelector('button');
+    node.classList.add('show');
+    const undo = () => {
+      if (restoreDeletedNotification(id)) closeNotificationUndo(false);
+    };
+    button.onclick = undo;
+    notificationUndo = {
+      id,
+      timer: setTimeout(() => closeNotificationUndo(true), CLIENT_NOTIFICATION_UNDO_MS)
+    };
+  }
+
+  async function deleteClientNotification(id, options = {}) {
+    const item = findClientNotification(id);
+    if (!item) return false;
+    notificationStore.delete(String(id));
+    removeNotificationFromViews(id);
+    notificationMeta.all.total = Math.max(0, notificationMeta.all.total - 1);
+    if (!item.read_at) notificationMeta.all.totalUnread = Math.max(0, notificationMeta.all.totalUnread - 1);
+    notificationMeta.unread.total = notificationMeta.all.totalUnread;
+    notificationMeta.unread.totalUnread = notificationMeta.all.totalUnread;
+    upsertNotificationOperation({
+      type: 'delete',
+      id,
+      snapshot: item,
+      executeAt: Date.now() + (options.immediate ? 0 : CLIENT_NOTIFICATION_UNDO_MS)
+    });
+    const row = document.querySelector(`.v20-notification-row[data-notification-id="${CSS.escape(String(id))}"]`);
+    row?.remove();
+    persistClientNotifications();
+    paintClientNotifications();
+    if (!options.immediate) showNotificationUndo(id);
+    else processNotificationQueue();
+    announceNotification('Notificação eliminada. Pode desfazer durante cinco segundos.');
+    return true;
+  }
+
+  async function markClientNotificationsRead() {
+    const unreadCount = Math.max(notificationMeta.all.totalUnread, [...notificationStore.values()].filter((item) => !item.read_at).length);
+    if (!unreadCount) {
+      toast('Todas as notificações já estão lidas.', 'info');
+      return;
+    }
+    const timestamp = new Date().toISOString();
+    [...notificationStore.values()].forEach((item) => {
+      if (!item.read_at) notificationStore.set(item.id, { ...item, read_at: timestamp, updated_at: timestamp });
+    });
+    notificationViews.unread = [];
+    notificationMeta.all.totalUnread = 0;
+    notificationMeta.unread.total = 0;
+    notificationMeta.unread.totalUnread = 0;
+    upsertNotificationOperation({ type: 'read_all', id: 'all', executeAt: Date.now() });
+    persistClientNotifications();
+    paintClientNotifications();
+    processNotificationQueue();
+    toast(navigator.onLine === false ? 'Alteração guardada. Será sincronizada quando voltar a ter internet.' : 'Notificações marcadas como lidas.');
+  }
+
+  async function executeNotificationOperation(operation, token) {
+    const path = operation.type === 'read_all'
+      ? '/api/client/notifications/read-all'
+      : operation.type === 'read'
+        ? `/api/client/notifications/${encodeURIComponent(operation.id)}/read`
+        : `/api/client/notifications/${encodeURIComponent(operation.id)}`;
+    const response = await fetch(`${API_URL}${path}`, {
+      method: operation.type === 'delete' ? 'DELETE' : 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await readJsonResponse(response);
+    if (!response.ok && response.status !== 404) {
+      const error = new Error(data.message || 'Não foi possível sincronizar a notificação.');
+      error.status = response.status;
+      throw error;
+    }
+    return data;
+  }
+
+  function scheduleNotificationQueue() {
+    clearTimeout(notificationQueueTimer);
+    const now = Date.now();
+    const next = readNotificationPendingOps()
+      .filter((operation) => Number(operation.executeAt || 0) > now)
+      .sort((a, b) => Number(a.executeAt) - Number(b.executeAt))[0];
+    if (next) notificationQueueTimer = setTimeout(processNotificationQueue, Math.max(40, Number(next.executeAt) - now + 20));
+  }
+
+  async function processNotificationQueue() {
+    if (notificationQueueProcessing || navigator.onLine === false) {
+      scheduleNotificationQueue();
+      updateNotificationSyncStatus();
+      return;
+    }
+    const session = readSession();
+    if (!session?.token) return;
+    const now = Date.now();
+    const operations = readNotificationPendingOps();
+    const due = operations.filter((operation) => Number(operation.executeAt || 0) <= now);
+    if (!due.length) {
+      scheduleNotificationQueue();
+      updateNotificationSyncStatus();
+      return;
+    }
+    notificationQueueProcessing = true;
+    const remaining = [...operations];
+    for (const operation of due) {
+      try {
+        await executeNotificationOperation(operation, session.token);
+        const index = remaining.findIndex((entry) => entry.type === operation.type && String(entry.id) === String(operation.id));
+        if (index >= 0) remaining.splice(index, 1);
+      } catch (error) {
+        const index = remaining.findIndex((entry) => entry.type === operation.type && String(entry.id) === String(operation.id));
+        if (index >= 0) {
+          remaining[index] = {
+            ...remaining[index],
+            attempts: Number(remaining[index].attempts || 0) + 1,
+            lastError: error.message || 'Falha de ligação',
+            executeAt: Date.now() + Math.min(60000, 2500 * (Number(remaining[index].attempts || 0) + 1))
+          };
+        }
+        if (Number(error?.status || 0) === 401) break;
+      }
+    }
+    writeNotificationPendingOps(remaining);
+    notificationQueueProcessing = false;
+    scheduleNotificationQueue();
+    updateNotificationSyncStatus();
+  }
+
+  function resetNotificationSwipe(row, card) {
+    if (!row || !card) return;
+    row.classList.remove('is-swiping', 'is-read-direction', 'is-delete-direction', 'is-committing');
+    card.style.removeProperty('transform');
+    if (notificationPaintDeferred) paintClientNotifications();
+  }
+
+  function beginNotificationSwipe(event) {
+    if (event.button !== undefined && event.button !== 0) return;
+    if (event.target.closest('.v20-notification-quick-actions, .v20-notification-menu-toggle, .v20-notification-mobile-actions')) return;
+    const row = event.target.closest('.v20-notification-row');
+    const card = row?.querySelector('.v20-notification-card');
+    if (!row || !card) return;
+    notificationSwipe = {
+      pointerId: event.pointerId,
+      row,
+      card,
+      startX: event.clientX,
+      startY: event.clientY,
+      dx: 0,
+      axis: ''
+    };
+    card.setPointerCapture?.(event.pointerId);
+  }
+
+  function moveNotificationSwipe(event) {
+    if (!notificationSwipe || notificationSwipe.pointerId !== event.pointerId) return;
+    const dx = event.clientX - notificationSwipe.startX;
+    const dy = event.clientY - notificationSwipe.startY;
+    if (!notificationSwipe.axis && Math.max(Math.abs(dx), Math.abs(dy)) >= 8) {
+      notificationSwipe.axis = Math.abs(dx) > Math.abs(dy) * 1.15 ? 'x' : 'y';
+    }
+    if (notificationSwipe.axis !== 'x') return;
+    event.preventDefault();
+    const item = findClientNotification(notificationSwipe.row.dataset.notificationId);
+    const positiveLimit = item?.read_at ? 34 : 118;
+    notificationSwipe.dx = Math.max(-118, Math.min(positiveLimit, dx));
+    const { row, card } = notificationSwipe;
+    row.classList.add('is-swiping');
+    row.classList.toggle('is-read-direction', notificationSwipe.dx > 0 && !item?.read_at);
+    row.classList.toggle('is-delete-direction', notificationSwipe.dx < 0);
+    card.style.transform = `translate3d(${notificationSwipe.dx}px,0,0)`;
+  }
+
+  function finishNotificationSwipe(event) {
+    if (!notificationSwipe || notificationSwipe.pointerId !== event.pointerId) return;
+    const current = notificationSwipe;
+    notificationSwipe = null;
+    const id = current.row.dataset.notificationId;
+    const item = findClientNotification(id);
+    const threshold = Math.min(82, Math.max(58, current.row.clientWidth * 0.22));
+    if (current.axis !== 'x' || Math.abs(current.dx) < threshold || (current.dx > 0 && item?.read_at)) {
+      resetNotificationSwipe(current.row, current.card);
+      return;
+    }
+    notificationClickBlockedUntil = Date.now() + 450;
+    current.row.classList.add('is-committing');
+    current.card.style.transform = `translate3d(${current.dx > 0 ? '115%' : '-115%'},0,0)`;
+    setTimeout(async () => {
+      if (current.dx > 0) await markClientNotificationRead(id, { silent: true });
+      else await deleteClientNotification(id);
+      if (document.contains(current.row)) resetNotificationSwipe(current.row, current.card);
+      if (notificationPaintDeferred) paintClientNotifications();
+    }, 160);
+  }
+
+  function cancelNotificationSwipe(event) {
+    if (!notificationSwipe || (event.pointerId !== undefined && notificationSwipe.pointerId !== event.pointerId)) return;
+    const current = notificationSwipe;
+    notificationSwipe = null;
+    resetNotificationSwipe(current.row, current.card);
+  }
+
+  function toggleNotificationMenu(id, button) {
+    const row = button.closest('.v20-notification-row');
+    if (!row) return;
+    const open = !row.classList.contains('is-menu-open');
+    document.querySelectorAll('.v20-notification-row.is-menu-open').forEach((other) => {
+      other.classList.remove('is-menu-open');
+      other.querySelector('.v20-notification-menu-toggle')?.setAttribute('aria-expanded', 'false');
+      other.querySelector('.v20-notification-mobile-actions')?.toggleAttribute('hidden', true);
+    });
+    row.classList.toggle('is-menu-open', open);
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+    row.querySelector('.v20-notification-mobile-actions')?.toggleAttribute('hidden', !open);
+  }
+
+  function setNotificationFilter(filter) {
+    const target = filter === 'unread' ? 'unread' : 'all';
+    if (notificationFilter === target) return;
+    notificationFilter = target;
+    paintClientNotifications();
+    fetchClientNotifications({ force: true, filter: target });
+  }
+
+  function loadMoreClientNotifications() {
+    if (!notificationMeta[notificationFilter].hasMore) return;
+    fetchClientNotifications({ append: true, filter: notificationFilter, force: true });
+  }
+
+  function startNotificationPolling() {
+    clearInterval(notificationPollTimer);
+    notificationPollTimer = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      if (state.activePanel === 'notifications') fetchClientNotifications({ force: true, filter: notificationFilter });
+      else fetchClientNotificationSummary();
+      processNotificationQueue();
+    }, CLIENT_NOTIFICATIONS_POLL_MS);
   }
 
   window.TragoClientRenderNotifications = renderClientNotifications;
 
+  const ORDER_ACTIVE_STATUSES = Object.freeze([
+    'pendente', 'atribuido', 'em_progresso', 'recolha_em_progresso', 'recolha_concluida', 'entrega_em_progresso'
+  ]);
+  const ORDER_FILTER_TO_API = Object.freeze({ active: 'active', previous: 'completed', cancelled: 'cancelled' });
+  const ORDER_PAGE_SIZE = 30;
+  const ORDER_CACHE_MAX = 360;
+  const orderStore = new Map();
+  const orderViews = { active: [], previous: [], cancelled: [] };
+  const orderMeta = {
+    active: { total: 0, hasMore: false, nextCursor: '', loaded: false },
+    previous: { total: 0, hasMore: false, nextCursor: '', loaded: false },
+    cancelled: { total: 0, hasMore: false, nextCursor: '', loaded: false }
+  };
+  let orderOwnerScope = '';
+  let orderOwnerVersion = 0;
+  let orderRequestController = null;
+  let orderRequestPromise = null;
+  let orderRequestFilter = '';
+  let orderQueuedRefresh = null;
+  let orderFetchedAt = 0;
+  let orderHydrated = false;
+  let activeOrderContextController = null;
+
+  function currentOrderOwnerScope() {
+    const session = state.session || readSession();
+    return String(session?.id || session?._id || 'guest');
+  }
+
+  function canonicalOrderStatus(value) {
+    const raw = String(value || 'pendente').trim().toLowerCase();
+    const aliases = {
+      pending: 'pendente', new: 'pendente', aguardando: 'pendente',
+      assigned: 'atribuido', accepted: 'atribuido', confirmado: 'atribuido',
+      in_progress: 'em_progresso', em_andamento: 'em_progresso',
+      pickup_in_progress: 'recolha_em_progresso', collecting: 'recolha_em_progresso',
+      pickup_done: 'recolha_concluida', collected: 'recolha_concluida',
+      delivery_in_progress: 'entrega_em_progresso', on_the_way: 'entrega_em_progresso',
+      completed: 'concluido', delivered: 'concluido', finalizado: 'concluido', entregue: 'concluido',
+      canceled: 'cancelado', cancelled: 'cancelado', cancelada: 'cancelado'
+    };
+    return aliases[raw] || raw || 'pendente';
+  }
+
+  function orderBucket(status) {
+    const normalised = canonicalOrderStatus(status);
+    if (normalised === 'concluido') return 'previous';
+    if (normalised === 'cancelado') return 'cancelled';
+    return 'active';
+  }
+
+  function orderStatusLabel(status, restaurantStatus = '') {
+    const normalised = canonicalOrderStatus(status);
+    if (restaurantStatus === 'preparing' && !['entrega_em_progresso', 'concluido', 'cancelado'].includes(normalised)) return 'Em preparação';
+    return ({
+      pendente: 'A aguardar',
+      atribuido: 'Motorista atribuído',
+      em_progresso: 'Em andamento',
+      recolha_em_progresso: 'Em recolha',
+      recolha_concluida: 'Recolha concluída',
+      entrega_em_progresso: 'A caminho',
+      concluido: 'Entregue',
+      cancelado: 'Cancelado'
+    })[normalised] || 'Em actualização';
+  }
+
+  function orderDateValue(item) {
+    const bucket = orderBucket(item?.status);
+    const preferred = bucket === 'active'
+      ? (item?.updatedAt || item?.updated_at || item?.last_update || item?.createdAt || item?.created_at)
+      : (item?.closedAt || item?.closed_at || item?.timestamp_completed || item?.cancelledAt || item?.cancelled_at || item?.updatedAt || item?.createdAt);
+    const parsed = new Date(preferred || 0).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function formatOrderDate(item) {
+    const value = orderDateValue(item);
+    return value ? new Date(value).toLocaleString('pt-MZ', { dateStyle: 'medium', timeStyle: 'short' }) : 'Data indisponível';
+  }
+
+  function normaliseOrderRecord(order, previous = {}) {
+    const id = String(order?.id || order?._id || previous?.id || '');
+    if (!id) return null;
+    const status = canonicalOrderStatus(order?.status || previous?.status);
+    const accessToken = order?.public_access_token || order?.access_token || previous?.access_token || previous?.public_access_token || '';
+    return {
+      ...previous,
+      ...order,
+      id,
+      _id: id,
+      status,
+      code: order?.verification_code || order?.code || previous?.code || '',
+      access_token: accessToken,
+      public_access_token: accessToken,
+      service_type: order?.service_type || previous?.service_type || 'Serviço',
+      price: Number(order?.price ?? previous?.price ?? 0),
+      delivery_fee: Number(order?.delivery_fee ?? previous?.delivery_fee ?? 0),
+      createdAt: order?.createdAt || order?.created_at || previous?.createdAt || previous?.created_at || new Date().toISOString(),
+      updatedAt: order?.updatedAt || order?.updated_at || previous?.updatedAt || previous?.updated_at || new Date().toISOString(),
+      closedAt: order?.closedAt || order?.closed_at || previous?.closedAt || previous?.closed_at || null,
+      closed_at: order?.closed_at || order?.closedAt || previous?.closed_at || previous?.closedAt || null,
+      cancelledAt: order?.cancelledAt || order?.cancelled_at || previous?.cancelledAt || previous?.cancelled_at || null,
+      restaurant_status: order?.restaurant_status || order?.restaurantStatus || previous?.restaurant_status || null,
+      assigned_to_driver: order?.assigned_to_driver || previous?.assigned_to_driver || null,
+      driver_offer_status: order?.driver_offer_status ?? previous?.driver_offer_status ?? null,
+      driver_offer_expires_at: order?.driver_offer_expires_at ?? previous?.driver_offer_expires_at ?? null,
+      pickup_address_coords: order?.pickup_address_coords || previous?.pickup_address_coords || null,
+      address_coords: order?.address_coords || previous?.address_coords || null,
+      last_update: order?.updatedAt || order?.updated_at || previous?.last_update || new Date().toISOString()
+    };
+  }
+
+  function persistOrderStore() {
+    const rows = [...orderStore.values()]
+      .sort((a, b) => orderDateValue(b) - orderDateValue(a) || String(b.id).localeCompare(String(a.id)))
+      .slice(0, ORDER_CACHE_MAX);
+    try { localStorage.setItem(clientStorageKey(ORDER_HISTORY_KEY), JSON.stringify(rows)); } catch { /* storage indisponível */ }
+  }
+
+  function hydrateOrderStore(force = false) {
+    if (orderHydrated && !force) return;
+    orderStore.clear();
+    let cached = [];
+    try { cached = JSON.parse(localStorage.getItem(clientStorageKey(ORDER_HISTORY_KEY)) || '[]'); } catch { cached = []; }
+    Object.keys(orderViews).forEach((filter) => { orderViews[filter] = []; });
+    (Array.isArray(cached) ? cached : []).forEach((entry) => {
+      const safe = normaliseOrderRecord(entry);
+      if (!safe) return;
+      orderStore.set(safe.id, safe);
+      orderViews[orderBucket(safe.status)].push(safe.id);
+    });
+    Object.keys(orderViews).forEach((filter) => {
+      orderViews[filter].sort((a, b) => orderDateValue(orderStore.get(b)) - orderDateValue(orderStore.get(a)) || String(b).localeCompare(String(a)));
+    });
+    orderHydrated = true;
+  }
+
+  function ensureOrderOwner() {
+    const owner = currentOrderOwnerScope();
+    if (owner === orderOwnerScope && orderHydrated) return false;
+    orderOwnerVersion += 1;
+    orderOwnerScope = owner;
+    orderRequestController?.abort?.();
+    activeOrderContextController?.abort?.();
+    activeOrderContextController = null;
+    orderRequestController = null;
+    orderRequestPromise = null;
+    orderRequestFilter = '';
+    orderQueuedRefresh = null;
+    orderFetchedAt = 0;
+    orderHydrated = false;
+    Object.values(orderMeta).forEach((meta) => Object.assign(meta, { total: 0, hasMore: false, nextCursor: '', loaded: false }));
+    hydrateOrderStore(true);
+    return true;
+  }
+
+  function upsertOrderHistory(order, options = {}) {
+    ensureOrderOwner();
+    const id = String(order?.id || order?._id || '');
+    if (!id) return null;
+    const previous = orderStore.get(id) || {};
+    const safe = normaliseOrderRecord(order, previous);
+    if (!safe) return null;
+    orderStore.set(id, safe);
+    Object.keys(orderViews).forEach((filter) => {
+      orderViews[filter] = orderViews[filter].filter((entryId) => String(entryId) !== id);
+    });
+    orderViews[orderBucket(safe.status)].unshift(id);
+    persistOrderStore();
+    if (options.render !== false) renderHistory();
+    return safe;
+  }
+
+  function patchOrderHistory(id, patch, options = {}) {
+    ensureOrderOwner();
+    const current = orderStore.get(String(id));
+    if (!current) return null;
+    return upsertOrderHistory({ ...current, ...(patch || {}), id: current.id }, options);
+  }
+
+  function orderRowsForFilter(filter = state.orderHistoryFilter) {
+    ensureOrderOwner();
+    const ids = orderViews[filter] || [];
+    return ids
+      .map((id) => orderStore.get(String(id)))
+      .filter((item) => item && orderBucket(item.status) === filter)
+      .sort((a, b) => orderDateValue(b) - orderDateValue(a) || String(b.id).localeCompare(String(a.id)));
+  }
+
+  function updateOrderTabUI(filter) {
+    $$('[data-order-tab]').forEach((button) => {
+      const active = button.dataset.orderTab === filter;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    $('.v20-active-order')?.classList.toggle('hidden', filter !== 'active');
+  }
+
   function renderHistory() {
+    ensureOrderOwner();
     const list = $('#client-history-list');
     if (!list) return;
-    let history = [];
-    try { history = JSON.parse(localStorage.getItem(clientStorageKey(ORDER_HISTORY_KEY)) || '[]'); } catch { history = []; }
-    renderClientNotifications();
     window.TragoClientSyncOrderShell?.();
-    const activeCount = history.filter((item) => !['concluido', 'cancelado'].includes(item.status)).length;
+    const computedActive = orderRowsForFilter('active').length;
+    const activeCount = state.session?.token && orderMeta.active.loaded ? Number(orderMeta.active.total) : computedActive;
     $$('[data-client-active-count]').forEach((badge) => {
       badge.textContent = String(activeCount);
       badge.hidden = activeCount === 0;
     });
-    history = history.filter((item) => {
-      if (state.orderHistoryFilter === 'previous') return item.status === 'concluido';
-      if (state.orderHistoryFilter === 'cancelled') return item.status === 'cancelado';
-      return !['concluido', 'cancelado'].includes(item.status);
-    });
-    if (!history.length) {
+    updateOrderTabUI(state.orderHistoryFilter);
+    const rows = orderRowsForFilter(state.orderHistoryFilter);
+    const sync = $('#client-history-sync-status');
+    if (sync) sync.textContent = navigator.onLine === false ? 'A mostrar pedidos guardados.' : `${rows.length} pedido${rows.length === 1 ? '' : 's'} carregado${rows.length === 1 ? '' : 's'}.`;
+    if (!rows.length) {
       const label = state.orderHistoryFilter === 'previous'
         ? 'Ainda não existem pedidos anteriores.'
         : state.orderHistoryFilter === 'cancelled'
           ? 'Ainda não existem pedidos cancelados.'
           : 'Não existem pedidos activos neste momento.';
       list.innerHTML = `<div class="empty-state">${label}</div>`;
-      return;
+    } else {
+      list.innerHTML = rows.map((item) => {
+        const status = canonicalOrderStatus(item.status);
+        const serviceLabel = String(item.service_type || 'Serviço').replaceAll('_', ' ');
+        return `
+          <div class="order-card" data-open-client-order="${escapeHtml(item.id)}" role="button" tabindex="0" aria-label="Abrir pedido #${escapeHtml(String(item.id).slice(-6).toUpperCase())}">
+            <div class="order-card-head">
+              <strong>#${escapeHtml(String(item.id).slice(-6).toUpperCase())}</strong>
+              <span class="status-pill status-${escapeHtml(status)}">${escapeHtml(orderStatusLabel(status, item.restaurant_status))}</span>
+            </div>
+            <div class="order-meta">${escapeHtml(serviceLabel)} · ${money(item.price)} · ${escapeHtml(formatOrderDate(item))}</div>
+            ${item.delivery_fee ? `<div class="order-meta"><strong>Taxa de entrega:</strong> ${money(item.delivery_fee)}</div>` : ''}
+            ${item.code && status !== 'cancelado' ? `<div class="order-meta"><strong>Código para entrega:</strong> ${escapeHtml(item.code)}</div>` : ''}
+          </div>`;
+      }).join('');
     }
-    list.innerHTML = history.map((item) => `
-      <div class="order-card" data-open-client-order="${escapeHtml(item.id)}" role="button" tabindex="0" aria-label="Abrir pedido #${escapeHtml(String(item.id).slice(-6).toUpperCase())}">
-        <div class="order-card-head">
-          <strong>#${escapeHtml(String(item.id).slice(-6).toUpperCase())}</strong>
-          <span class="status-pill">${escapeHtml(item.status || 'pendente')}</span>
-        </div>
-        <div class="order-meta">${escapeHtml(item.service_type || 'Serviço')} · ${money(item.price)} · ${new Date(item.createdAt).toLocaleString('pt-MZ')}</div>
-        ${item.delivery_fee ? `<div class="order-meta"><strong>Taxa de entrega:</strong> ${money(item.delivery_fee)}</div>` : ''}
-        ${item.code ? `<div class="order-meta"><strong>Código para entrega:</strong> ${escapeHtml(item.code)}</div>` : ''}
-      </div>
-    `).join('');
+    const meta = orderMeta[state.orderHistoryFilter];
+    const more = $('[data-order-load-more]');
+    if (more) {
+      more.hidden = !state.session?.token || !meta.hasMore;
+      more.disabled = Boolean(orderRequestPromise);
+    }
+  }
+
+  async function refreshActiveOrderContextForShell(order) {
+    if (!order?.id || (!order.access_token && !state.session?.token)) return;
+    activeOrderContextController?.abort?.();
+    const controller = new AbortController();
+    activeOrderContextController = controller;
+    try {
+      const response = await fetch(`${API_URL}/api/public/orders/${encodeURIComponent(order.id)}/context`, {
+        headers: {
+          'X-Order-Access-Token': order.access_token || '',
+          ...(state.session?.token ? { Authorization: `Bearer ${state.session.token}` } : {})
+        },
+        signal: controller.signal
+      });
+      const data = await readJsonResponse(response);
+      if (!response.ok) return;
+      if (data.driver) window.TragoClientSetAssignedDriver?.(data.driver);
+      if (data.order) patchOrderHistory(order.id, data.order, { render: false });
+      window.TragoClientSyncOrderShell?.();
+    } catch (error) {
+      if (error?.name !== 'AbortError') console.warn('[TraGo] contexto activo indisponível:', error?.message || error);
+    } finally {
+      if (activeOrderContextController === controller) activeOrderContextController = null;
+    }
+  }
+
+  async function fetchOrderPage(options = {}) {
+    ensureOrderOwner();
+    const filter = ['active', 'previous', 'cancelled'].includes(options.filter) ? options.filter : state.orderHistoryFilter;
+    const append = options.append === true;
+    const silent = options.silent === true;
+    const owner = orderOwnerScope;
+    const version = orderOwnerVersion;
+    if (!state.session?.token) {
+      renderHistory();
+      return { orders: orderRowsForFilter(filter), local: true };
+    }
+    if (orderRequestPromise) {
+      if (orderRequestFilter === filter && !append) return orderRequestPromise;
+      orderQueuedRefresh = { ...options, filter };
+      orderRequestController?.abort?.();
+      return orderRequestPromise;
+    }
+    const controller = new AbortController();
+    orderRequestController = controller;
+    orderRequestFilter = filter;
+    const meta = orderMeta[filter];
+    const params = new URLSearchParams({ filter: ORDER_FILTER_TO_API[filter], limit: String(ORDER_PAGE_SIZE) });
+    if (append && meta.nextCursor) params.set('before', meta.nextCursor);
+    const list = $('#client-history-list');
+    list?.setAttribute('aria-busy', 'true');
+    const request = (async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/client/orders?${params}`, {
+          headers: { Authorization: `Bearer ${state.session.token}` },
+          signal: controller.signal
+        });
+        const data = await readJsonResponse(response);
+        if (!response.ok) throw new Error(data.message || 'Não foi possível carregar os pedidos.');
+        if (owner !== currentOrderOwnerScope() || version !== orderOwnerVersion) return data;
+        const received = Array.isArray(data.orders) ? data.orders : [];
+        received.forEach((order) => upsertOrderHistory(order, { render: false }));
+        const receivedIds = received.map((order) => String(order.id || order._id || '')).filter(Boolean);
+        orderViews[filter] = append
+          ? [...new Set([...(orderViews[filter] || []), ...receivedIds])]
+          : receivedIds;
+        const totals = data.totals || {};
+        orderMeta.active.total = Number(totals.active ?? orderMeta.active.total ?? 0);
+        orderMeta.previous.total = Number(totals.completed ?? orderMeta.previous.total ?? 0);
+        orderMeta.cancelled.total = Number(totals.cancelled ?? orderMeta.cancelled.total ?? 0);
+        meta.hasMore = data.hasMore === true;
+        meta.nextCursor = String(data.nextCursor || '');
+        meta.loaded = true;
+        orderFetchedAt = Date.now();
+        renderHistory();
+        if (filter === 'active') refreshActiveOrderContextForShell(orderRowsForFilter('active')[0]);
+        return data;
+      } catch (error) {
+        if (error?.name === 'AbortError') return null;
+        renderHistory();
+        if (!silent) toast(error.message || 'Não foi possível actualizar os pedidos.', 'error');
+        return null;
+      } finally {
+        const currentRequest = orderRequestPromise === request;
+        if (orderRequestController === controller) orderRequestController = null;
+        if (currentRequest) {
+          orderRequestPromise = null;
+          orderRequestFilter = '';
+          list?.setAttribute('aria-busy', 'false');
+          const queued = orderQueuedRefresh;
+          orderQueuedRefresh = null;
+          if (queued) queueMicrotask(() => fetchOrderPage(queued));
+        }
+      }
+    })();
+    orderRequestPromise = request;
+    return request;
+  }
+
+  function setOrderHistoryFilter(filter, options = {}) {
+    const target = ['active', 'previous', 'cancelled'].includes(filter) ? filter : 'active';
+    state.orderHistoryFilter = target;
+    renderHistory();
+    if (options.fetch !== false) fetchOrderPage({ filter: target, force: true, silent: options.silent === true });
+    return target;
   }
 
   async function refreshHistoryStatuses(silent = false) {
-    let history = [];
-    try { history = JSON.parse(localStorage.getItem(clientStorageKey(ORDER_HISTORY_KEY)) || '[]'); } catch { history = []; }
-    if (state.session?.token) {
-      try {
-        const response = await fetch(`${API_URL}/api/client/orders`, { headers: { Authorization: `Bearer ${state.session.token}` } });
-        const data = await readJsonResponse(response);
-        if (response.ok) {
-          const previousById = new Map(history.map((item) => [String(item.id), item]));
-          history = (data.orders || []).map((order) => {
-            const id = String(order.id || order._id || '');
-            const previous = previousById.get(id) || {};
-            return {
-              ...previous,
-              id,
-              code: order.verification_code || previous.code || '',
-              service_type: order.service_type || '',
-              price: Number(order.price || 0),
-              delivery_fee: Number(order.delivery_fee || 0),
-              createdAt: order.createdAt || order.created_at || new Date().toISOString(),
-              status: order.status || 'pendente',
-              assigned_to_driver: order.assigned_to_driver || null,
-              driver_offer_status: order.driver_offer_status || null,
-              driver_offer_expires_at: order.driver_offer_expires_at || null,
-              pickup_address_coords: order.pickup_address_coords || previous.pickup_address_coords || null,
-              address_coords: order.address_coords || previous.address_coords || null,
-              restaurant_status: order.restaurant_status || null,
-              last_update: order.updatedAt || order.updated_at || new Date().toISOString()
-            };
-          });
-          localStorage.setItem(clientStorageKey(ORDER_HISTORY_KEY), JSON.stringify(history));
-        }
-      } catch (_error) { /* mantém a cache local quando estiver offline */ }
-    }
-    const refreshable = history.filter((item) =>
-      !['concluido', 'cancelado'].includes(String(item.status || ''))
-      && (item.access_token || state.session?.token)
-      && /^[a-f0-9]{24}$/i.test(String(item.id || ''))
-    );
-    if (!refreshable.length) { renderHistory(); return; }
-    const refreshableIds = new Set(refreshable.map((item) => String(item.id)));
-    const updated = await Promise.all(history.map(async (item) => {
-      if (!refreshableIds.has(String(item.id || ''))) return item;
-      try {
-        const response = await fetch(`${API_URL}/api/public/orders/${encodeURIComponent(item.id)}/context`, {
-          headers: {
-            'X-Order-Access-Token': item.access_token || '',
-            ...(state.session?.token ? { Authorization: `Bearer ${state.session.token}` } : {})
-          }
-        });
-        const data = await readJsonResponse(response);
-        if (!response.ok) return item;
-        if (data.driver) window.TragoClientSetAssignedDriver?.(data.driver);
-        const nextStatus = data.order?.status || item.status;
-        const nextRestaurantStatus = data.order?.restaurant_status || data.order?.restaurantStatus || item.restaurant_status;
-        const nextOfferStatus = data.order?.driver_offer_status || null;
-        const changed = nextStatus !== item.status || nextRestaurantStatus !== item.restaurant_status || nextOfferStatus !== item.driver_offer_status;
-        return {
-          ...item,
-          status: nextStatus,
-          assigned_to_driver: data.order?.assigned_to_driver || item.assigned_to_driver,
-          driver_offer_status: nextOfferStatus,
-          driver_offer_expires_at: data.order?.driver_offer_expires_at || null,
-          pickup_address_coords: data.order?.pickup_address_coords || item.pickup_address_coords,
-          address_coords: data.order?.address_coords || item.address_coords,
-          restaurant_status: nextRestaurantStatus,
-          last_update: changed ? new Date().toISOString() : item.last_update
-        };
-      } catch (_error) { return item; }
-    }));
-    localStorage.setItem(clientStorageKey(ORDER_HISTORY_KEY), JSON.stringify(updated));
-    renderHistory();
-    if (!silent) toast('Estado dos pedidos actualizado.');
+    ensureOrderOwner();
+    const filter = state.orderHistoryFilter || 'active';
+    const result = await fetchOrderPage({ filter, force: true, silent });
+    if (filter !== 'active') await fetchOrderPage({ filter: 'active', force: true, silent: true });
+    if (!silent && result) toast('Estado dos pedidos actualizado.');
+    return result;
   }
 
-  function initSessionUI() {
-    state.session = readSession();
+  function loadMoreOrderHistory() {
+    const meta = orderMeta[state.orderHistoryFilter];
+    if (!meta?.hasMore) return;
+    fetchOrderPage({ filter: state.orderHistoryFilter, append: true, force: true });
+  }
+
+  function resetOrderSessionState() {
+    orderOwnerScope = '';
+    ensureOrderOwner();
+    sessionStorage.removeItem('tragoClientSelectedOrderId');
+    window.TragoClientResetOrderTracking?.();
+    renderHistory();
+  }
+
+  window.TragoClientFilterOrders = setOrderHistoryFilter;
+  window.TragoClientOrders = Object.freeze({
+    upsert: upsertOrderHistory,
+    patch: patchOrderHistory,
+    get: (id) => { ensureOrderOwner(); return orderStore.get(String(id)) || null; },
+    all: () => { ensureOrderOwner(); return [...orderStore.values()]; },
+    active: () => orderRowsForFilter('active'),
+    refresh: refreshHistoryStatuses,
+    resetSession: resetOrderSessionState
+  });
+
+
+  async function claimGuestOrdersForSession(session) {
+    if (!session?.token) return 0;
+    const guestKey = `${ORDER_HISTORY_KEY}:${encodeURIComponent('guest')}`;
+    let guestOrders = [];
+    try { guestOrders = JSON.parse(localStorage.getItem(guestKey) || '[]'); } catch { guestOrders = []; }
+    const claimable = (Array.isArray(guestOrders) ? guestOrders : [])
+      .filter((order) => order?.id && (order?.access_token || order?.public_access_token))
+      .slice(0, 30);
+    if (!claimable.length) return 0;
+    const claimedIds = new Set();
+    for (const order of claimable) {
+      try {
+        const response = await fetch(`${API_URL}/api/client/orders/claim`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` },
+          body: JSON.stringify({ order_id: order.id, access_token: order.access_token || order.public_access_token })
+        });
+        const data = await readJsonResponse(response);
+        if (!response.ok) continue;
+        claimedIds.add(String(order.id));
+        upsertOrderHistory({ ...order, ...(data.order || {}), id: order.id }, { render: false });
+      } catch { /* mantém no perfil convidado para nova tentativa */ }
+    }
+    if (claimedIds.size) {
+      const remaining = guestOrders.filter((order) => !claimedIds.has(String(order?.id || '')));
+      try {
+        if (remaining.length) localStorage.setItem(guestKey, JSON.stringify(remaining));
+        else localStorage.removeItem(guestKey);
+      } catch { /* storage indisponível */ }
+      persistOrderStore();
+      renderHistory();
+      toast(`${claimedIds.size} pedido${claimedIds.size === 1 ? '' : 's'} associado${claimedIds.size === 1 ? '' : 's'} à sua conta.`, 'info');
+    }
+    return claimedIds.size;
+  }
+
+  function initSessionUI(options = {}) {
+    const nextSession = readSession();
+    const previousScope = sessionOwnerScope;
+    const nextScope = String(nextSession?.id || nextSession?._id || 'guest');
+    const identityChanged = Boolean(previousScope && previousScope !== nextScope);
+    state.session = nextSession;
+    sessionOwnerScope = nextScope;
+    ensureNotificationOwner();
+    ensureOrderOwner();
     state.selectedRatings = readLocalRatings();
     const authenticated = Boolean(state.session);
     const profile = state.session || {};
@@ -569,10 +1565,32 @@
     const foodPhone = $('#food-client-phone');
     if (foodName) foodName.value = profile.name || '';
     if (foodPhone) foodPhone.value = profile.phone || '';
+
+    if (identityChanged) {
+      restoreCart();
+      resetOrderSessionState();
+      hydrateClientNotifications(true);
+      paintClientNotifications();
+      renderCart();
+      panelNavigation?.destroy?.();
+      panelNavigation = null;
+      initPanelNavigation();
+      window.TragoClientAddresses?.refresh?.();
+      window.TragoClientRefreshFavorites?.();
+      fetchClientNotificationSummary();
+      if (previousScope === 'guest' && nextScope !== 'guest') {
+        claimGuestOrdersForSession(nextSession).finally(() => fetchOrderPage({ filter: 'active', force: true, silent: true }));
+      } else {
+        fetchOrderPage({ filter: 'active', force: true, silent: true });
+      }
+    } else if (options.refreshData === true) {
+      fetchClientNotificationSummary();
+      fetchOrderPage({ filter: 'active', force: true, silent: true });
+    }
     return true;
   }
 
-  window.TragoClientRefreshSession = initSessionUI;
+  window.TragoClientRefreshSession = (options = {}) => initSessionUI(options);
 
   function logout() {
     localStorage.removeItem(SESSION_KEY);
@@ -605,9 +1623,21 @@
     if (panel === 'map') setTimeout(() => state.map?.invalidateSize?.(), 160);
     if (['food', 'bottle-store', 'bottle-profile', 'home', 'dish-detail', 'restaurant-profile', 'wishlist'].includes(panel)) loadRestaurants();
     if (panel === 'bottle-store') renderBottleStore();
-    if (panel === 'bottle-profile' && state.selectedRestaurantId) renderBottleProfile(state.selectedRestaurantId);
-    if (panel === 'restaurant-profile' && state.selectedRestaurantId) renderRestaurantProfile(state.selectedRestaurantId);
+    if (panel === 'bottle-profile') {
+      if (state.selectedRestaurantId) renderBottleProfile(state.selectedRestaurantId);
+      else queueMicrotask(() => setPanel('bottle-store', { replace: true, skipStack: true }));
+    }
+    if (panel === 'restaurant-profile') {
+      if (state.selectedRestaurantId) renderRestaurantProfile(state.selectedRestaurantId);
+      else queueMicrotask(() => setPanel('food', { replace: true, skipStack: true }));
+    }
+    if (panel === 'dish-detail' && state.selectedDishId) renderDishDetail(state.selectedDishId);
     if (panel === 'wishlist') renderWishlist();
+    if (panel === 'notifications') renderClientNotifications({ force: true });
+    if (panel === 'history') {
+      renderHistory();
+      fetchOrderPage({ filter: state.orderHistoryFilter, force: true, silent: true });
+    }
     if (panel === 'partners') {
       loadPartners();
       setTimeout(() => state.partnersMap?.invalidateSize?.(), 120);
@@ -628,6 +1658,7 @@
   }
 
   function initPanelNavigation() {
+    if (panelNavigation) return panelNavigation;
     $$('.v20-back:not([data-local-back])').forEach((button) => {
       if (button.dataset.jumpPanel && !button.dataset.fallbackPanel) {
         button.dataset.fallbackPanel = button.dataset.jumpPanel;
@@ -646,8 +1677,27 @@
       scope: state.session?.id || state.session?._id || 'guest',
       pages: ['home', 'food', 'bottle-store', 'bottle-profile', 'restaurant-profile', 'dish-detail', 'wishlist', 'partners', 'delivery', 'map', 'history', 'menu', 'addresses', 'notifications', 'coupons', 'preferences', 'language', 'support', 'referral', 'policies', 'about'],
       defaultPage: 'home',
-      transientPages: ['dish-detail'],
+      transientPages: ['dish-detail', 'map'],
+      restorablePages: ['home', 'food', 'bottle-store', 'wishlist', 'partners', 'delivery', 'history', 'menu'],
+      deepLinkPages: ['home', 'food', 'bottle-store', 'wishlist', 'partners', 'delivery', 'history', 'menu', 'restaurant-profile', 'bottle-profile'],
       getCurrent: () => state.activePanel,
+      getContext: (page) => {
+        if (['restaurant-profile', 'bottle-profile'].includes(page) && state.selectedRestaurantId) return { id: state.selectedRestaurantId };
+        if (page === 'dish-detail' && state.selectedDishId) return { id: state.selectedDishId, origin: state.lastPanelBeforeDish || 'food' };
+        return {};
+      },
+      applyContext: (page, context) => {
+        if (['restaurant-profile', 'bottle-profile'].includes(page)) state.selectedRestaurantId = context.id || null;
+        if (page === 'dish-detail') {
+          state.selectedDishId = context.id || null;
+          state.lastPanelBeforeDish = context.origin || state.lastPanelBeforeDish || 'food';
+        }
+      },
+      validateContext: (page, context) => {
+        if (['restaurant-profile', 'bottle-profile', 'dish-detail'].includes(page)) return Boolean(context.id);
+        return true;
+      },
+      fallbackFor: (page) => page === 'bottle-profile' ? 'bottle-store' : page === 'restaurant-profile' || page === 'dish-detail' ? 'food' : 'home',
       render: renderPanel
     });
     panelNavigation.restore();
@@ -1290,9 +2340,10 @@
       state.stopMarker?.setLatLng(cleanCoords).bindPopup(stopLabel);
       if (options.openPopup !== false) state.stopMarker?.openPopup();
     }
-    if (options.recenter !== false) {
-      if (state.mapCamera?.setView) state.mapCamera.setView(cleanCoords, Math.max(state.map.getZoom?.() || 14, 14), { force: true, mode: 'free' });
-      else state.map?.setView(cleanCoords, Math.max(state.map.getZoom?.() || 14, 14));
+    if (options.recenter !== false && state.map) {
+      const zoom = Math.max(state.map.getZoom?.() || 14, 14);
+      if (state.mapCamera?.setView) state.mapCamera.setView(cleanCoords, zoom, { force: true, mode: 'free' });
+      else state.map.setView(cleanCoords, zoom);
     }
     drawRouteLine();
     if (options.refresh !== false) {
@@ -1300,6 +2351,63 @@
       else if (kind !== 'stop') refreshDeliveryQuote();
     }
   }
+
+  async function resolveSavedAddressPoint(address) {
+    const label = String(address?.address || address?.label || '').trim();
+    let coords = normaliseCoord(address);
+    let resolvedLabel = label;
+    if (!coords && label.length >= 4) {
+      const suggestion = (await searchAddresses(label, { limit: 3 }))[0];
+      coords = normaliseCoord(suggestion);
+      resolvedLabel = String(suggestion?.label || suggestion?.short_label || label).trim();
+      if (coords && window.TragoFeedback?.confirm) {
+        const confirmed = await window.TragoFeedback.confirm({
+          type: 'info',
+          title: 'Confirmar localização encontrada?',
+          message: `${resolvedLabel}. Confirme antes de calcular a rota e o preço.`,
+          confirmText: 'Usar localização',
+          cancelText: 'Editar endereço'
+        });
+        if (!confirmed) throw new Error('Localização não aplicada. Edite o endereço e associe um ponto exacto.');
+      }
+    }
+    if (!coords) throw new Error('Este endereço ainda não tem uma localização exacta. Edite-o e associe a localização actual.');
+    return { coords, label: resolvedLabel || String(address?.label || 'Endereço guardado') };
+  }
+
+  async function useSavedAddress(address, target = 'delivery', options = {}) {
+    const safeTarget = ['pickup', 'delivery', 'food-delivery'].includes(target) ? target : 'delivery';
+    const resolved = await resolveSavedAddressPoint(address);
+    const inputSelector = safeTarget === 'pickup'
+      ? '#order-pickup-address'
+      : safeTarget === 'food-delivery' ? '#food-delivery-address' : '#order-delivery-address';
+    const input = $(inputSelector);
+    if (input) {
+      input.value = resolved.label;
+      input.dataset.resolvedAddress = resolved.label;
+      input.dataset.savedAddressId = String(address?.id || '');
+      delete input.dataset.addressSuggestion;
+    }
+    if (safeTarget === 'pickup') {
+      state.selectedPartnerId = null;
+      state.cargoSourceType = 'map_location';
+      setInputValue('#selected-partner-id', '');
+      setInputValue('#selected-partner-entity-type', '');
+      if ($('#cargo-partner-select')) $('#cargo-partner-select').value = '';
+    }
+    placeMarker(safeTarget, resolved.coords, resolved.label, { openPopup: false, recenter: false });
+    if (safeTarget === 'pickup') renderCargoSourceSelection();
+    if (options.openPanel !== false) {
+      setPanel(safeTarget === 'food-delivery' ? 'food' : 'delivery');
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+    document.dispatchEvent(new CustomEvent('trago:saved-address-used', {
+      detail: { address, target: safeTarget, coords: resolved.coords, label: resolved.label }
+    }));
+    return { ...resolved, target: safeTarget };
+  }
+
+  window.TragoClientUseSavedAddress = useSavedAddress;
 
   function initMap() {
     const mapEl = $('#client-map');
@@ -1367,6 +2475,7 @@
     }
     navigator.geolocation.getCurrentPosition((pos) => {
       const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      syncCatalogLocation(coords);
       if (target === 'pickup') setMapMode('pickup');
       else setMapMode(target === 'stop' ? 'stop' : 'delivery');
       const label = target === 'pickup'
@@ -1404,6 +2513,122 @@
     const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
+
+
+  function readCatalogLocation() {
+    const runtime = window.TragoClientLocation?.read?.();
+    if (isValidCoord(runtime)) return normaliseCoord(runtime);
+    try {
+      const cached = JSON.parse(localStorage.getItem(CURRENT_LOCATION_KEY) || 'null');
+      return isValidCoord(cached) ? normaliseCoord(cached) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function syncCatalogLocation(location = null, { render = true } = {}) {
+    state.catalogLocation = isValidCoord(location) ? normaliseCoord(location) : readCatalogLocation();
+    if (render && state.restaurantsLoaded) renderAllFoodViews();
+    return state.catalogLocation;
+  }
+
+  function restaurantDistanceKm(restaurant) {
+    const clientLocation = isValidCoord(state.catalogLocation) ? state.catalogLocation : readCatalogLocation();
+    const restaurantLocation = normaliseCoord(restaurant?.address_coords);
+    if (!clientLocation || !restaurantLocation) return null;
+    const value = haversineKm(clientLocation, restaurantLocation);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  function restaurantDistanceText(restaurant, unavailable = 'Activar localização') {
+    const distance = restaurantDistanceKm(restaurant);
+    if (distance === null) return unavailable;
+    if (distance < 1) return `≈ ${Math.max(50, Math.round(distance * 1000 / 50) * 50)} m de si`;
+    return `≈ ${distance.toFixed(distance < 10 ? 1 : 0)} km de si`;
+  }
+
+  function restaurantDistanceMarkup(restaurant, className = 'v20-catalog-distance') {
+    const available = restaurantDistanceKm(restaurant) !== null;
+    return `<span class="${className}${available ? '' : ' is-unavailable'}"><i class="fa-solid fa-location-arrow"></i>${escapeHtml(restaurantDistanceText(restaurant))}</span>`;
+  }
+
+  function primaryRestaurantCoupon(restaurant) {
+    const coupons = Array.isArray(restaurant?.coupons) ? restaurant.coupons : [];
+    return coupons.find((coupon) => coupon?.code && coupon?.discount_label) || coupons[0] || null;
+  }
+
+  function restaurantCouponMarkup(restaurant, className = 'v20-catalog-coupon') {
+    const coupon = primaryRestaurantCoupon(restaurant);
+    if (!coupon) return '';
+    const label = coupon.discount_label || coupon.name || `Cupão ${coupon.code}`;
+    return `<span class="${className}" title="Código ${escapeHtml(coupon.code || '')}"><i class="fa-solid fa-ticket"></i>${escapeHtml(label)}</span>`;
+  }
+
+  function restaurantCouponBanner(restaurant) {
+    const coupon = primaryRestaurantCoupon(restaurant);
+    if (!coupon) return '';
+    return `<div class="v20-restaurant-coupon-banner"><i class="fa-solid fa-ticket"></i><span><small>CUPÃO DISPONÍVEL</small><strong>${escapeHtml(coupon.discount_label || coupon.name || 'Desconto disponível')}</strong><b>Código ${escapeHtml(coupon.code || '')}</b><em>${escapeHtml(coupon.conditions || coupon.description || 'Consulte as condições no checkout.')}</em></span></div>`;
+  }
+
+
+  let catalogCouponsPromise = null;
+  async function loadPublicCatalogCoupons({ force = false } = {}) {
+    if (catalogCouponsPromise && !force) return catalogCouponsPromise;
+    const supabaseUrl = String(window.TRAGO_SUPABASE_URL || '').replace(/\/$/, '');
+    const anonKey = String(window.TRAGO_SUPABASE_ANON_KEY || '').trim();
+    if (!supabaseUrl || !anonKey) return [];
+    catalogCouponsPromise = fetch(`${supabaseUrl}/rest/v1/rpc/trago_public_catalog_coupons`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`
+      },
+      body: '{}'
+    }).then(async (response) => {
+      const data = await readJsonResponse(response);
+      if (!response.ok) throw new Error(data.message || 'Não foi possível carregar os cupões do catálogo.');
+      return registerCatalogCoupons(Array.isArray(data) ? data : []);
+    }).catch(() => state.catalogCoupons).finally(() => {
+      if (force) catalogCouponsPromise = null;
+    });
+    return catalogCouponsPromise;
+  }
+
+  function mergeRestaurantCoupons(restaurants, coupons) {
+    const byRestaurant = new Map();
+    (Array.isArray(coupons) ? coupons : []).forEach((coupon) => {
+      const key = String(coupon.restaurant_id || '');
+      if (!key || !coupon.code) return;
+      byRestaurant.set(key, [...(byRestaurant.get(key) || []), coupon]);
+    });
+    return (Array.isArray(restaurants) ? restaurants : []).map((restaurant) => {
+      const existing = Array.isArray(restaurant.coupons) ? restaurant.coupons : [];
+      const merged = new Map();
+      [...existing, ...(byRestaurant.get(String(restaurant.id)) || [])].forEach((coupon) => {
+        const key = `${String(coupon.source || 'restaurant')}:${String(coupon.restaurant_id || restaurant.id)}:${String(coupon.code || '').toUpperCase()}`;
+        if (coupon.code) merged.set(key, coupon);
+      });
+      return { ...restaurant, coupons: [...merged.values()] };
+    });
+  }
+
+  function registerCatalogCoupons(coupons) {
+    const merged = new Map();
+    [...(Array.isArray(state.catalogCoupons) ? state.catalogCoupons : []), ...(Array.isArray(coupons) ? coupons : [])].forEach((coupon) => {
+      const key = `${String(coupon?.source || 'platform')}:${String(coupon?.restaurant_id || '')}:${String(coupon?.code || '').trim().toUpperCase()}`;
+      if (coupon?.code) merged.set(key, coupon);
+    });
+    state.catalogCoupons = [...merged.values()];
+    return state.catalogCoupons;
+  }
+
+  window.TragoClientCatalogCoupons = Object.freeze({
+    load: (force = false) => loadPublicCatalogCoupons({ force }),
+    merge: mergeRestaurantCoupons,
+    register: registerCatalogCoupons
+  });
 
   function calculateDeliveryFee(distanceKm) {
     const distance = Math.max(0, Number(distanceKm) || 0);
@@ -1825,7 +3050,7 @@
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> A criar pedido...';
     try {
       const order = await createPublicOrder(payload);
-      writeHistory(order);
+      upsertOrderHistory(order);
       toast(`Pedido criado. Código do destinatário: ${order.verification_code || '—'}`);
       await runDriverRadar(order);
       form.reset();
@@ -1871,7 +3096,9 @@
       const response = await fetch(`${API_URL}/api/public/restaurants`);
       const data = await readJsonResponse(response);
       if (!response.ok) throw new Error(data.message || 'Falha ao carregar restaurantes.');
-      state.restaurants = Array.isArray(data.restaurants) ? data.restaurants : [];
+      const restaurants = Array.isArray(data.restaurants) ? data.restaurants : [];
+      const fallbackCoupons = await loadPublicCatalogCoupons();
+      state.restaurants = mergeRestaurantCoupons(restaurants, fallbackCoupons);
       state.restaurantsLoaded = true;
       reconcileCartWithRestaurants();
       renderAllFoodViews();
@@ -2445,10 +3672,12 @@
           <div><small>BOTTLE STORE PARCEIRA</small><h2>${escapeHtml(restaurant.name || 'Bottle Store')}</h2><p>${escapeHtml(restaurant.address_text || 'Localização ainda não publicada')}</p></div>
         </div>
         <p class="v20-restaurant-about">${escapeHtml(restaurant.description || restaurant.operational_note || 'Loja de bebidas parceira TraGo com catálogo e entrega integrados.')}</p>
+        ${restaurantCouponBanner(restaurant)}
         <div class="v20-restaurant-facts">
           <span><i class="fa-solid fa-star"></i><b>${Number(restaurant.average_rating || 0).toFixed(1)}</b><small>${Number(restaurant.rating_count || 0)} avaliações</small></span>
           <span><i class="fa-regular fa-clock"></i><b>${escapeHtml(restaurant.delivery_time || 'A confirmar')}</b><small>Entrega</small></span>
           <span><i class="fa-solid fa-wine-bottle"></i><b>${drinks.length}</b><small>Bebidas</small></span>
+          <span><i class="fa-solid fa-location-arrow"></i><b>${escapeHtml(restaurantDistanceText(restaurant, 'Localização desligada'))}</b><small>Distância aproximada</small></span>
         </div>
         <div class="v20-bottle-contact-grid">
           ${restaurant.phone ? `<a href="tel:${escapeHtml(String(restaurant.phone).replace(/[^\d+]/g, ''))}"><i class="fa-solid fa-phone"></i><span><strong>Telefone</strong><small>${escapeHtml(restaurant.phone)}</small></span></a>` : ''}
@@ -2466,7 +3695,7 @@
   function openBottleProfile(restaurantId) {
     state.selectedRestaurantId = restaurantId;
     renderBottleProfile(restaurantId);
-    setPanel('bottle-profile');
+    setPanel('bottle-profile', { context: { id: String(restaurantId) } });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -2582,6 +3811,7 @@
             <h4>${escapeHtml(item.name)}</h4>
             <p class="food-restaurant-name"><i class="fas fa-store"></i> ${escapeHtml(restaurant.name || 'Restaurante')}</p>
           </div>
+          <div class="v20-food-card-context">${restaurantDistanceMarkup(restaurant)}${restaurantCouponMarkup(restaurant)}</div>
           <p>${escapeHtml(item.description || 'Prato disponível para entrega.')}</p>
           ${renderStars({ type: 'food', id: item.id, restaurantId: restaurant.id, average: item.average_rating, count: item.rating_count })}
           <div class="food-bottom">
@@ -2605,6 +3835,7 @@
         <div class="popular-restaurant-cover">
           ${cover ? `<img src="${escapeHtml(cover)}" alt="" loading="lazy" decoding="async">` : '<span><i class="fa-solid fa-store"></i></span>'}
           <b class="${restaurant.is_open === false ? 'closed' : ''}"><i></i>${restaurant.is_open === false ? 'Fechado' : 'Aberto'}</b>
+          ${primaryRestaurantCoupon(restaurant) ? `<em class="v20-cover-coupon"><i class="fa-solid fa-ticket"></i>${escapeHtml(primaryRestaurantCoupon(restaurant).discount_label || 'Cupão')}</em>` : ''}
           <button type="button" class="v20-favorite-button popular-restaurant-favorite ${readFavoriteIds().includes(String(restaurant.id)) ? 'active' : ''}" data-favorite-id="${escapeHtml(restaurant.id)}" data-favorite-type="restaurant" aria-label="${readFavoriteIds().includes(String(restaurant.id)) ? 'Remover restaurante dos favoritos' : 'Guardar restaurante nos favoritos'}"><i class="${readFavoriteIds().includes(String(restaurant.id)) ? 'fa-solid' : 'fa-regular'} fa-heart"></i></button>
         </div>
         <div class="popular-restaurant-body">
@@ -2618,6 +3849,7 @@
         <footer>
           <span><i class="fa-solid fa-star"></i> <b>${Number(restaurant.average_rating || 0).toFixed(1)}</b><small>${Number(restaurant.rating_count || 0) ? `(${Number(restaurant.rating_count)})` : 'Novo'}</small></span>
           <span><i class="fa-regular fa-clock"></i> ${escapeHtml(deliveryLabel)}</span>
+          ${restaurantDistanceMarkup(restaurant, 'v20-popular-distance')}
           <span><i class="fa-solid fa-motorcycle"></i> ${Number(restaurant.delivery_fee || 0) ? money(restaurant.delivery_fee) : 'Grátis'}</span>
         </footer>
       </article>`;
@@ -2657,10 +3889,12 @@
           <div><h2>${escapeHtml(restaurant.name || 'Restaurante')}</h2><p>${escapeHtml(restaurant.address_text || 'Restaurante parceiro TraGo')}</p></div>
         </div>
         ${restaurant.description || restaurant.operational_note ? `<p class="v20-restaurant-about">${escapeHtml(restaurant.description || restaurant.operational_note)}</p>` : ''}
+        ${restaurantCouponBanner(restaurant)}
         <div class="v20-restaurant-facts">
           <span><i class="fa-solid fa-star"></i><b>${Number(restaurant.average_rating || 0).toFixed(1)}</b><small>${Number(restaurant.rating_count || 0)} avaliações</small></span>
           <span><i class="fa-regular fa-clock"></i><b>${prep ? `${prep}–${prep + 15} min` : 'A confirmar'}</b><small>Preparação</small></span>
           <span><i class="fa-solid fa-motorcycle"></i><b>${Number(restaurant.delivery_fee || 0) ? money(restaurant.delivery_fee) : 'Grátis'}</b><small>Entrega</small></span>
+          <span><i class="fa-solid fa-location-arrow"></i><b>${escapeHtml(restaurantDistanceText(restaurant, 'Localização desligada'))}</b><small>Distância aproximada</small></span>
         </div>
         <div class="v20-restaurant-rate">
           <span><strong>Classificar este restaurante</strong><small>A sua avaliação ajuda outros clientes.</small></span>
@@ -2680,7 +3914,7 @@
   function openRestaurantProfile(restaurantId) {
     state.selectedRestaurantId = restaurantId;
     renderRestaurantProfile(restaurantId);
-    setPanel('restaurant-profile');
+    setPanel('restaurant-profile', { context: { id: String(restaurantId) } });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -2714,6 +3948,7 @@
             <span><strong>${money(item.price)}</strong><small>Preço</small></span>
             <span><strong>${item.prep_time_min ? `${escapeHtml(item.prep_time_min)} min` : '—'}</strong><small>Preparação</small></span>
             <span><strong>${Number(item.average_rating || 0).toFixed(1)}</strong><small>Avaliação</small></span>
+            <span><strong>${escapeHtml(restaurantDistanceText(restaurant, '—'))}</strong><small>Distância do restaurante</small></span>
           </div>
           ${options.length ? `<div class="dish-option-groups">${options.map((group, groupIndex) => `<fieldset data-dish-option-group="${groupIndex}" data-required="${group.required === true}"><legend>${escapeHtml(group.name)}${group.required ? ' *' : ''}</legend>${(group.values || []).map((value, valueIndex) => `<label><input type="${group.max_select === 1 || group.required ? 'radio' : 'checkbox'}" name="dish-option-${groupIndex}" value="${valueIndex}" ${group.required && valueIndex === 0 ? 'checked' : ''}><span>${escapeHtml(value.name)}</span><b>${Number(value.price || 0) ? `+ ${money(value.price)}` : 'Incluído'}</b></label>`).join('')}</fieldset>`).join('')}</div>` : ''}
           <div class="portal-actions">
@@ -2740,7 +3975,7 @@
   function openDishDetail(itemId) {
     state.selectedDishId = itemId;
     renderDishDetail(itemId);
-    setPanel('dish-detail');
+    setPanel('dish-detail', { context: { id: String(itemId), origin: state.lastPanelBeforeDish || 'food' } });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -2838,6 +4073,7 @@
               <div>
                 <h3>${escapeHtml(restaurant.name)}</h3>
                 <p>${escapeHtml(restaurant.address_text || 'Restaurante parceiro Trago')}</p>
+                <div class="v20-restaurant-head-context">${restaurantDistanceMarkup(restaurant)}${restaurantCouponMarkup(restaurant)}</div>
                 ${renderStars({ type: 'restaurant', id: restaurant.id, restaurantId: restaurant.id, average: restaurant.average_rating, count: restaurant.rating_count })}
               </div>
             </div>
@@ -2894,7 +4130,7 @@
     if (existing) existing.qty += 1;
     else state.cart.push({ item: configuredItem, restaurant, qty: 1, selectedOptions: selectedOptions || [] });
     state.foodQuote = null;
-    state.appliedCoupon = null;
+    invalidateAppliedCoupon('O cesto mudou. Confirme novamente o cupão.');
     renderCart();
     toast(`${item.name} adicionado ao carrinho.`);
   }
@@ -2905,14 +4141,14 @@
     entry.qty += delta;
     if (entry.qty <= 0) state.cart = state.cart.filter((cartItem) => String(cartItem.item.id) !== String(itemId));
     state.foodQuote = null;
-    state.appliedCoupon = null;
+    invalidateAppliedCoupon('O cesto mudou. Confirme novamente o cupão.');
     renderCart();
   }
 
   function removeCartItem(itemId) {
     state.cart = state.cart.filter((cartItem) => String(cartItem.item.id) !== String(itemId));
     state.foodQuote = null;
-    state.appliedCoupon = null;
+    invalidateAppliedCoupon('O cesto mudou. Confirme novamente o cupão.');
     renderCart();
   }
 
@@ -2920,7 +4156,7 @@
     if (!state.cart.length) return;
     state.cart = [];
     state.foodQuote = null;
-    state.appliedCoupon = null;
+    invalidateAppliedCoupon('', { clearCode: true });
     renderCart();
     toast('Carrinho limpo.');
   }
@@ -2951,6 +4187,125 @@
     return isValidCoord(coords) ? coords : (isValidCoord(state.foodDeliveryCoords) ? state.foodDeliveryCoords : null);
   }
 
+  function setCartCouponFeedback(message = '', tone = 'info') {
+    const feedback = $('#cart-coupon-feedback');
+    if (!feedback) return;
+    feedback.textContent = String(message || '');
+    feedback.hidden = !message;
+    feedback.className = `v20-coupon-feedback is-${['success', 'warning', 'error'].includes(tone) ? tone : 'info'}`;
+  }
+
+  function invalidateAppliedCoupon(message = '', { clearCode = false } = {}) {
+    state.appliedCoupon = null;
+    if (clearCode && $('#cart-coupon')) $('#cart-coupon').value = '';
+    setCartCouponFeedback(message, 'info');
+  }
+
+  function couponMinimumOrderMzn(coupon) {
+    if (!coupon) return 0;
+    if (coupon.min_order_cents !== undefined && coupon.min_order_cents !== null) {
+      return Math.max(0, Number(coupon.min_order_cents || 0) / 100);
+    }
+    return Math.max(0, Number(coupon.min || coupon.minimum_order || 0));
+  }
+
+  function couponDiscountType(coupon) {
+    return String(coupon?.discount_type || coupon?.type || '').toLowerCase();
+  }
+
+  function findCatalogCoupon(code, restaurant) {
+    const normalizedCode = String(code || '').trim().toUpperCase();
+    if (!normalizedCode) return null;
+    const restaurantId = String(restaurant?.id || '');
+    const candidates = [
+      ...(Array.isArray(restaurant?.coupons) ? restaurant.coupons : []),
+      ...(Array.isArray(state.catalogCoupons) ? state.catalogCoupons : [])
+    ].filter((coupon) => String(coupon?.code || '').trim().toUpperCase() === normalizedCode);
+    return candidates.find((coupon) => String(coupon.source || 'restaurant') === 'restaurant' && String(coupon.restaurant_id || restaurantId) === restaurantId)
+      || candidates.find((coupon) => {
+        const ids = Array.isArray(coupon.restaurant_ids) ? coupon.restaurant_ids.map(String) : [];
+        return !ids.length || ids.includes(restaurantId);
+      })
+      || candidates[0]
+      || null;
+  }
+
+  function evaluateCatalogCouponLocally(code, restaurant) {
+    const coupon = findCatalogCoupon(code, restaurant);
+    if (!coupon) return null;
+    const subtotal = cartSubtotal();
+    const minimumOrder = couponMinimumOrderMzn(coupon);
+    const restaurantId = String(restaurant?.id || '');
+    const couponRestaurantId = String(coupon.restaurant_id || '');
+    const restaurantIds = Array.isArray(coupon.restaurant_ids) ? coupon.restaurant_ids.map(String) : [];
+    const expiresAt = coupon.expires_at ? new Date(coupon.expires_at).getTime() : 0;
+    const startsAt = coupon.starts_at ? new Date(coupon.starts_at).getTime() : 0;
+    const totalLimit = Math.max(0, Number(coupon.total_limit ?? coupon.limit ?? 0));
+    const used = Math.max(0, Number(coupon.usage_count ?? coupon.used ?? 0));
+    const result = (status, message, tone = 'info', extra = {}) => ({
+      recognized: true,
+      valid: false,
+      eligible: false,
+      status,
+      code: String(code || '').trim().toUpperCase(),
+      message,
+      severity: tone,
+      minimum_order: minimumOrder,
+      current_subtotal: subtotal,
+      ...extra
+    });
+    if (coupon.active === false) return result('inactive', 'Este cupão está temporariamente indisponível.', 'warning');
+    if (startsAt && startsAt > Date.now()) return result('not_started', `Este cupão ficará disponível em ${new Date(startsAt).toLocaleDateString('pt-MZ')}.`);
+    if (expiresAt && expiresAt < Date.now()) return result('expired', 'Este cupão expirou.', 'warning');
+    if (totalLimit > 0 && used >= totalLimit) return result('usage_limit_reached', 'Este cupão já atingiu o limite de utilizações.', 'warning');
+    if (couponRestaurantId && couponRestaurantId !== restaurantId) return result('restaurant_mismatch', 'Este cupão pertence a outro restaurante.');
+    if (restaurantIds.length && !restaurantIds.includes(restaurantId)) return result('restaurant_mismatch', 'Este cupão não se aplica ao restaurante seleccionado.');
+    if ((coupon.first_order_only === true || Number(coupon.per_client_limit || 0) > 0) && !readSession()?.token) {
+      return result('login_required', 'Entre na sua conta para confirmar a elegibilidade deste cupão.');
+    }
+    if (subtotal < minimumOrder) {
+      const missing = Math.max(0, minimumOrder - subtotal);
+      return result('minimum_not_reached', `Pedido mínimo de ${money(minimumOrder)}. Adicione mais ${money(missing)} ao cesto.`, 'info', { missing_amount: missing });
+    }
+    if (couponDiscountType(coupon).includes('delivery') && Number(state.foodQuote?.delivery_fee || 0) <= 0) {
+      return result('delivery_fee_pending', 'Calcule primeiro a distância para aplicar o desconto na entrega.');
+    }
+    return { recognized: true, eligible: null, coupon };
+  }
+
+  function legacyCouponBusinessResult(response, data, code) {
+    const message = String(data?.message || '').trim();
+    if (![400, 401, 404, 422].includes(Number(response?.status)) || !/cup[aã]o|pedido m[ií]nimo/i.test(message)) return null;
+    const lower = message.toLowerCase();
+    const status = lower.includes('mínimo') ? 'minimum_not_reached'
+      : lower.includes('expir') ? 'expired'
+        : lower.includes('primeiro pedido') ? 'first_order_only'
+          : lower.includes('entre na sua conta') ? 'login_required'
+            : lower.includes('restaurante') ? 'restaurant_mismatch'
+              : lower.includes('limite') ? 'usage_limit_reached'
+                : lower.includes('inexistente') ? 'not_found'
+                  : 'not_eligible';
+    return {
+      recognized: status !== 'not_found',
+      valid: false,
+      eligible: false,
+      status,
+      code,
+      message: message || 'Este cupão não pode ser aplicado agora.',
+      severity: ['expired', 'usage_limit_reached', 'not_found'].includes(status) ? 'warning' : 'info',
+      discount: 0
+    };
+  }
+
+  function presentCouponEligibility(result) {
+    state.appliedCoupon = null;
+    renderCartQuote();
+    const tone = result?.severity === 'warning' ? 'warning' : 'info';
+    setCartCouponFeedback(result?.message || 'Este cupão não pode ser aplicado agora.', tone);
+    toast(result?.message || 'Consulte as condições do cupão.');
+    return result;
+  }
+
   function renderCartQuote() {
     const subtotal = cartSubtotal();
     const quote = state.foodQuote;
@@ -2975,6 +4330,15 @@
       if (!state.cart.length) help.textContent = 'Adicione pratos para iniciar um pedido.';
       else if (quote?.source) help.textContent = quote.source === 'openrouteservice' ? 'Distância calculada pela rota.' : 'Distância estimada localmente.';
       else help.textContent = 'Para calcular a distância, o restaurante precisa ter coordenadas e a entrega deve estar marcada no mapa.';
+    }
+    const orderFeedback = $('#cart-order-condition-feedback');
+    if (orderFeedback) {
+      const minimumOrder = Math.max(0, Number(state.cart[0]?.restaurant?.min_order_amount || 0));
+      const missing = Math.max(0, minimumOrder - subtotal);
+      orderFeedback.hidden = !state.cart.length || missing <= 0;
+      orderFeedback.textContent = missing > 0
+        ? `Pedido mínimo: ${money(minimumOrder)}. Faltam ${money(missing)} no cesto.`
+        : '';
     }
     renderActiveMapQuote();
   }
@@ -3042,27 +4406,57 @@
   async function applyCartCoupon() {
     if (!state.cart.length) return toast('Adicione produtos antes de aplicar um cupão.', 'error');
     const code = String($('#cart-coupon')?.value || '').trim().toUpperCase();
-    if (!code) return toast('Indique o código do cupão.', 'error');
+    if (!code) {
+      setCartCouponFeedback('Indique o código do cupão.', 'info');
+      return;
+    }
     const session = readSession();
     const restaurant = state.cart[0].restaurant;
-    const response = await fetch(`${API_URL}/api/public/coupons/validate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(session?.token ? { Authorization: `Bearer ${session.token}` } : {})
-      },
-      body: JSON.stringify({
-        code,
-        restaurant_id: restaurant.id,
-        subtotal: cartSubtotal(),
-        delivery_fee: Number(state.foodQuote?.delivery_fee || 0)
-      })
-    });
-    const data = await readJsonResponse(response);
-    if (!response.ok) throw new Error(data.message || 'Cupão inválido.');
-    state.appliedCoupon = data;
-    renderCartQuote();
-    toast(`${data.label || `Cupão ${code}`} aplicado: ${money(data.discount)} de desconto.`);
+    const localEligibility = evaluateCatalogCouponLocally(code, restaurant);
+    if (localEligibility?.eligible === false) return presentCouponEligibility(localEligibility);
+
+    const button = $('.v20-coupon-input button');
+    const originalText = button?.textContent || 'Aplicar';
+    if (button) {
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+      button.textContent = 'A verificar…';
+    }
+    setCartCouponFeedback('A verificar condições do cupão…', 'info');
+    try {
+      const response = await fetch(`${API_URL}/api/public/coupons/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Trago-Coupon-Contract': 'eligibility-v1',
+          ...(session?.token ? { Authorization: `Bearer ${session.token}` } : {})
+        },
+        body: JSON.stringify({
+          code,
+          restaurant_id: restaurant.id,
+          subtotal: cartSubtotal(),
+          delivery_fee: Number(state.foodQuote?.delivery_fee || 0)
+        })
+      });
+      const data = await readJsonResponse(response);
+      if (!response.ok) {
+        const businessResult = legacyCouponBusinessResult(response, data, code);
+        if (businessResult) return presentCouponEligibility(businessResult);
+        throw new Error(data.message || 'Não foi possível verificar o cupão.');
+      }
+      if (data.eligible !== true) return presentCouponEligibility(data);
+      state.appliedCoupon = data;
+      renderCartQuote();
+      setCartCouponFeedback(`${data.label || `Cupão ${code}`} aplicado. Desconto: ${money(data.discount)}.`, 'success');
+      toast(`${data.label || `Cupão ${code}`} aplicado: ${money(data.discount)} de desconto.`);
+      return data;
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+        button.textContent = originalText;
+      }
+    }
   }
 
   function openCartModal() {
@@ -3097,6 +4491,14 @@
       return;
     }
     const subtotal = cartSubtotal();
+    const minimumOrder = Math.max(0, Number(restaurant.min_order_amount || 0));
+    if (subtotal < minimumOrder) {
+      const missing = Math.max(0, minimumOrder - subtotal);
+      renderCartQuote();
+      toast(`Pedido mínimo de ${money(minimumOrder)}. Adicione mais ${money(missing)} ao cesto.`);
+      $('#cart-list')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
     if (!isValidCoord(restaurant.address_coords) || String(restaurant.address_text || '').trim().length < 5) {
       toast('Este estabelecimento ainda não publicou o ponto exacto de recolha. Escolha outro parceiro ou contacte a loja.', 'error');
       return;
@@ -3145,12 +4547,12 @@
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> A enviar pedido...';
     try {
       const order = await createPublicOrder(payload);
-      writeHistory(order);
+      upsertOrderHistory(order);
       toast(`Pedido de comida enviado. Código: ${order.verification_code || '—'}`);
       await runDriverRadar(order);
       state.cart = [];
       state.foodQuote = null;
-      state.appliedCoupon = null;
+      invalidateAppliedCoupon('', { clearCode: true });
       state.foodDeliveryCoords = null;
       if (state.foodDeliveryMarker) { state.map?.removeLayer(state.foodDeliveryMarker); state.foodDeliveryMarker = null; }
       renderCart();
@@ -3497,8 +4899,7 @@
       toast('Entre na sua conta para avaliar uma compra concluída.', 'error');
       return;
     }
-    let history = [];
-    try { history = JSON.parse(localStorage.getItem(clientStorageKey(ORDER_HISTORY_KEY)) || '[]'); } catch { history = []; }
+    const history = window.TragoClientOrders?.all?.() || [];
     const targetRestaurantId = String(restaurantId || id || '');
     const eligibleOrder = history.find((order) => {
       if (order.status !== 'concluido' || String(order.restaurant_id || '') !== targetRestaurantId) return false;
@@ -3569,9 +4970,31 @@
     $('#btn-refresh-bottle-store')?.addEventListener('click', () => loadRestaurants(true));
     $('#btn-refresh-partners')?.addEventListener('click', () => loadPartners(true));
     $('#btn-refresh-home')?.addEventListener('click', () => loadRestaurants(true));
-    $('#btn-refresh-history')?.addEventListener('click', refreshHistoryStatuses);
+    $('#btn-refresh-history')?.addEventListener('click', () => refreshHistoryStatuses(false));
+    $('[data-order-load-more]')?.addEventListener('click', loadMoreOrderHistory);
     $('#btn-refresh-radar')?.addEventListener('click', refreshDriverRadar);
     $('[data-client-notifications-read]')?.addEventListener('click', markClientNotificationsRead);
+    const notificationList = $('#client-notification-list');
+    notificationList?.addEventListener('pointerdown', beginNotificationSwipe);
+    notificationList?.addEventListener('pointermove', moveNotificationSwipe, { passive: false });
+    notificationList?.addEventListener('pointerup', finishNotificationSwipe);
+    notificationList?.addEventListener('pointercancel', cancelNotificationSwipe);
+    notificationList?.addEventListener('lostpointercapture', cancelNotificationSwipe);
+    window.addEventListener('online', () => {
+      processNotificationQueue();
+      if (state.activePanel === 'notifications') renderClientNotifications({ force: true });
+      else fetchClientNotificationSummary();
+      if (state.activePanel === 'history') refreshHistoryStatuses(true);
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      processNotificationQueue();
+      if (state.activePanel === 'notifications') renderClientNotifications({ force: true });
+      else fetchClientNotificationSummary();
+      if (state.activePanel === 'history' && Date.now() - orderFetchedAt > 15000) refreshHistoryStatuses(true);
+    });
+    $('[data-notification-load-more]')?.addEventListener('click', loadMoreClientNotifications);
+    $('[data-notifications-retry]')?.addEventListener('click', () => renderClientNotifications({ force: true }));
     $('#btn-clear-food-filter')?.addEventListener('click', () => {
       state.selectedCategory = 'all';
       state.directoryQuickFilters = [];
@@ -3609,7 +5032,18 @@
     $('#btn-clear-cart')?.addEventListener('click', clearCart);
     $('#btn-calc-cart-distance')?.addEventListener('click', () => calculateCartDistance(true));
     $('.v20-coupon-input button')?.addEventListener('click', async () => {
-      try { await applyCartCoupon(); } catch (error) { toast(error.message, 'error'); }
+      try { await applyCartCoupon(); } catch (error) {
+        setCartCouponFeedback(error.message || 'Não foi possível verificar o cupão.', 'error');
+        toast(error.message, 'error');
+      }
+    });
+    $('#cart-coupon')?.addEventListener('keydown', async (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      try { await applyCartCoupon(); } catch (error) {
+        setCartCouponFeedback(error.message || 'Não foi possível verificar o cupão.', 'error');
+        toast(error.message, 'error');
+      }
     });
     document.addEventListener('click', (event) => {
       if (event.target.closest('[data-close-radar]')) {
@@ -3630,7 +5064,7 @@
         radarDriver.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
         requestDriverOffer(orderId, driverId, order.public_access_token || order.access_token || '')
           .then((data) => {
-            if (data.order) writeHistory(data.order);
+            if (data.order) upsertOrderHistory(data.order);
             updateRadarModal({ progress: 100, message: `Oferta enviada a ${data.driver?.name || 'este motorista'}.`, status: 'A aguardar aceitação durante 90 segundos. O pedido ainda não foi atribuído.' });
             toast('O motorista recebeu o resumo e pode aceitar ou recusar.');
             closeRadarModal(1700);
@@ -3644,9 +5078,7 @@
         return;
       }
       if (event.target.closest('[data-reopen-driver-radar]')) {
-        let history = [];
-        try { history = JSON.parse(localStorage.getItem(clientStorageKey(ORDER_HISTORY_KEY)) || '[]'); } catch { history = []; }
-        const order = radarState.order || history.find((entry) => !['concluido', 'cancelado'].includes(entry.status));
+        const order = radarState.order || window.TragoClientOrders?.active?.()?.[0];
         if (order) runDriverRadar(order);
         else toast('Não existe um pedido activo para procurar motorista.', 'error');
         return;
@@ -3659,8 +5091,34 @@
       }
       const closeBtn = event.target.closest('[data-close-cart]');
       if (closeBtn) closeCartModal();
+      const notificationFilterButton = event.target.closest('[data-notification-filter]');
+      if (notificationFilterButton) {
+        setNotificationFilter(notificationFilterButton.dataset.notificationFilter);
+        return;
+      }
+      const notificationMenu = event.target.closest('[data-notification-menu]');
+      if (notificationMenu) {
+        toggleNotificationMenu(notificationMenu.dataset.notificationMenu, notificationMenu);
+        return;
+      }
+      const notificationRead = event.target.closest('[data-notification-read]');
+      if (notificationRead) {
+        markClientNotificationRead(notificationRead.dataset.notificationRead);
+        return;
+      }
+      const notificationDelete = event.target.closest('[data-notification-delete]');
+      if (notificationDelete) {
+        deleteClientNotification(notificationDelete.dataset.notificationDelete);
+        return;
+      }
+      if (Date.now() < notificationClickBlockedUntil && event.target.closest('.v20-notification-row')) {
+        event.preventDefault();
+        return;
+      }
       const historyOrder = event.target.closest('[data-open-client-order]');
       if (historyOrder) {
+        const notificationRow = historyOrder.closest('.v20-notification-row');
+        if (notificationRow?.dataset.notificationId) markClientNotificationRead(notificationRow.dataset.notificationId, { silent: true });
         window.TragoClientOpenOrder?.(historyOrder.dataset.openClientOrder);
         return;
       }
@@ -3803,6 +5261,10 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     if (!initSessionUI()) return;
+    state.catalogLocation = readCatalogLocation();
+    document.addEventListener('trago:current-location-updated', (event) => {
+      syncCatalogLocation(event.detail || null);
+    });
     restoreCart();
     bindEvents();
     initMap();
@@ -3821,6 +5283,11 @@
     refreshHistoryStatuses(true);
     loadRestaurants();
     loadPartners();
+    hydrateClientNotifications();
+    paintClientNotifications();
+    fetchClientNotificationSummary();
+    processNotificationQueue();
+    startNotificationPolling();
     setInterval(() => {
       if (document.visibilityState === 'visible') loadPartners(true);
     }, 60000);

@@ -112,7 +112,7 @@ const ONLINE_DRIVER_STATUSES = [
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-order-access-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-order-access-token, x-trago-coupon-contract',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
 };
 
@@ -635,6 +635,81 @@ const fromRestaurant = (row: AnyRecord) => row ? ({
   updatedAt: row.updated_at
 }) : null;
 
+
+const couponDateIsActive = (coupon: AnyRecord, nowMs = Date.now()) => {
+  if (!coupon || coupon.active === false) return false;
+  const startsAt = coupon.starts_at || coupon.start_at || null;
+  const expiresAt = coupon.expires_at || coupon.expiry_at || null;
+  if (startsAt && new Date(startsAt).getTime() > nowMs) return false;
+  if (expiresAt && new Date(expiresAt).getTime() < nowMs) return false;
+  const limit = Number(coupon.total_limit ?? coupon.limit ?? 0);
+  const used = Number(coupon.usage_count ?? coupon.used ?? 0);
+  if (limit > 0 && used >= limit) return false;
+  return Boolean(String(coupon.code || '').trim());
+};
+
+const couponDiscountLabel = (coupon: AnyRecord) => {
+  const type = String(coupon.discount_type || coupon.type || '').toLowerCase();
+  if (type.includes('percent')) return `${Math.max(0, Number(coupon.discount_percent ?? coupon.value ?? 0))}% de desconto`;
+  if (type.includes('delivery')) return 'Entrega grátis';
+  const amountMzn = coupon.discount_value_cents !== undefined
+    ? Number(coupon.discount_value_cents || 0) / 100
+    : Number(coupon.value || 0);
+  return `${Math.max(0, amountMzn).toFixed(2)} MZN de desconto`;
+};
+
+const couponConditionsLabel = (coupon: AnyRecord) => {
+  const parts: string[] = [];
+  const minMzn = coupon.min_order_cents !== undefined
+    ? Number(coupon.min_order_cents || 0) / 100
+    : Number(coupon.min || 0);
+  if (minMzn > 0) parts.push(`Pedido mínimo de ${minMzn.toFixed(2)} MZN`);
+  if (coupon.first_order_only === true) parts.push('Válido no primeiro pedido');
+  if (coupon.expires_at) {
+    const expires = new Date(coupon.expires_at);
+    if (Number.isFinite(expires.getTime())) parts.push(`Válido até ${expires.toLocaleDateString('pt-MZ')}`);
+  }
+  return parts.join(' · ') || 'Consulte as condições no checkout.';
+};
+
+const publicRestaurantCoupons = (restaurant: AnyRecord) => (Array.isArray(restaurant?.coupons) ? restaurant.coupons : [])
+  .filter((coupon: AnyRecord) => couponDateIsActive(coupon))
+  .slice(0, 20)
+  .map((coupon: AnyRecord) => ({
+    id: String(coupon.id || `${restaurant.id}:${coupon.code}`),
+    code: String(coupon.code || '').trim().toUpperCase(),
+    name: coupon.name || `Cupão ${restaurant.name || 'do restaurante'}`,
+    description: coupon.description || couponConditionsLabel(coupon),
+    source: 'restaurant',
+    restaurant_id: restaurant.id,
+    restaurant_name: restaurant.name || '',
+    discount_type: String(coupon.type || ''),
+    discount_percent: String(coupon.type || '').includes('percentage') ? Number(coupon.value || 0) : 0,
+    discount_value_cents: String(coupon.type || '').includes('fixed') ? Math.round(Number(coupon.value || 0) * 100) : 0,
+    discount_label: couponDiscountLabel(coupon),
+    min_order_cents: Math.round(Math.max(0, Number(coupon.min || 0)) * 100),
+    expires_at: coupon.expires_at || null,
+    conditions: couponConditionsLabel(coupon)
+  }));
+
+const publicFinanceCoupon = (coupon: AnyRecord, restaurantNames: string[] = []) => ({
+  id: coupon.id,
+  code: String(coupon.code || '').trim().toUpperCase(),
+  name: coupon.name || 'Cupão TraGo',
+  description: coupon.description || couponConditionsLabel(coupon),
+  source: 'platform',
+  restaurant_ids: Array.isArray(coupon.restaurant_ids) ? coupon.restaurant_ids : [],
+  restaurant_names: restaurantNames,
+  discount_type: coupon.discount_type || '',
+  discount_percent: Number(coupon.discount_percent || 0),
+  discount_value_cents: Number(coupon.discount_value_cents || 0),
+  discount_label: couponDiscountLabel(coupon),
+  min_order_cents: Number(coupon.min_order_cents || 0),
+  first_order_only: coupon.first_order_only === true,
+  expires_at: coupon.expires_at || null,
+  conditions: couponConditionsLabel(coupon)
+});
+
 const fromPartner = (row: AnyRecord) => row ? ({
   _id: row.id,
   id: row.id,
@@ -1156,14 +1231,58 @@ const createAdminNotification = async ({
 const createClientNotification = async (order: AnyRecord, type: string, title: string, message: string, payload: AnyRecord = {}) => {
   if (!order?.client) return null;
   try {
-    return await insertRow('client_notifications', {
+    const safePayload = payload && typeof payload === 'object' ? { ...payload } : {};
+    const explicitDedupeKey = String(safePayload.dedupe_key || '').trim();
+    delete safePayload.dedupe_key;
+    const eventParts = [
+      safePayload.event_id,
+      safePayload.status_event_id,
+      safePayload.driver_offer_id,
+      safePayload.offer_id,
+      safePayload.driver_id,
+      safePayload.restaurant_id,
+      safePayload.restaurant_status,
+      safePayload.driver_offer_status,
+      safePayload.status,
+      type
+    ].filter((value) => value !== null && value !== undefined && String(value).trim() !== '')
+      .map((value) => String(value).trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').slice(0, 45));
+    const titleKey = String(title || 'actualizacao')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48);
+    const dedupeKey = (explicitDedupeKey || `client:${order.client}:${order.id || 'general'}:${eventParts.join(':') || 'event'}:${titleKey}`).slice(0, 180);
+    const timestamp = nowIso();
+    const record = {
+      id: generateId(),
       client_id: order.client,
       order_id: order.id || null,
+      dedupe_key: dedupeKey,
       type: String(type || 'info').slice(0, 40),
       title: String(title || 'Actualização do pedido').slice(0, 120),
       message: String(message || '').slice(0, 500),
-      payload: payload || {}
-    });
+      payload: safePayload,
+      created_at: timestamp,
+      updated_at: timestamp
+    };
+    const { data, error } = await supabase
+      .from('client_notifications')
+      .insert(record)
+      .select('*')
+      .single();
+    if (!error) return data;
+    if (String(error.code || '') === '23505') {
+      const { data: existing } = await supabase
+        .from('client_notifications')
+        .select('*')
+        .eq('dedupe_key', dedupeKey)
+        .maybeSingle();
+      return existing || null;
+    }
+    throw error;
   } catch (error) {
     console.warn('[trago-edge] Notificação do cliente não persistida:', error);
     return null;
@@ -2657,15 +2776,91 @@ const routeClientPortal = async (req: Request, path: string, method: string) => 
     return json({ preferences: updated.notification_preferences, language: updated.language });
   }
 
+  if (path === '/api/client/orders/claim' && method === 'POST') {
+    const body = await readBody(req) as AnyRecord;
+    const orderId = String(body.order_id || body.orderId || '').trim();
+    const accessToken = String(body.access_token || body.accessToken || '').trim();
+    if (!isValidId(orderId) || accessToken.length < 24) throw new HttpError(400, 'Dados do pedido inválidos.');
+    const order = await selectOne('orders', 'id', orderId);
+    if (!order) throw new HttpError(404, 'Pedido não encontrado.');
+    if (order.client && String(order.client) !== String(client.id)) {
+      throw new HttpError(409, 'Este pedido já pertence a outra conta.');
+    }
+    if (!order.public_access_token_hash || await hashOrderAccessToken(accessToken) !== order.public_access_token_hash) {
+      throw new HttpError(403, 'Token de acesso ao pedido inválido.');
+    }
+    const claimed = order.client
+      ? order
+      : await updateRow('orders', order.id, { client: client.id });
+    return json({ message: 'Pedido associado à conta.', order: fromOrder(claimed), alreadyClaimed: Boolean(order.client) });
+  }
+
   if (path === '/api/client/orders' && method === 'GET') {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('client', client.id)
-      .order('created_at', { ascending: false })
-      .limit(100);
+    const query = parseQuery(req);
+    const filter = ['active', 'completed', 'cancelled'].includes(String(query.filter || ''))
+      ? String(query.filter)
+      : 'active';
+    const limit = Math.min(Math.max(Number(query.limit || 30), 1), 50);
+    const activeStatuses = [
+      ORDER_STATUS.PENDING,
+      ORDER_STATUS.ASSIGNED,
+      ORDER_STATUS.IN_PROGRESS,
+      ORDER_STATUS.PICKUP_IN_PROGRESS,
+      ORDER_STATUS.PICKUP_DONE,
+      ORDER_STATUS.DELIVERY_IN_PROGRESS
+    ];
+    const sortColumn = filter === 'active' ? 'updated_at' : 'closed_at';
+    let beforeSortAt = '';
+    let beforeId = '';
+    if (query.before) {
+      try {
+        const cursor = JSON.parse(atob(String(query.before)));
+        const cursorDate = new Date(cursor?.sort_at || '');
+        if (cursor?.filter === filter && Number.isFinite(cursorDate.getTime()) && isValidId(String(cursor?.id || ''))) {
+          beforeSortAt = cursorDate.toISOString();
+          beforeId = String(cursor.id);
+        }
+      } catch { /* cursor inválido será ignorado */ }
+    }
+
+    const [activeCountResult, completedCountResult, cancelledCountResult] = await Promise.all([
+      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('client', client.id).in('status', activeStatuses),
+      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('client', client.id).eq('status', ORDER_STATUS.COMPLETED),
+      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('client', client.id).eq('status', ORDER_STATUS.CANCELED)
+    ]);
+    const countError = activeCountResult.error || completedCountResult.error || cancelledCountResult.error;
+    if (countError) throw new HttpError(500, countError.message);
+
+    let ordersQuery = supabase.from('orders').select('*').eq('client', client.id);
+    if (filter === 'active') ordersQuery = ordersQuery.in('status', activeStatuses);
+    else if (filter === 'completed') ordersQuery = ordersQuery.eq('status', ORDER_STATUS.COMPLETED);
+    else ordersQuery = ordersQuery.eq('status', ORDER_STATUS.CANCELED);
+    if (beforeSortAt && beforeId) {
+      ordersQuery = ordersQuery.or(`${sortColumn}.lt.${beforeSortAt},and(${sortColumn}.eq.${beforeSortAt},id.lt.${beforeId})`);
+    }
+    const { data, error } = await ordersQuery
+      .order(sortColumn, { ascending: false, nullsFirst: false })
+      .order('id', { ascending: false })
+      .limit(limit + 1);
     if (error) throw new HttpError(500, error.message);
-    return json({ orders: (data || []).map(fromOrder) });
+    const rows = data || [];
+    const hasMore = rows.length > limit;
+    const page = rows.slice(0, limit);
+    const last = page.at(-1);
+    const lastSortAt = last?.[sortColumn] || last?.updated_at || last?.created_at || '';
+    return json({
+      orders: page.map(fromOrder),
+      filter,
+      totals: {
+        active: Number(activeCountResult.count || 0),
+        completed: Number(completedCountResult.count || 0),
+        cancelled: Number(cancelledCountResult.count || 0)
+      },
+      hasMore,
+      nextCursor: hasMore && lastSortAt && last?.id
+        ? btoa(JSON.stringify({ filter, sort_at: lastSortAt, id: last.id }))
+        : ''
+    });
   }
 
   if (path === '/api/client/addresses' && method === 'GET') {
@@ -2755,29 +2950,170 @@ const routeClientPortal = async (req: Request, path: string, method: string) => 
   }
 
   if (path === '/api/client/notifications' && method === 'GET') {
-    const { data, error } = await supabase.from('client_notifications').select('*').eq('client_id', client.id).order('created_at', { ascending: false }).limit(100);
+    const query = parseQuery(req);
+    const limit = Math.min(Math.max(Number(query.limit || 30), 1), 50);
+    const filter = query.filter === 'unread' ? 'unread' : 'all';
+    const summaryOnly = String(query.summary_only || '').toLowerCase() === 'true';
+    let beforeCreatedAt = '';
+    let beforeId = '';
+    if (query.before) {
+      try {
+        const cursor = JSON.parse(atob(String(query.before)));
+        const cursorDate = new Date(cursor?.created_at || '');
+        if (Number.isFinite(cursorDate.getTime()) && isValidId(String(cursor?.id || ''))) {
+          beforeCreatedAt = cursorDate.toISOString();
+          beforeId = String(cursor.id);
+        }
+      } catch { /* cursor inválido será ignorado */ }
+    }
+
+    const [totalResult, unreadResult] = await Promise.all([
+      supabase.from('client_notifications').select('id', { count: 'exact', head: true }).eq('client_id', client.id).is('deleted_at', null),
+      supabase.from('client_notifications').select('id', { count: 'exact', head: true }).eq('client_id', client.id).is('deleted_at', null).is('read_at', null)
+    ]);
+    if (totalResult.error) throw new HttpError(500, totalResult.error.message);
+    if (unreadResult.error) throw new HttpError(500, unreadResult.error.message);
+    const totalAll = Number(totalResult.count || 0);
+    const totalUnread = Number(unreadResult.count || 0);
+    if (summaryOnly) return json({ total: totalAll, totalUnread });
+
+    let inboxQuery = supabase
+      .from('client_notifications')
+      .select('*')
+      .eq('client_id', client.id)
+      .is('deleted_at', null);
+    if (filter === 'unread') inboxQuery = inboxQuery.is('read_at', null);
+    if (beforeCreatedAt && beforeId) {
+      inboxQuery = inboxQuery.or(`created_at.lt.${beforeCreatedAt},and(created_at.eq.${beforeCreatedAt},id.lt.${beforeId})`);
+    }
+    const { data, error } = await inboxQuery
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(limit + 1);
     if (error) throw new HttpError(500, error.message);
-    return json({ notifications: data || [] });
+    const rows = data || [];
+    const hasMore = rows.length > limit;
+    const notifications = rows.slice(0, limit);
+    const last = notifications.at(-1);
+    return json({
+      notifications,
+      total: filter === 'unread' ? totalUnread : totalAll,
+      totalAll,
+      totalUnread,
+      hasMore,
+      nextCursor: hasMore && last?.created_at && last?.id
+        ? btoa(JSON.stringify({ created_at: last.created_at, id: last.id }))
+        : ''
+    });
   }
 
   if (path === '/api/client/notifications/read-all' && method === 'POST') {
-    const { error } = await supabase.from('client_notifications').update({ read_at: nowIso() }).eq('client_id', client.id).is('read_at', null);
+    const timestamp = nowIso();
+    const { data, error } = await supabase
+      .from('client_notifications')
+      .update({ read_at: timestamp, updated_at: timestamp })
+      .eq('client_id', client.id)
+      .is('deleted_at', null)
+      .is('read_at', null)
+      .select('id');
     if (error) throw new HttpError(400, error.message);
-    return json({ message: 'Notificações marcadas como lidas.' });
+    return json({ message: 'Notificações marcadas como lidas.', updatedCount: data?.length || 0 });
+  }
+
+  const clientNotificationReadMatch = path.match(/^\/api\/client\/notifications\/([a-f0-9]{24})\/read$/i);
+  if (clientNotificationReadMatch && method === 'POST') {
+    const notificationId = clientNotificationReadMatch[1];
+    const { data: current, error: lookupError } = await supabase
+      .from('client_notifications')
+      .select('*')
+      .eq('id', notificationId)
+      .eq('client_id', client.id)
+      .maybeSingle();
+    if (lookupError) throw new HttpError(400, lookupError.message);
+    if (!current || current.deleted_at) throw new HttpError(404, 'Notificação não encontrada.');
+    if (current.read_at) return json({ message: 'Notificação já estava lida.', notification: current, alreadyRead: true });
+    const timestamp = nowIso();
+    const { data, error } = await supabase
+      .from('client_notifications')
+      .update({ read_at: timestamp, updated_at: timestamp })
+      .eq('id', notificationId)
+      .eq('client_id', client.id)
+      .select('*')
+      .single();
+    if (error) throw new HttpError(400, error.message);
+    return json({ message: 'Notificação marcada como lida.', notification: data });
+  }
+
+  const clientNotificationDeleteMatch = path.match(/^\/api\/client\/notifications\/([a-f0-9]{24})$/i);
+  if (clientNotificationDeleteMatch && method === 'DELETE') {
+    const notificationId = clientNotificationDeleteMatch[1];
+    const { data: current, error: lookupError } = await supabase
+      .from('client_notifications')
+      .select('id,deleted_at')
+      .eq('id', notificationId)
+      .eq('client_id', client.id)
+      .maybeSingle();
+    if (lookupError) throw new HttpError(400, lookupError.message);
+    if (!current) throw new HttpError(404, 'Notificação não encontrada.');
+    if (current.deleted_at) return json({ message: 'Notificação já estava eliminada.', alreadyDeleted: true });
+    const timestamp = nowIso();
+    const { error } = await supabase
+      .from('client_notifications')
+      .update({ deleted_at: timestamp, updated_at: timestamp })
+      .eq('id', notificationId)
+      .eq('client_id', client.id);
+    if (error) throw new HttpError(400, error.message);
+    return json({ message: 'Notificação eliminada.' });
   }
 
   if (path === '/api/client/benefits' && method === 'GET') {
-    const now = nowIso();
-    const { data: coupons, error: couponError } = await supabase.from('finance_coupons').select('*').eq('active', true).or(`starts_at.is.null,starts_at.lte.${now}`).or(`expires_at.is.null,expires_at.gte.${now}`).order('created_at', { ascending: false });
-    if (couponError) throw new HttpError(500, couponError.message);
-    const { data: transactions, error: walletError } = await supabase.from('wallet_transactions').select('*').eq('client_id', client.id).order('created_at', { ascending: false }).limit(50);
-    if (walletError) throw new HttpError(500, walletError.message);
+    const [financeResult, restaurantResult, walletResult, redemptionResult, previousOrdersResult] = await Promise.all([
+      supabase.from('finance_coupons').select('*').eq('active', true).order('created_at', { ascending: false }),
+      supabase.from('restaurants').select('id,name,coupons,status').eq('status', 'active').order('name', { ascending: true }),
+      supabase.from('wallet_transactions').select('*').eq('client_id', client.id).order('created_at', { ascending: false }).limit(50),
+      supabase.from('coupon_redemptions').select('coupon_id,status').eq('client_id', client.id).eq('status', 'applied'),
+      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('client', client.id).neq('status', ORDER_STATUS.CANCELED)
+    ]);
+    if (financeResult.error) throw new HttpError(500, financeResult.error.message);
+    if (restaurantResult.error) throw new HttpError(500, restaurantResult.error.message);
+    if (walletResult.error) throw new HttpError(500, walletResult.error.message);
+    if (redemptionResult.error) throw new HttpError(500, redemptionResult.error.message);
+    if (previousOrdersResult.error) throw new HttpError(500, previousOrdersResult.error.message);
+
+    const restaurants = restaurantResult.data || [];
+    const restaurantNames = new Map(restaurants.map((restaurant: AnyRecord) => [String(restaurant.id), String(restaurant.name || '')]));
+    const clientRedemptions = new Map<string, number>();
+    (redemptionResult.data || []).forEach((redemption: AnyRecord) => {
+      const key = String(redemption.coupon_id || '');
+      clientRedemptions.set(key, Number(clientRedemptions.get(key) || 0) + 1);
+    });
+    const hasPreviousOrder = Number(previousOrdersResult.count || 0) > 0;
+    const platformCoupons = (financeResult.data || [])
+      .filter((coupon: AnyRecord) => couponDateIsActive(coupon))
+      .filter((coupon: AnyRecord) => !(coupon.first_order_only === true && hasPreviousOrder))
+      .filter((coupon: AnyRecord) => {
+        const perClientLimit = Number(coupon.per_client_limit || 0);
+        return perClientLimit <= 0 || Number(clientRedemptions.get(String(coupon.id)) || 0) < perClientLimit;
+      })
+      .map((coupon: AnyRecord) => publicFinanceCoupon(
+        coupon,
+        (Array.isArray(coupon.restaurant_ids) ? coupon.restaurant_ids : [])
+          .map((id: unknown) => restaurantNames.get(String(id)) || '')
+          .filter(Boolean)
+      ));
+    const restaurantCoupons = restaurants.flatMap((restaurant: AnyRecord) => publicRestaurantCoupons(restaurant));
+    const coupons = [...platformCoupons, ...restaurantCoupons].sort((left: AnyRecord, right: AnyRecord) => {
+      const leftExpiry = left.expires_at ? new Date(left.expires_at).getTime() : Number.MAX_SAFE_INTEGER;
+      const rightExpiry = right.expires_at ? new Date(right.expires_at).getTime() : Number.MAX_SAFE_INTEGER;
+      return leftExpiry - rightExpiry || String(left.restaurant_name || left.name).localeCompare(String(right.restaurant_name || right.name), 'pt');
+    });
+
     return json({
       wallet_balance_cents: Number(client.wallet_balance_cents || 0),
       loyalty_points: Number(client.loyalty_points || 0),
       referral_code: client.referral_code || '',
-      coupons: coupons || [],
-      wallet_transactions: transactions || []
+      coupons,
+      wallet_transactions: walletResult.data || []
     });
   }
 
@@ -2839,54 +3175,196 @@ const syncMenuExtras = async (itemId: string, body: AnyRecord) => {
   }
 };
 
-const resolveCoupon = async (rawCode: unknown, restaurantId: string | null, subtotalMzn: number, deliveryFeeMzn: number, client: AnyRecord | null) => {
+const couponEligibility = ({
+  status,
+  code,
+  message,
+  source = '',
+  coupon = null,
+  restaurant = null,
+  discount = 0,
+  label = '',
+  severity = 'info',
+  minimumOrder = 0,
+  currentSubtotal = 0,
+  missingAmount = 0,
+  requiresLogin = false,
+  startsAt = null,
+  expiresAt = null
+}: AnyRecord) => ({
+  recognized: Boolean(coupon),
+  valid: status === 'eligible',
+  eligible: status === 'eligible',
+  status,
+  code: String(code || '').trim().toUpperCase(),
+  label: label || (code ? `Cupão ${code}` : 'Cupão'),
+  message,
+  severity,
+  discount: Math.max(0, Number(discount || 0)),
+  source,
+  minimum_order: Math.max(0, Number(minimumOrder || 0)),
+  current_subtotal: Math.max(0, Number(currentSubtotal || 0)),
+  missing_amount: Math.max(0, Number(missingAmount || 0)),
+  requires_login: requiresLogin === true,
+  restaurant_id: restaurant?.id || null,
+  restaurant_name: restaurant?.name || '',
+  starts_at: startsAt || null,
+  expires_at: expiresAt || null,
+  coupon,
+  restaurant
+});
+
+const couponPublicResult = (evaluation: AnyRecord | null) => {
+  if (!evaluation) return {
+    recognized: false,
+    valid: false,
+    eligible: false,
+    status: 'empty_code',
+    code: '',
+    label: 'Cupão',
+    message: 'Indique o código do cupão.',
+    severity: 'info',
+    discount: 0,
+    source: '',
+    minimum_order: 0,
+    current_subtotal: 0,
+    missing_amount: 0,
+    requires_login: false,
+    restaurant_id: null,
+    restaurant_name: '',
+    starts_at: null,
+    expires_at: null
+  };
+  const { coupon: _coupon, restaurant: _restaurant, ...publicResult } = evaluation;
+  return publicResult;
+};
+
+const evaluateCoupon = async (rawCode: unknown, restaurantId: string | null, subtotalMzn: number, deliveryFeeMzn: number, client: AnyRecord | null) => {
   const code = String(rawCode || '').trim().toUpperCase().replace(/\s+/g, '').slice(0, 30);
-  if (!code) return null;
   const subtotal = Math.max(0, toNumber(subtotalMzn, 0));
   const deliveryFee = Math.max(0, toNumber(deliveryFeeMzn, 0));
+  if (!code) return couponEligibility({ status: 'empty_code', code, message: 'Indique o código do cupão.', currentSubtotal: subtotal });
+
+  const evaluateKnownCoupon = async (coupon: AnyRecord, source: 'restaurant' | 'finance', restaurant: AnyRecord | null) => {
+    const label = coupon.name || (source === 'restaurant' ? `Cupão ${code}` : 'Cupão TraGo');
+    const startsAt = coupon.starts_at || coupon.start_at || null;
+    const expiresAt = coupon.expires_at || coupon.expiry_at || null;
+    const now = Date.now();
+    const startsMs = startsAt ? new Date(startsAt).getTime() : 0;
+    const expiresMs = expiresAt ? new Date(expiresAt).getTime() : 0;
+    const minimumOrder = source === 'restaurant'
+      ? Math.max(0, Number(coupon.min || 0))
+      : Math.max(0, Number(coupon.min_order_cents || 0) / 100);
+    const unavailable = (status: string, message: string, severity = 'info', extra: AnyRecord = {}) => couponEligibility({
+      status, code, message, severity, source, coupon, restaurant, label,
+      minimumOrder, currentSubtotal: subtotal, startsAt, expiresAt, ...extra
+    });
+
+    if (coupon.active === false) return unavailable('inactive', 'Este cupão está temporariamente indisponível.', 'warning');
+    if (startsMs && startsMs > now) return unavailable('not_started', `Este cupão ficará disponível em ${new Date(startsMs).toLocaleDateString('pt-MZ')}.`);
+    if (expiresMs && expiresMs < now) return unavailable('expired', 'Este cupão expirou.', 'warning');
+
+    const totalLimit = source === 'restaurant'
+      ? Math.max(0, Number(coupon.limit || 0))
+      : Math.max(0, Number(coupon.total_limit || 0));
+    const usageCount = source === 'restaurant'
+      ? Math.max(0, Number(coupon.used || 0))
+      : Math.max(0, Number(coupon.usage_count || 0));
+    if (totalLimit > 0 && usageCount >= totalLimit) {
+      return unavailable('usage_limit_reached', 'Este cupão já atingiu o limite de utilizações.', 'warning');
+    }
+
+    if (source === 'finance') {
+      const restaurantIds = Array.isArray(coupon.restaurant_ids) ? coupon.restaurant_ids.map(String) : [];
+      if (restaurantIds.length && (!restaurantId || !restaurantIds.includes(String(restaurantId)))) {
+        return unavailable('restaurant_mismatch', 'Este cupão não se aplica ao restaurante seleccionado.');
+      }
+      const perClientLimit = Math.max(0, Number(coupon.per_client_limit || 0));
+      if ((coupon.first_order_only === true || perClientLimit > 0) && !client) {
+        return unavailable('login_required', 'Entre na sua conta para confirmar a elegibilidade deste cupão.', 'info', { requiresLogin: true });
+      }
+      if (client && perClientLimit > 0) {
+        const { count, error: countError } = await supabase
+          .from('coupon_redemptions')
+          .select('id', { count: 'exact', head: true })
+          .eq('coupon_id', coupon.id)
+          .eq('client_id', client.id)
+          .eq('status', 'applied');
+        if (countError) throw new HttpError(500, countError.message);
+        if (Number(count || 0) >= perClientLimit) {
+          return unavailable('client_limit_reached', 'Já utilizou este cupão o número máximo de vezes.', 'warning');
+        }
+      }
+      if (client && coupon.first_order_only === true) {
+        const previousOrders = await countRows('orders', (query) => query.eq('client', client.id).neq('status', ORDER_STATUS.CANCELED));
+        if (previousOrders > 0) return unavailable('first_order_only', 'Este cupão é exclusivo para o primeiro pedido.');
+      }
+    }
+
+    if (subtotal < minimumOrder) {
+      const missingAmount = Math.max(0, minimumOrder - subtotal);
+      return unavailable(
+        'minimum_not_reached',
+        `Pedido mínimo de ${minimumOrder.toFixed(2)} MZN. Adicione mais ${missingAmount.toFixed(2)} MZN ao cesto.`,
+        'info',
+        { missingAmount }
+      );
+    }
+
+    const type = String(coupon.discount_type || coupon.type || '').toLowerCase();
+    if (type.includes('delivery') && deliveryFee <= 0) {
+      return unavailable('delivery_fee_pending', 'Calcule primeiro a distância para aplicar o desconto na entrega.');
+    }
+
+    let discount = 0;
+    if (type.includes('percent')) {
+      const percent = Math.min(100, Math.max(0, Number(coupon.discount_percent ?? coupon.value ?? 0)));
+      discount = subtotal * percent / 100;
+    } else if (type.includes('delivery')) {
+      discount = deliveryFee;
+    } else {
+      discount = source === 'restaurant'
+        ? Math.min(subtotal, Math.max(0, Number(coupon.value || 0)))
+        : Math.max(0, Number(coupon.discount_value_cents || 0) / 100);
+    }
+    if (source === 'finance' && coupon.max_discount_cents != null) {
+      discount = Math.min(discount, Math.max(0, Number(coupon.max_discount_cents || 0) / 100));
+    }
+    discount = Math.min(subtotal + deliveryFee, Math.max(0, discount));
+    if (discount <= 0) return unavailable('zero_discount', 'Este cupão não gera desconto nas condições actuais.');
+
+    return couponEligibility({
+      status: 'eligible', code, message: 'Cupão elegível e pronto para aplicar.', severity: 'success',
+      source, coupon, restaurant, label, discount, minimumOrder, currentSubtotal: subtotal,
+      startsAt, expiresAt
+    });
+  };
 
   if (restaurantId) {
     const restaurant = await selectOne('restaurants', 'id', restaurantId);
     const list = Array.isArray(restaurant?.coupons) ? restaurant.coupons : [];
-    const coupon = list.find((item: AnyRecord) => item?.active !== false && String(item?.code || '').toUpperCase() === code);
-    if (coupon) {
-      if (coupon.expires_at && new Date(coupon.expires_at).getTime() < Date.now()) throw new HttpError(400, 'Este cupão expirou.');
-      if (Number(coupon.used || 0) >= Number(coupon.limit || Infinity)) throw new HttpError(400, 'Este cupão atingiu o limite de utilizações.');
-      if (subtotal < Number(coupon.min || 0)) throw new HttpError(400, `Este cupão requer um pedido mínimo de ${Number(coupon.min || 0).toFixed(2)} MZN.`);
-      const discount = coupon.type === 'percentage'
-        ? subtotal * Math.min(100, Number(coupon.value || 0)) / 100
-        : coupon.type === 'delivery' ? deliveryFee : Math.min(subtotal, Number(coupon.value || 0));
-      return { code, discount: Math.max(0, discount), source: 'restaurant', coupon, restaurant, label: `Cupão ${code}` };
-    }
+    const restaurantCoupon = list.find((item: AnyRecord) => String(item?.code || '').trim().toUpperCase() === code);
+    if (restaurantCoupon) return evaluateKnownCoupon(restaurantCoupon, 'restaurant', restaurant);
   }
 
-  const { data: coupon, error } = await supabase.from('finance_coupons').select('*').eq('code', code).eq('active', true).maybeSingle();
+  const { data: financeCoupon, error } = await supabase
+    .from('finance_coupons')
+    .select('*')
+    .ilike('code', code)
+    .maybeSingle();
   if (error) throw new HttpError(500, error.message);
-  if (!coupon) throw new HttpError(404, 'Cupão inexistente ou indisponível.');
-  const now = Date.now();
-  if (coupon.starts_at && new Date(coupon.starts_at).getTime() > now) throw new HttpError(400, 'Este cupão ainda não está activo.');
-  if (coupon.expires_at && new Date(coupon.expires_at).getTime() < now) throw new HttpError(400, 'Este cupão expirou.');
-  if (coupon.total_limit !== null && Number(coupon.usage_count || 0) >= Number(coupon.total_limit)) throw new HttpError(400, 'Este cupão atingiu o limite de utilizações.');
-  if (subtotal * 100 < Number(coupon.min_order_cents || 0)) throw new HttpError(400, `Este cupão requer um pedido mínimo de ${(Number(coupon.min_order_cents || 0) / 100).toFixed(2)} MZN.`);
-  const restaurantIds = Array.isArray(coupon.restaurant_ids) ? coupon.restaurant_ids.map(String) : [];
-  if (restaurantIds.length && (!restaurantId || !restaurantIds.includes(String(restaurantId)))) throw new HttpError(400, 'Este cupão não é válido neste restaurante.');
-  if ((coupon.first_order_only || Number(coupon.per_client_limit || 0) > 0) && !client) throw new HttpError(401, 'Entre na sua conta para usar este cupão.');
-  if (client) {
-    const { count, error: countError } = await supabase.from('coupon_redemptions').select('id', { count: 'exact', head: true }).eq('coupon_id', coupon.id).eq('client_id', client.id).eq('status', 'applied');
-    if (countError) throw new HttpError(500, countError.message);
-    if (Number(count || 0) >= Number(coupon.per_client_limit || 1)) throw new HttpError(400, 'Já utilizou este cupão o número máximo de vezes.');
-    if (coupon.first_order_only) {
-      const previousOrders = await countRows('orders', (query) => query.eq('client', client.id).neq('status', ORDER_STATUS.CANCELED));
-      if (previousOrders > 0) throw new HttpError(400, 'Este cupão é exclusivo para o primeiro pedido.');
-    }
+  if (!financeCoupon) {
+    return couponEligibility({
+      status: 'not_found', code, message: 'Código de cupão não encontrado.', severity: 'warning', currentSubtotal: subtotal
+    });
   }
-  const type = String(coupon.discount_type || '');
-  let discount = type.includes('percent')
-    ? subtotal * Math.min(100, Number(coupon.discount_percent || 0)) / 100
-    : type.includes('delivery') ? deliveryFee : Number(coupon.discount_value_cents || 0) / 100;
-  if (coupon.max_discount_cents !== null) discount = Math.min(discount, Number(coupon.max_discount_cents || 0) / 100);
-  discount = Math.min(subtotal + deliveryFee, Math.max(0, discount));
-  return { code, discount, source: 'finance', coupon, restaurant: null, label: coupon.name || `Cupão ${code}` };
+  return evaluateKnownCoupon(financeCoupon, 'finance', null);
+};
+
+const requireEligibleCoupon = async (rawCode: unknown, restaurantId: string | null, subtotalMzn: number, deliveryFeeMzn: number, client: AnyRecord | null) => {
+  const evaluation = await evaluateCoupon(rawCode, restaurantId, subtotalMzn, deliveryFeeMzn, client);
+  if (!evaluation?.eligible) throw new HttpError(422, evaluation?.message || 'Este cupão não pode ser aplicado agora.');
+  return evaluation;
 };
 
 const commitCouponUse = async (resolved: AnyRecord | null, order: AnyRecord, client: AnyRecord | null) => {
@@ -2969,7 +3447,7 @@ const validateFoodOrder = async (restaurantId: string | null, rawItems: unknown)
     normalized.push({ id, name: menu.name, category: menu.category || 'Geral', qty: quantity, base_price: Number(menu.price || 0), price: unitPrice, options: acceptedOptions });
     if (stock && stock.quantity !== null && stock.quantity !== undefined) stockReservations.push({ menu_item_id: id, quantity });
   }
-  if (subtotal < Number(restaurant.min_order_amount || 0)) throw new HttpError(400, `O pedido mínimo deste restaurante é ${Number(restaurant.min_order_amount || 0).toFixed(2)} MZN.`);
+  if (subtotal < Number(restaurant.min_order_amount || 0)) throw new HttpError(422, `O pedido mínimo deste restaurante é ${Number(restaurant.min_order_amount || 0).toFixed(2)} MZN.`);
   return { restaurant, items: normalized, subtotal, preparationMinutes: preparationMinutes || null, stockReservations };
 };
 
@@ -3174,6 +3652,7 @@ const routePublicPortals = async (req: Request, path: string, method: string) =>
       delete safeRestaurant.email;
       return {
         ...safeRestaurant,
+        coupons: publicRestaurantCoupons(restaurant),
         menuItems: (menuItems || [])
           .filter((item: AnyRecord) => item.restaurant_id === restaurant.id)
           .map((item: AnyRecord) => {
@@ -3306,14 +3785,14 @@ const routePublicPortals = async (req: Request, path: string, method: string) =>
     const body = await readBody(req) as AnyRecord;
     const restaurantId = isValidId(String(body.restaurant_id || '')) ? String(body.restaurant_id) : null;
     const client = await optionalClient(req);
-    const resolved = await resolveCoupon(body.code, restaurantId, toNumber(body.subtotal, 0), toNumber(body.delivery_fee, 0), client);
-    return json({
-      valid: true,
-      code: resolved?.code || '',
-      label: resolved?.label || '',
-      discount: Number(resolved?.discount || 0),
-      source: resolved?.source || ''
-    });
+    const evaluation = await evaluateCoupon(body.code, restaurantId, toNumber(body.subtotal, 0), toNumber(body.delivery_fee, 0), client);
+    const publicResult = couponPublicResult(evaluation);
+    const contract = String(req.headers.get('x-trago-coupon-contract') || '').toLowerCase();
+    if (contract !== 'eligibility-v1' && !publicResult.eligible) {
+      const legacyStatus = publicResult.status === 'not_found' ? 404 : publicResult.status === 'login_required' ? 401 : 400;
+      throw new HttpError(legacyStatus, publicResult.message);
+    }
+    return json(publicResult);
   }
 
   if (path === '/api/public/geo/route' && method === 'POST') {
@@ -3759,9 +4238,10 @@ const routePublicPortals = async (req: Request, path: string, method: string) =>
 
     const rawPayment = String(body.payment_method || '').trim();
     const paymentMethod = ALLOWED_PAYMENT_METHODS.has(rawPayment) && rawPayment !== 'postpaid_credit' ? rawPayment : 'cash';
-    const coupon = body.coupon_code
-      ? await resolveCoupon(body.coupon_code, restaurantId, baseServicePrice, toNumber(routeQuote.delivery_fee, 0), authenticatedClient)
+    const couponEvaluation = body.coupon_code
+      ? await requireEligibleCoupon(body.coupon_code, restaurantId, baseServicePrice, toNumber(routeQuote.delivery_fee, 0), authenticatedClient)
       : null;
+    const coupon = couponEvaluation?.eligible ? couponEvaluation : null;
     const totalOrderPrice = Math.max(0, baseServicePrice + toNumber(routeQuote.delivery_fee, 0) - Number(coupon?.discount || 0));
     const scheduledAt = body.scheduled_at ? new Date(String(body.scheduled_at)) : null;
     if (scheduledAt && (!Number.isFinite(scheduledAt.getTime()) || scheduledAt.getTime() < Date.now() + 15 * 60 * 1000)) {
@@ -4186,7 +4666,7 @@ const routePublicPortals = async (req: Request, path: string, method: string) =>
     await recordOrderStatusEvent(order.id, updated.status, status === 'preparing' ? 'Em preparação' : 'Cancelado', 'restaurant', restaurant.id, restaurant.name || 'Estabelecimento', reason);
     await recordAudit('restaurant', restaurant.id, status === 'preparing' ? 'order_preparing' : 'order_cancelled', 'order', order.id, { reason });
     await createAdminNotification({ dedupeKey: `restaurant_status:${order.id}:${status}`, type: status === 'rejected' ? 'warning' : 'order', title: `${restaurant.name || 'Restaurante'} · ${shortOrderCode(order.id)}`, message: labels[status], order: updated });
-    await createClientNotification(updated, status === 'rejected' ? 'warning' : 'restaurant', status === 'rejected' ? 'Pedido cancelado' : 'Em preparação', labels[status], { restaurant_status: status, reason });
+    await createClientNotification(updated, status === 'rejected' ? 'warning' : 'restaurant', status === 'rejected' ? 'Pedido cancelado' : 'Em preparação', labels[status], { restaurant_status: status, restaurant_id: updated.restaurant_id || updated.restaurant, reason });
     await broadcastAdmin('restaurant_order_status_changed', { orderId: order.id, restaurantStatus: status, messageId: message.id });
     if (order.assigned_to_driver) {
       const profile = await selectOne('driver_profiles', 'id', order.assigned_to_driver);
@@ -4347,7 +4827,7 @@ const routeOrders = async (req: Request, path: string, method: string) => {
 
     const updated = await selectOne('orders', 'id', order.id);
     if (outcomeRow?.outcome === 'rejected') {
-      await createOrderMessage(order.id, 'system', 'system', 'TraGo', `${user.nome || 'O motorista'} recusou a oferta. O cliente pode escolher outro motorista.`, 'status', { driver_offer_status: 'rejected' });
+      await createOrderMessage(order.id, 'system', 'system', 'TraGo', `${user.nome || 'O motorista'} recusou a oferta. O cliente pode escolher outro motorista.`, 'status', { driver_offer_status: 'rejected', driver_id: profile.id, driver_offer_id: pendingOffer.id });
       await createAdminNotification({
         dedupeKey: `driver_offer_rejected:${order.id}:${profile.id}`,
         type: 'warning',
@@ -4355,7 +4835,7 @@ const routeOrders = async (req: Request, path: string, method: string) => {
         message: `${user.nome || 'Motorista'} recusou o pedido. O cliente pode escolher outro motorista.`,
         order: updated
       });
-      await createClientNotification(updated, 'warning', 'Motorista indisponível', 'O motorista escolhido não aceitou. Escolha outro motorista no radar.', { driver_offer_status: 'rejected' });
+      await createClientNotification(updated, 'warning', 'Motorista indisponível', 'O motorista escolhido não aceitou. Escolha outro motorista no radar.', { driver_offer_status: 'rejected', driver_id: profile.id, driver_offer_id: pendingOffer.id });
       await broadcastAdmin('orders_changed', { orderId: order.id, action: 'driver_offer_rejected' });
       return json({ accepted: false, order: fromOrder(updated) });
     }
@@ -4367,7 +4847,7 @@ const routeOrders = async (req: Request, path: string, method: string) => {
       message: `${user.nome || 'Motorista'} aceitou o pedido do cliente.`,
       order: updated
     });
-    await createClientNotification(updated, 'driver', 'Motorista confirmado', `${user.nome || 'O motorista'} aceitou o seu pedido. Já pode acompanhar a localização em tempo real.`, { status: ORDER_STATUS.ASSIGNED, driver_id: profile.id });
+    await createClientNotification(updated, 'driver', 'Motorista confirmado', `${user.nome || 'O motorista'} aceitou o seu pedido. Já pode acompanhar a localização em tempo real.`, { status: ORDER_STATUS.ASSIGNED, driver_id: profile.id, driver_offer_id: pendingOffer.id });
     await broadcastDriver(profile.user_id, 'nova_entrega_atribuida', {
       orderId: order.id,
       clientName: order.client_name,
@@ -4797,7 +5277,7 @@ const handleOrderAction = async (req: Request, orderId: string, action: string, 
       delivery_started: 'Entrega iniciada',
       delivery_completed: 'Pedido entregue'
     };
-    await createClientNotification(updatedOrder, event === 'delivery_completed' ? 'success' : 'driver', titles[event] || 'Actualização da entrega', statusMessages[event], { status: updatedOrder.status });
+    await createClientNotification(updatedOrder, event === 'delivery_completed' ? 'success' : 'driver', titles[event] || 'Actualização da entrega', statusMessages[event], { status: updatedOrder.status, driver_id: profile.id, event_id: `${event}:${updatedOrder.last_status_at || updatedOrder.updated_at || now}` });
   }
   if (event === 'delivery_completed') {
     await createAdminNotification({

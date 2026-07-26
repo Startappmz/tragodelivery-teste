@@ -37,7 +37,7 @@ test('navegação guarda painel, histórico e scroll com restauro seguro', () =>
     'sessionStorage', 'localStorage', 'pushState', 'replaceState', 'popstate',
     'pagehide', 'saveScroll', 'restorePosition', 'transientPages', 'data-smart-back'
   ], 'navigation-memory.js');
-  assertIncludes(clientJs, ["role: 'client'", "transientPages: ['dish-detail']", 'panelNavigation.restore()'], 'client.js');
+  assertIncludes(clientJs, ["role: 'client'", "transientPages: ['dish-detail', 'map']", 'restorablePages:', 'validateContext:', 'panelNavigation.restore()'], 'client.js');
   assertIncludes(restaurantJs, ["role: 'restaurant'", 'panelNavigation.restore()'], 'restaurant.js');
   assertIncludes(driverJs, ["role: 'driver'", "transientPages: ['detalhe-entrega']", 'driverNavigation.restore()'], 'driver.js');
 });
@@ -73,7 +73,7 @@ test('navegação inteligente funciona com avanço, retorno e posição anterior
   const fakeDocument = {
     addEventListener(type, listener) { documentListeners[type] = listener; }
   };
-  vm.runInNewContext(navigationJs, { window: fakeWindow, document: fakeDocument, URL, Map, Set, JSON, Math, Number, String, Array, Object, Error });
+  vm.runInNewContext(navigationJs, { window: fakeWindow, document: fakeDocument, URL, URLSearchParams, Map, Set, JSON, Math, Number, String, Array, Object, Error });
 
   const renders = [];
   const navigation = fakeWindow.TragoNavigation.create({
@@ -98,6 +98,13 @@ test('navegação inteligente funciona com avanço, retorno e posição anterior
   navigation.navigate('dish-detail');
   const saved = JSON.parse(fakeWindow.localStorage.getItem('trago:navigation:client:last'));
   assert.equal(saved.page, 'food', 'painel transitório não deve substituir a última página segura');
+  const pushesBeforeTransientExit = fakeWindow.history.pushes;
+  const replacementsBeforeTransientExit = fakeWindow.history.replacements;
+  navigation.navigate('menu');
+  assert.equal(fakeWindow.history.pushes, pushesBeforeTransientExit, 'sair de painel transitório deve substituir a entrada e não criar loop');
+  assert.equal(fakeWindow.history.replacements, replacementsBeforeTransientExit + 1, 'saída do detalhe deve substituir a entrada transitória');
+  navigation.back('home');
+  assert.equal(navigation.current, 'food', 'Voltar depois de sair do detalhe deve regressar ao painel real anterior');
   const pushesBeforeRoot = fakeWindow.history.pushes;
   navigation.navigate('menu', { root: true, source: 'root' });
   assert.equal(fakeWindow.history.pushes, pushesBeforeRoot, 'navegação principal não deve poluir o histórico do botão Voltar');
@@ -111,16 +118,19 @@ test('navegação inteligente funciona com avanço, retorno e posição anterior
   assert.equal(typeof documentListeners.click, 'function');
 });
 
-test('endereços guardados estão separados da rota de recolha e entrega', () => {
+test('localização actual e endereços guardados alimentam rotas e pedidos', () => {
   assertIncludes(clientHtml, [
     'id="client-address-sheet"', 'id="client-address-form"', 'data-address-type="home"',
     'data-address-type="work"', 'data-address-type="other"', 'id="client-address-list"',
-    'Endereços guardados não são rotas', 'js/client/client-addresses.js'
+    'Locais prontos para usar.', 'data-client-location-refresh', 'js/client/client-addresses.js'
   ], 'cliente.html');
   assertIncludes(clientAddressesJs, [
-    'tragoClientSavedAddresses', 'renderAddresses', 'saveFromForm', 'data-address-default',
-    'data-address-edit', 'data-address-delete', 'data-address-use-location'
+    'tragoClientSavedAddresses', 'tragoClientCurrentLocationV1', 'refreshCurrentLocation', 'renderAddresses', 'saveFromForm',
+    'data-address-use', 'data-address-use-action', 'data-address-menu', 'data-address-default',
+    'data-address-edit', 'data-address-delete', 'data-address-use-location', 'addressStorageKey'
   ], 'client-addresses.js');
+  assertIncludes(clientJs, ['TragoClientUseSavedAddress', 'resolveSavedAddressPoint'], 'client.js');
+  assertIncludes(clientHtml, ['data-smart-back', 'data-fallback-panel="food"'], 'cliente.html');
   assert.doesNotMatch(clientV20Js, /\[data-address-add\][\s\S]{0,180}jump-panel="map"/);
   assertIncludes(clientHtml, ['data-local-back', 'id="btn-cargo-back"'], 'cliente.html');
   assert.match(clientJs, /\.v20-back:not\(\[data-local-back\]\)/);

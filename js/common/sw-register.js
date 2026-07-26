@@ -3,7 +3,7 @@
 
   if (!('serviceWorker' in navigator) || !['http:', 'https:'].includes(location.protocol)) return;
 
-  const reloadKey = 'trago:sw:reloaded:final-v4';
+  const reloadKey = 'trago:sw:reloaded:client-v21-7';
   let refreshing = false;
 
   navigator.serviceWorker.addEventListener('controllerchange', () => {

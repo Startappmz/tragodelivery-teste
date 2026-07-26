@@ -174,11 +174,25 @@ test('filtros rápidos são exclusivos e o botão limpar restaura Todos', () => 
   assert.ok(clientJs.includes("state.directorySort = 'recommended'"));
 });
 
-test('notificações não usam contadores fictícios e aceitam resposta remota vazia', () => {
+test('notificações usam caixa remota estável, fila offline e gestos persistentes', () => {
   assert.ok(clientHtml.includes('class="v20-menu-badge" hidden>0</b>'));
   assert.equal(clientHtml.includes('class="v20-menu-badge">3</b>'), false);
-  assert.ok(clientJs.includes("const notifications = Array.isArray(data.notifications) ? data.notifications : []"));
-  assert.ok(clientJs.includes("setNotificationUnreadCount(realUnread)"));
+  assert.ok(clientJs.includes('CLIENT_NOTIFICATIONS_CACHE_KEY'));
+  assert.ok(clientJs.includes('CLIENT_NOTIFICATIONS_PENDING_KEY'));
+  assert.ok(clientJs.includes('applyNotificationPendingState'));
+  assert.ok(clientJs.includes('processNotificationQueue'));
+  assert.ok(clientJs.includes('showNotificationUndo'));
+  assert.equal(clientJs.includes('CLIENT_NOTIFICATIONS_DELETED_OVERRIDES_KEY'), false);
+  assert.equal(clientJs.includes('CLIENT_NOTIFICATIONS_READ_OVERRIDES_KEY'), false);
+  assert.ok(clientJs.includes('beginNotificationSwipe'));
+  assert.ok(clientJs.includes("/api/client/notifications/${encodeURIComponent(operation.id)}/read"));
+  assert.ok(clientJs.includes("method: operation.type === 'delete' ? 'DELETE' : 'POST'"));
+  assert.ok(clientJs.includes("operation.type === 'read_all'"));
+  assert.ok(edge.includes('clientNotificationReadMatch'));
+  assert.ok(edge.includes('clientNotificationDeleteMatch'));
+  assert.ok(edge.includes('summaryOnly'));
+  assert.ok(edge.includes('nextCursor'));
+  assert.ok(edge.includes(".is('deleted_at', null)"));
 });
 
 test('Voltar guarda a origem e não fica preso ao Menu', () => {

@@ -3,6 +3,8 @@
   'use strict';
 
   const STORAGE_KEY = 'tragoClientSavedAddresses';
+  const CURRENT_LOCATION_KEY = 'tragoClientCurrentLocationV1';
+  const CURRENT_LOCATION_FRESH_MS = 5 * 60 * 1000;
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
@@ -16,6 +18,14 @@
 
   function clientSession() {
     try { return JSON.parse(localStorage.getItem('tragoClientSession') || 'null'); } catch { return null; }
+  }
+
+
+  function addressStorageKey() {
+    if (typeof window.TragoClientStorageKey === 'function') return window.TragoClientStorageKey(STORAGE_KEY);
+    const session = clientSession();
+    const identity = String(session?.id || session?._id || 'guest');
+    return `${STORAGE_KEY}:${encodeURIComponent(identity)}`;
   }
 
   async function request(path, options = {}) {
@@ -51,9 +61,18 @@
 
   function readAddresses() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const key = addressStorageKey();
+      let stored = localStorage.getItem(key);
+      if (!stored && !clientSession()?.token) {
+        const legacy = localStorage.getItem(STORAGE_KEY);
+        if (legacy) {
+          stored = legacy;
+          localStorage.setItem(key, legacy);
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
       if (!stored) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(starterAddresses));
+        localStorage.setItem(key, JSON.stringify(starterAddresses));
         return starterAddresses.map(normalise);
       }
       const parsed = JSON.parse(stored);
@@ -69,7 +88,7 @@
   function writeAddresses(values) {
     const clean = values.map(normalise).filter((item) => item.address);
     if (clean.length && !clean.some((item) => item.isDefault)) clean[0].isDefault = true;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+    localStorage.setItem(addressStorageKey(), JSON.stringify(clean));
     renderAddresses(clean);
     document.dispatchEvent(new CustomEvent('trago:addresses-updated', { detail: { addresses: clean } }));
   }
@@ -98,6 +117,110 @@
     node.className = `portal-toast ${kind} show`;
     clearTimeout(toast.timer);
     toast.timer = setTimeout(() => node.classList.remove('show'), 2800);
+  }
+
+  function readCurrentLocation() {
+    try {
+      const value = JSON.parse(localStorage.getItem(CURRENT_LOCATION_KEY) || 'null');
+      if (!value || !Number.isFinite(Number(value.lat)) || !Number.isFinite(Number(value.lng))) return null;
+      return {
+        lat: Number(value.lat),
+        lng: Number(value.lng),
+        accuracy: Number(value.accuracy || 0),
+        label: String(value.label || 'Localização actual'),
+        shortLabel: String(value.shortLabel || value.label || 'Localização actual'),
+        timestamp: Number(value.timestamp || 0)
+      };
+    } catch { return null; }
+  }
+
+  function writeCurrentLocation(value) {
+    try { localStorage.setItem(CURRENT_LOCATION_KEY, JSON.stringify(value)); } catch { /* cache opcional */ }
+  }
+
+  function setLocationBusy(busy) {
+    $$('[data-client-location-refresh]').forEach((button) => {
+      button.toggleAttribute('aria-busy', busy);
+      button.classList.toggle('is-locating', busy);
+    });
+  }
+
+  function updateCurrentLocationUI(location, fallback = 'A localizar…') {
+    const label = String(location?.shortLabel || location?.label || fallback).trim();
+    $$('[data-client-active-address]').forEach((node) => {
+      node.textContent = label;
+      node.title = String(location?.label || label);
+    });
+    $$('[data-client-location-refresh]').forEach((button) => {
+      const details = location ? `${location.label}${location.accuracy ? ` · precisão aproximada ${Math.round(location.accuracy)} m` : ''}` : fallback;
+      button.title = `${details}. Clique para actualizar.`;
+      button.setAttribute('aria-label', `Localização actual: ${label}. Actualizar localização.`);
+    });
+  }
+
+  async function reverseLocation(coords) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      const url = new URL(`${API_URL}/api/public/geo/reverse`);
+      url.searchParams.set('lat', String(coords.lat));
+      url.searchParams.set('lng', String(coords.lng));
+      const response = await fetch(url.toString(), { signal: controller.signal, headers: { Accept: 'application/json' } });
+      const data = await readJsonResponse(response);
+      if (!response.ok) throw new Error(data.message || 'Morada indisponível');
+      const label = String(data.label || data.display_name || 'Localização actual').trim();
+      const shortLabel = String(data.short_label || label.split(',').slice(0, 2).join(',') || 'Localização actual').trim();
+      return { label, shortLabel };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  let locationRequest = null;
+  async function refreshCurrentLocation({ force = false, manual = false } = {}) {
+    const cached = readCurrentLocation();
+    if (cached) updateCurrentLocationUI(cached);
+    if (!force && cached && Date.now() - cached.timestamp < CURRENT_LOCATION_FRESH_MS) return cached;
+    if (locationRequest) return locationRequest;
+    if (!navigator.geolocation) {
+      updateCurrentLocationUI(cached, 'Localização indisponível');
+      if (manual) toast('Este dispositivo não disponibiliza localização.', 'error');
+      return cached;
+    }
+    locationRequest = new Promise((resolve) => {
+      setLocationBusy(true);
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const base = {
+          lat: Number(position.coords.latitude),
+          lng: Number(position.coords.longitude),
+          accuracy: Number(position.coords.accuracy || 0),
+          label: 'Localização actual',
+          shortLabel: 'Localização actual',
+          timestamp: Date.now()
+        };
+        try {
+          const resolved = await reverseLocation(base);
+          Object.assign(base, resolved);
+        } catch {
+          base.label = `Localização actual · ${base.lat.toFixed(5)}, ${base.lng.toFixed(5)}`;
+        }
+        writeCurrentLocation(base);
+        try { localStorage.setItem('tragoV20LastLocation', JSON.stringify({ lat: base.lat, lng: base.lng, accuracy: base.accuracy, timestamp: base.timestamp })); } catch { /* compatibilidade opcional */ }
+        updateCurrentLocationUI(base);
+        document.dispatchEvent(new CustomEvent('trago:current-location-updated', { detail: base }));
+        if (manual) toast('Localização actualizada.');
+        resolve(base);
+      }, (error) => {
+        const denied = error?.code === 1;
+        updateCurrentLocationUI(cached, denied ? 'Activar localização' : 'Localização indisponível');
+        if (manual) toast(denied ? 'Autorize a localização no navegador e tente novamente.' : 'Não foi possível obter a localização.', 'error');
+        resolve(cached);
+      }, { enableHighAccuracy: manual === true, timeout: manual ? 12000 : 8000, maximumAge: force ? 0 : (manual ? 60000 : 300000) });
+    }).finally(() => {
+      setLocationBusy(false);
+      locationRequest = null;
+    });
+    return locationRequest;
   }
 
   function openSheet() {
@@ -152,24 +275,40 @@
 
   function syncDefaultAddress(values) {
     const selected = activeAddress(values);
-    const shortAddress = selected?.address?.split(',')[0]?.trim() || 'Escolher endereço';
-    $$('[data-client-active-address]').forEach((node) => { node.textContent = shortAddress; });
-    if (!selected) return;
-    const suggest = (inputSelector, latSelector, lngSelector) => {
-      const input = $(inputSelector);
-      if (!input) return;
-      const canReplace = !input.value.trim() || input.dataset.addressSuggestion === 'true';
-      if (!canReplace) return;
-      input.value = selected.address;
-      input.dataset.addressSuggestion = 'true';
-      input.dataset.resolvedAddress = selected.address.trim();
-      const latInput = $(latSelector);
-      const lngInput = $(lngSelector);
-      latInput && (latInput.value = selected.lat !== null ? Number(selected.lat).toFixed(6) : '');
-      lngInput && (lngInput.value = selected.lng !== null ? Number(selected.lng).toFixed(6) : '');
-    };
-    suggest('#food-delivery-address', '#food-delivery-lat', '#food-delivery-lng');
-    suggest('#order-delivery-address', '#delivery-lat', '#delivery-lng');
+    document.body.dataset.clientPreferredAddress = selected?.id || '';
+  }
+
+  let selectedUseAddressId = '';
+
+  function closeAddressMenus(exceptId = '') {
+    document.querySelectorAll('.v20-address-card.is-menu-open').forEach((card) => {
+      if (exceptId && card.dataset.addressId === exceptId) return;
+      card.classList.remove('is-menu-open');
+      card.querySelector('[data-address-menu]')?.setAttribute('aria-expanded', 'false');
+      card.querySelector('.v20-address-actions')?.toggleAttribute('hidden', true);
+    });
+  }
+
+  function openAddressUseSheet(item) {
+    const sheet = $('#client-address-use-sheet');
+    if (!sheet || !item) return;
+    selectedUseAddressId = item.id;
+    sheet.dataset.addressId = item.id;
+    $('[data-address-use-label]', sheet).textContent = item.label || typeMeta[item.type]?.label || 'Endereço';
+    $('[data-address-use-details]', sheet).textContent = item.address;
+    sheet.classList.add('open');
+    sheet.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeAddressUseSheet() {
+    const sheet = $('#client-address-use-sheet');
+    if (!sheet) return;
+    sheet.classList.remove('open');
+    sheet.setAttribute('aria-hidden', 'true');
+    sheet.removeAttribute('data-address-id');
+    selectedUseAddressId = '';
+    if (!$('.v20-sheet.open')) document.body.style.overflow = '';
   }
 
   function renderAddresses(values = readAddresses()) {
@@ -179,9 +318,13 @@
     list.innerHTML = values.map((item) => {
       const meta = typeMeta[item.type];
       return `<article class="v20-address-card${item.isDefault ? ' active' : ''}" data-address-id="${escapeHtml(item.id)}">
-        <i class="fa-solid ${meta.icon}"></i>
-        <span><strong>${escapeHtml(item.label || meta.label)}</strong><p>${escapeHtml(item.address)}</p>${item.reference ? `<small><i class="fa-solid fa-landmark"></i> ${escapeHtml(item.reference)}</small>` : ''}${item.isDefault ? '<em><i class="fa-solid fa-circle-check"></i> Predefinido</em>' : ''}</span>
-        <div class="v20-address-actions">${item.isDefault ? '' : `<button type="button" data-address-default="${escapeHtml(item.id)}" title="Usar como predefinido"><i class="fa-regular fa-circle-check"></i><span>Predefinir</span></button>`}<button type="button" data-address-edit="${escapeHtml(item.id)}" title="Editar"><i class="fa-regular fa-pen-to-square"></i><span>Editar</span></button><button type="button" data-address-delete="${escapeHtml(item.id)}" title="Eliminar"><i class="fa-regular fa-trash-can"></i><span>Eliminar</span></button></div>
+        <i class="fa-solid ${meta.icon}" aria-hidden="true"></i>
+        <span><strong>${escapeHtml(item.label || meta.label)}</strong><p>${escapeHtml(item.address)}</p>${item.reference ? `<small><i class="fa-solid fa-landmark"></i> ${escapeHtml(item.reference)}</small>` : ''}${item.isDefault ? '<em><i class="fa-solid fa-circle-check"></i> Preferido</em>' : ''}</span>
+        <div class="v20-address-primary-actions">
+          <button class="primary" type="button" data-address-use="${escapeHtml(item.id)}"><i class="fa-solid fa-route"></i><span>Usar endereço</span></button>
+          <button aria-expanded="false" aria-label="Gerir endereço" type="button" data-address-menu="${escapeHtml(item.id)}"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+        </div>
+        <div class="v20-address-actions" hidden>${item.isDefault ? '' : `<button type="button" data-address-default="${escapeHtml(item.id)}"><i class="fa-regular fa-circle-check"></i><span>Preferir</span></button>`}<button type="button" data-address-edit="${escapeHtml(item.id)}"><i class="fa-regular fa-pen-to-square"></i><span>Editar</span></button><button type="button" data-address-delete="${escapeHtml(item.id)}"><i class="fa-regular fa-trash-can"></i><span>Eliminar</span></button></div>
       </article>`;
     }).join('');
     empty.hidden = values.length > 0;
@@ -268,6 +411,71 @@
   }
 
   async function handleActions(event) {
+    const locationRefresh = event.target.closest('[data-client-location-refresh]');
+    if (locationRefresh) {
+      event.preventDefault();
+      await refreshCurrentLocation({ force: true, manual: true });
+      return;
+    }
+    const closeUseSheet = event.target.closest('[data-close-address-use]');
+    if (closeUseSheet) {
+      event.preventDefault();
+      closeAddressUseSheet();
+      return;
+    }
+    const useAddress = event.target.closest('[data-address-use]');
+    if (useAddress) {
+      event.preventDefault();
+      const item = readAddresses().find((address) => address.id === useAddress.dataset.addressUse);
+      if (!item) { toast('Endereço não encontrado.', 'error'); return; }
+      closeAddressMenus();
+      openAddressUseSheet(item);
+      return;
+    }
+    const addressMenu = event.target.closest('[data-address-menu]');
+    if (addressMenu) {
+      event.preventDefault();
+      const card = addressMenu.closest('.v20-address-card');
+      if (!card) return;
+      const open = !card.classList.contains('is-menu-open');
+      closeAddressMenus(open ? card.dataset.addressId : '');
+      card.classList.toggle('is-menu-open', open);
+      addressMenu.setAttribute('aria-expanded', open ? 'true' : 'false');
+      card.querySelector('.v20-address-actions')?.toggleAttribute('hidden', !open);
+      return;
+    }
+    const useAction = event.target.closest('[data-address-use-action]');
+    if (useAction) {
+      event.preventDefault();
+      const item = readAddresses().find((address) => address.id === selectedUseAddressId);
+      if (!item) { toast('Endereço não encontrado.', 'error'); closeAddressUseSheet(); return; }
+      if (typeof window.TragoClientUseSavedAddress !== 'function') {
+        toast('Fluxo de pedidos ainda não está pronto. Actualize a página.', 'error');
+        return;
+      }
+      const action = useAction.dataset.addressUseAction;
+      const target = action === 'pickup' ? 'pickup' : action === 'food' ? 'food-delivery' : 'delivery';
+      useAction.disabled = true;
+      useAction.classList.add('is-loading');
+      try {
+        await window.TragoClientUseSavedAddress(item, target, { openPanel: true, flow: action });
+        closeAddressUseSheet();
+        const messages = {
+          pickup: 'Endereço usado como ponto de recolha.',
+          delivery: 'Endereço usado como ponto de entrega.',
+          food: 'Morada aplicada ao pedido de comida.',
+          express: 'Novo envio Express iniciado com este destino.'
+        };
+        toast(messages[action] || 'Endereço aplicado.');
+      } catch (error) {
+        toast(error.message || 'Não foi possível usar este endereço.', 'error');
+      } finally {
+        useAction.disabled = false;
+        useAction.classList.remove('is-loading');
+      }
+      return;
+    }
+    if (!event.target.closest('.v20-address-card')) closeAddressMenus();
     const add = event.target.closest('[data-address-add]');
     if (add) {
       event.preventDefault();
@@ -335,13 +543,17 @@
     if (!form) return;
     renderAddresses();
     refreshRemote(true);
+    const cachedLocation = readCurrentLocation();
+    updateCurrentLocationUI(cachedLocation, 'A localizar…');
+    refreshCurrentLocation({ force: false, manual: false });
     document.addEventListener('click', handleActions);
     $$('[data-address-type]', form).forEach((button) => button.addEventListener('click', () => selectType(button.dataset.addressType)));
     $('[data-address-use-location]', form)?.addEventListener('click', (event) => useCurrentLocation(event.currentTarget));
     form.addEventListener('submit', saveFromForm);
   }
 
-  window.TragoClientAddresses = { read: readAddresses, render: renderAddresses, refresh: () => refreshRemote(true), open: () => { resetForm(); openSheet(); } };
+  window.TragoClientAddresses = { read: readAddresses, render: renderAddresses, refresh: () => refreshRemote(true), open: () => { resetForm(); openSheet(); }, currentLocation: readCurrentLocation };
+  window.TragoClientLocation = { read: readCurrentLocation, refresh: (force = true) => refreshCurrentLocation({ force, manual: true }) };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();

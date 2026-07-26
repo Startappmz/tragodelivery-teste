@@ -7,7 +7,6 @@
   const FAVORITES_KEY = 'tragoV20Favorites';
   const PREFERENCES_KEY = 'tragoClientPreferences';
   const ASSIGNED_DRIVER_KEY = 'tragoClientAssignedDriver';
-  const ORDER_HISTORY_KEY = 'tragoClientOrderHistory';
   const storageKey = (base) => window.TragoClientStorageKey?.(base) || base;
   let activeOrderEntry = null;
   let activeOrderContext = null;
@@ -22,6 +21,8 @@
   let cargoStops = [];
   const favoriteRecords = new Map();
   const routeGeometryCache = new Map();
+  const TERMINAL_ORDER_STATUSES = new Set(['concluido', 'cancelado', 'completed', 'delivered', 'finalizado', 'entregue', 'canceled', 'cancelled']);
+  const isTerminalOrderStatus = (status) => TERMINAL_ORDER_STATUSES.has(String(status || '').trim().toLowerCase());
 
   const onboardingSlides = [
     { image: 'assets/v20/images/onboard_1.svg', title: 'Selecione a sua localização', description: 'Descubra restaurantes próximos, cozinhas e entregas disponíveis na sua zona.' },
@@ -191,6 +192,7 @@
     const data = await readJsonResponse(response);
     if (response.status === 401 && path.startsWith('/api/client/')) {
       localStorage.removeItem(SESSION_KEY);
+      window.TragoClientRefreshSession?.({ refreshData: true });
       syncProfile();
     }
     if (!response.ok) throw new Error(data.message || 'Não foi possível comunicar com a TraGo.');
@@ -351,21 +353,16 @@
   window.TragoClientOpenAuth = () => openSheet('client-auth-sheet');
 
   function readActiveOrderEntry() {
-    try {
-      const history = JSON.parse(localStorage.getItem(storageKey(ORDER_HISTORY_KEY)) || '[]');
-      const selectedId = sessionStorage.getItem('tragoClientSelectedOrderId');
-      return history.find((item) => selectedId && String(item.id) === selectedId)
-        || history.find((item) => !['concluido', 'cancelado'].includes(item.status))
-        || history[0]
-        || null;
-    } catch (_error) { return null; }
+    const selectedId = sessionStorage.getItem('tragoClientSelectedOrderId');
+    const orders = window.TragoClientOrders?.all?.() || [];
+    return (selectedId ? window.TragoClientOrders?.get?.(selectedId) : null)
+      || orders.find((item) => !isTerminalOrderStatus(item.status))
+      || orders[0]
+      || null;
   }
 
   function readCurrentActiveOrderEntry() {
-    try {
-      const history = JSON.parse(localStorage.getItem(storageKey(ORDER_HISTORY_KEY)) || '[]');
-      return history.find((item) => !['concluido', 'cancelado'].includes(item.status)) || null;
-    } catch (_error) { return null; }
+    return window.TragoClientOrders?.active?.()?.[0] || null;
   }
 
   function syncActiveOrderShell() {
@@ -1020,10 +1017,8 @@
       activeOrderEntry.driver_offer_status = context.order?.driver_offer_status || null;
       activeOrderEntry.driver_offer_expires_at = context.order?.driver_offer_expires_at || null;
       if (changed) activeOrderEntry.last_update = new Date().toISOString();
-      const history = JSON.parse(localStorage.getItem(storageKey(ORDER_HISTORY_KEY)) || '[]');
-      localStorage.setItem(storageKey(ORDER_HISTORY_KEY), JSON.stringify(history.map((entry) => String(entry.id) === String(activeOrderEntry.id) ? { ...entry, ...activeOrderEntry } : entry)));
+      window.TragoClientOrders?.upsert?.(activeOrderEntry);
       syncActiveOrderShell();
-      window.TragoClientRenderNotifications?.();
     } catch (error) {
       if (!silent) toast(error.message, 'error');
     }
@@ -1038,21 +1033,19 @@
     try {
       const context = await orderApi(`/api/public/orders/${encodeURIComponent(entry.id)}/context`, entry);
       renderOrderContext(context);
-      const history = JSON.parse(localStorage.getItem(storageKey(ORDER_HISTORY_KEY)) || '[]');
       const nextOrder = context.order || {};
-      localStorage.setItem(storageKey(ORDER_HISTORY_KEY), JSON.stringify(history.map((item) => String(item.id) === String(entry.id)
-        ? {
-            ...item,
-            status: nextOrder.status || item.status,
-            restaurant_status: nextOrder.restaurant_status || nextOrder.restaurantStatus || item.restaurant_status,
-            assigned_to_driver: nextOrder.assigned_to_driver || item.assigned_to_driver,
-            driver_offer_status: nextOrder.driver_offer_status || null,
-            driver_offer_expires_at: nextOrder.driver_offer_expires_at || null,
-            pickup_address_coords: nextOrder.pickup_address_coords || item.pickup_address_coords,
-            address_coords: nextOrder.address_coords || item.address_coords,
-            last_update: new Date().toISOString()
-          }
-        : item)));
+      window.TragoClientOrders?.patch?.(entry.id, {
+        status: nextOrder.status || entry.status,
+        restaurant_status: nextOrder.restaurant_status || nextOrder.restaurantStatus || entry.restaurant_status,
+        assigned_to_driver: nextOrder.assigned_to_driver || entry.assigned_to_driver,
+        driver_offer_status: nextOrder.driver_offer_status || null,
+        driver_offer_expires_at: nextOrder.driver_offer_expires_at || null,
+        pickup_address_coords: nextOrder.pickup_address_coords || entry.pickup_address_coords,
+        address_coords: nextOrder.address_coords || entry.address_coords,
+        updatedAt: nextOrder.updatedAt || nextOrder.updated_at || new Date().toISOString(),
+        closedAt: nextOrder.closedAt || nextOrder.closed_at || entry.closedAt || null,
+        last_update: new Date().toISOString()
+      });
       syncActiveOrderShell();
     } catch (_error) { /* o próximo ciclo volta a tentar */ }
   }
@@ -1079,12 +1072,31 @@
     }
     await refreshOrderConversation();
     clearInterval(orderChatTimer);
-    orderChatTimer = setInterval(() => refreshOrderConversation(true), 8000);
+    orderChatTimer = null;
+    if (!isTerminalOrderStatus(activeOrderEntry?.status)) {
+      orderChatTimer = setInterval(async () => {
+        await refreshOrderConversation(true);
+        if (isTerminalOrderStatus(activeOrderEntry?.status)) {
+          clearInterval(orderChatTimer);
+          orderChatTimer = null;
+        }
+      }, 8000);
+    }
   }
 
   window.TragoClientOpenOrder = (orderId) => {
     if (orderId) sessionStorage.setItem('tragoClientSelectedOrderId', String(orderId));
     openOrderDetail();
+  };
+
+  window.TragoClientResetOrderTracking = () => {
+    clearInterval(orderChatTimer);
+    orderChatTimer = null;
+    activeOrderEntry = null;
+    activeOrderContext = null;
+    sessionStorage.removeItem('tragoClientSelectedOrderId');
+    closeSheet('order-detail-sheet');
+    renderAssignedDriver();
   };
 
   function initSheets() {
@@ -1140,7 +1152,7 @@
             : { email, password }
         });
         const session = storeSession(result.client, result.token);
-        window.TragoClientRefreshSession?.();
+        window.TragoClientRefreshSession?.({ refreshData: true });
         window.TragoClientAddresses?.refresh?.();
         loadRemoteFavorites();
         loadClientBenefits(true);
@@ -1392,6 +1404,18 @@
     } catch (_error) { /* a cache local continua disponível */ }
   }
 
+  window.TragoClientRefreshFavorites = () => {
+    favoriteRecords.clear();
+    enhanceFoodCards();
+    $$('[data-favorite-id]').forEach((button) => {
+      const active = readFavorites().includes(String(button.dataset.favoriteId));
+      button.innerHTML = `<i class="${active ? 'fa-solid' : 'fa-regular'} fa-heart"></i>`;
+      button.classList.toggle('active', active);
+    });
+    document.dispatchEvent(new CustomEvent('trago:favorites-changed'));
+    if (readSession()?.token) loadRemoteFavorites();
+  };
+
   function enhanceFoodCards() {
     $$('.food-card').forEach((card) => {
       if ($('.v20-favorite-button', card)) return;
@@ -1462,6 +1486,14 @@
     }
     try {
       const data = await clientApi('/api/client/benefits');
+      const catalogCoupons = await window.TragoClientCatalogCoupons?.load?.() || [];
+      const couponMap = new Map();
+      [...(Array.isArray(data.coupons) ? data.coupons : []), ...catalogCoupons].forEach((coupon) => {
+        const key = `${String(coupon.source || 'platform')}:${String(coupon.restaurant_id || '')}:${String(coupon.code || '').toUpperCase()}`;
+        if (coupon.code) couponMap.set(key, coupon);
+      });
+      data.coupons = [...couponMap.values()];
+      window.TragoClientCatalogCoupons?.register?.(data.coupons);
       const balance = Number(data.wallet_balance_cents || 0) / 100;
       $$('[data-client-wallet-balance]').forEach((node) => { node.textContent = `${balance.toFixed(2)} MZN`; });
       $$('[data-client-loyalty-points]').forEach((node) => { node.textContent = String(data.loyalty_points || 0); });
@@ -1473,7 +1505,7 @@
         const coupons = Array.isArray(data.coupons) ? data.coupons : [];
         const transactions = Array.isArray(data.wallet_transactions) ? data.wallet_transactions : [];
         panel.innerHTML = `<div class="v20-benefit-summary"><article><i class="fa-solid fa-wallet"></i><span><small>SALDO TRAGO</small><strong>${balance.toFixed(2)} MZN</strong></span></article><article><i class="fa-solid fa-star"></i><span><small>PONTOS</small><strong>${Number(data.loyalty_points || 0)}</strong></span></article></div>
-          <section class="v20-benefit-list"><header><small>CUPÕES ACTIVOS</small><h2>Descontos disponíveis</h2></header>${coupons.length ? coupons.map((coupon) => `<article><b>${String(coupon.code || '').replace(/[<>&"]/g, '')}</b><span><strong>${String(coupon.name || 'Cupão TraGo').replace(/[<>&"]/g, '')}</strong><small>${String(coupon.description || 'Consulte as condições no checkout.').replace(/[<>&"]/g, '')}</small></span></article>`).join('') : '<div class="empty-state">Não existem cupões activos neste momento.</div>'}</section>
+          <section class="v20-benefit-list"><header><small>CUPÕES ACTIVOS</small><h2>Descontos disponíveis</h2></header>${coupons.length ? coupons.map((coupon) => `<article class="v20-benefit-coupon" data-coupon-source="${String(coupon.source || 'platform').replace(/[<>&"]/g, '')}"><b>${String(coupon.code || '').replace(/[<>&"]/g, '')}</b><span><strong>${String(coupon.discount_label || coupon.name || 'Cupão TraGo').replace(/[<>&"]/g, '')}</strong><small>${String(coupon.restaurant_name ? `${coupon.restaurant_name} · ${coupon.conditions || coupon.description || ''}` : (coupon.conditions || coupon.description || 'Consulte as condições no checkout.')).replace(/[<>&"]/g, '')}</small></span><button type="button" data-use-client-coupon="${String(coupon.code || '').replace(/[<>&"]/g, '')}" aria-label="Usar cupão ${String(coupon.code || '').replace(/[<>&"]/g, '')}"><i class="fa-solid fa-copy"></i></button></article>`).join('') : '<div class="empty-state">Não existem cupões activos neste momento.</div>'}</section>
           <section class="v20-benefit-list"><header><small>MOVIMENTOS</small><h2>Carteira</h2></header>${transactions.length ? transactions.slice(0, 20).map((entry) => `<article><b>${entry.direction === 'credit' ? '+' : '−'}${(Number(entry.amount_cents || 0) / 100).toFixed(2)}</b><span><strong>${String(entry.description || entry.type || 'Movimento').replace(/[<>&"]/g, '')}</strong><small>${new Date(entry.created_at).toLocaleString('pt-MZ')}</small></span></article>`).join('') : '<div class="empty-state">Ainda não existem movimentos na carteira.</div>'}</section>`;
       }
       return data;
@@ -1517,6 +1549,15 @@
     $$('[data-view="profile"]').forEach((button) => button.addEventListener('click', openProfile));
     $$('[data-jump-panel="coupons"]').forEach((button) => button.addEventListener('click', () => loadClientBenefits()));
     $('[data-refresh-benefits]')?.addEventListener('click', () => loadClientBenefits());
+    $('#client-benefits-content')?.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-use-client-coupon]');
+      if (!button) return;
+      const code = String(button.dataset.useClientCoupon || '').trim();
+      if (!code) return;
+      try { await navigator.clipboard.writeText(code); } catch { /* copiar pode não estar disponível */ }
+      if ($('#cart-coupon')) $('#cart-coupon').value = code;
+      toast(`Cupão ${code} copiado. Aplique-o no checkout.`);
+    });
     $('[data-change-client-password]')?.addEventListener('click', async () => {
       if (!readSession()?.token) return openSheet('client-auth-sheet');
       const currentPassword = window.TragoFeedback
@@ -1600,8 +1641,6 @@
       window.TragoClientRenderWishlist?.();
     }));
     $$('[data-order-tab]').forEach((button) => button.addEventListener('click', () => {
-      $$('[data-order-tab]').forEach((item) => item.classList.toggle('active', item === button));
-      $('.v20-active-order')?.classList.toggle('hidden', button.dataset.orderTab !== 'active');
       window.TragoClientFilterOrders?.(button.dataset.orderTab || 'active');
     }));
     $$('[data-directory-quick]').forEach((button) => button.addEventListener('click', () => {
@@ -1632,7 +1671,7 @@
     });
     $('#btn-client-logout-account')?.addEventListener('click', () => {
       localStorage.removeItem(SESSION_KEY);
-      window.TragoClientRefreshSession?.();
+      window.TragoClientRefreshSession?.({ refreshData: true });
       syncProfile();
       window.TragoClientAddresses?.refresh?.();
     });
